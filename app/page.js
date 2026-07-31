@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavLoadingDone } from "./NavLoading";
 
 const TYPE_ORDER = ["Hotel", "ACQ", "Liberty", "Temairazu", "IHM"];
 
@@ -321,9 +320,6 @@ export default function Page() {
   useEffect(() => {
     load();
   }, [load]);
-
-  // メニュー遷移スピナー：読込が終わったら解除
-  useNavLoadingDone(loading);
 
   // Esc で詳細を閉じる
   useEffect(() => {
