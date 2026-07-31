@@ -1168,7 +1168,7 @@ export default function DashboardPage() {
         </div>
       ) : records === null ? (
         <div className="card">
-          <div className="notice">集計中です…</div>
+          <div className="page-loading"><span className="loader-ring" role="status" aria-label="集計中" /></div>
         </div>
       ) : (
         <>

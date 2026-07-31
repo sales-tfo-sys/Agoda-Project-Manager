@@ -4879,6 +4879,13 @@ tbody tr.clickable {
   }
 }
 
+/* ページ内の読み込み表示：テキストの代わりに中央スピナー */
+.page-loading {
+  display: grid;
+  place-items: center;
+  padding: 44px 0;
+}
+
 /* メニュー遷移中：画面中央のスピナーオーバーレイ */
 .nav-loading {
   position: fixed;

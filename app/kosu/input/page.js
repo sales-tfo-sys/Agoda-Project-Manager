@@ -506,7 +506,7 @@ export default function KosuInputPage() {
 
       {loading || me === null ? (
         <div className="card">
-          <div className="notice">読み込み中です…</div>
+          <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>
         </div>
       ) : visibleTasks.length === 0 ? (
         <div className="card">

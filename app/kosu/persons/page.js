@@ -331,7 +331,7 @@ export default function KosuPersonsPage() {
     return (
       <div className="wrap page-compact persons-page">
         <div className="card">
-          <div className="notice">読み込み中です…</div>
+          <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>
         </div>
       </div>
     );
@@ -566,7 +566,7 @@ export default function KosuPersonsPage() {
 
       {loading ? (
         <div className="card">
-          <div className="notice">読み込み中です…</div>
+          <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>
         </div>
       ) : (
         <div className="card no-pad persons-card">
