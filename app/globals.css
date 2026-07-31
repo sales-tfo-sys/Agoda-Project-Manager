@@ -4879,11 +4879,19 @@ tbody tr.clickable {
   }
 }
 
-/* ページ内の読み込み表示：テキストの代わりに中央スピナー */
+/* ページ内の読み込み表示：白いカード枠を出さず、画面中央にスピナーだけ置く */
 .page-loading {
   display: grid;
   place-items: center;
-  padding: 44px 0;
+  min-height: 60vh;
+  padding: 0;
+}
+/* 読み込みスピナーだけを含むカードは、背景・枠・余白を消して透明にする */
+.card:has(> .page-loading) {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
 }
 
 /* メニュー遷移中：画面中央のスピナーオーバーレイ */
