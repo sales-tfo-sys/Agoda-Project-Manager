@@ -4878,6 +4878,42 @@ tbody tr.clickable {
   }
 }
 
+/* メニュー遷移中：画面中央のスピナーオーバーレイ */
+.nav-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+  display: grid;
+  place-items: center;
+  background: rgba(17, 27, 51, 0.26);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: nav-loading-fade 0.14s ease both;
+}
+@keyframes nav-loading-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.nav-loading-spinner {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 4px solid rgba(255, 255, 255, 0.6);
+  border-top-color: var(--accent);
+  background: transparent;
+  animation: loader-spin 0.7s linear infinite;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-loading-spinner {
+    animation-duration: 2s;
+  }
+}
+
 /* ログイン画面：画面イメージと文章が重ならないよう幅で調整 */
 @media (max-width: 1499px) {
   .auth-brand-inner {

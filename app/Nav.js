@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 function LogoutIcon() {
   return (
@@ -143,6 +144,8 @@ export default function Sidebar() {
   const [note, setNote] = useState(null);
   const [busy, setBusy] = useState(false);
   const [me, setMe] = useState(null);
+  // メニュー遷移中の読み込みオーバーレイ（クリックで表示→遷移完了で解除）
+  const [navigating, setNavigating] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me", { cache: "no-store" })
@@ -150,6 +153,17 @@ export default function Sidebar() {
       .then(setMe)
       .catch(() => {});
   }, [pathname]);
+
+  // 遷移が完了（URLが変わった）ら必ずオーバーレイを消す。
+  // 念のため一定時間で自動解除（万一遷移が起きなかったときの保険）。
+  useEffect(() => {
+    setNavigating(false);
+  }, [pathname]);
+  useEffect(() => {
+    if (!navigating) return;
+    const t = setTimeout(() => setNavigating(false), 8000);
+    return () => clearTimeout(t);
+  }, [navigating]);
 
   // アカウント管理は閲覧権限のある人（オーナー・管理者）だけメニューに出す
   const tabs = me?.perms?.viewAccounts
@@ -213,6 +227,10 @@ export default function Sidebar() {
             key={href}
             href={href}
             className={"side-tab" + (pathname === href ? " active" : "")}
+            onClick={() => {
+              // 同じページなら遷移しないのでスピナーは出さない
+              if (pathname !== href) setNavigating(true);
+            }}
           >
             <Icon />
             <span>{label}</span>
@@ -262,6 +280,16 @@ export default function Sidebar() {
           <span>ログアウト</span>
         </button>
       </div>
+
+      {/* メニュー遷移中の中央スピナーオーバーレイ（画面全体を覆う） */}
+      {navigating &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div className="nav-loading" role="status" aria-live="polite" aria-label="読み込み中">
+            <span className="nav-loading-spinner" aria-hidden="true" />
+          </div>,
+          document.body
+        )}
     </aside>
   );
 }
