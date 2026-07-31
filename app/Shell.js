@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Sidebar from "./Nav";
+import { NavLoadingProvider } from "./NavLoading";
 
 // 認証系の画面ではサイドメニューを出さない（未ログイン時にメニューを見せない）
 const BARE_PATHS = ["/login", "/auth/callback"];
@@ -18,9 +19,11 @@ export default function Shell({ children }) {
     );
   }
   return (
-    <div className="app">
-      <Sidebar />
-      <main className="main">{children}</main>
-    </div>
+    <NavLoadingProvider>
+      <div className="app">
+        <Sidebar />
+        <main className="main">{children}</main>
+      </div>
+    </NavLoadingProvider>
   );
 }

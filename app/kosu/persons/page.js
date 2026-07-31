@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Modal from "../../Modal";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavLoadingDone } from "../../NavLoading";
 
 const PAGE_SIZE = 10;
 
@@ -142,6 +143,9 @@ export default function KosuPersonsPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // メニュー遷移スピナー：権限確認とデータ読込が終わったら解除
+  useNavLoadingDone(!permsLoaded || loading);
 
   // 完了メッセージは数秒で自動的に消す（エラーは操作するまで残す）
   useEffect(() => {

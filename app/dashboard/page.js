@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import Modal from "../Modal";
+import { useNavLoadingDone } from "../NavLoading";
 
 const TYPE_CODE = "ドロップダウン_13"; // 案件名（空欄は Hotel依頼）
 const STAGE_CODE = "ドロップダウン"; // Stage（ステータス）
@@ -706,6 +707,9 @@ export default function DashboardPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // メニュー遷移スピナー：集計が終わったら解除
+  useNavLoadingDone(loading);
 
   // 全体KPI（全期間）
   const kpi = useMemo(() => {

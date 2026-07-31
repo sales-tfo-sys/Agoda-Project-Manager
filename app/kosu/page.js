@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import DetailTable from "./DetailTable";
+import { useNavLoadingDone } from "../NavLoading";
 
 const REGULAR_COLOR = "#8fb4e3";
 const ADHOC_COLOR = "#e79a9a";
@@ -157,6 +158,9 @@ export default function KosuPage() {
     });
     setWi(last);
   }, [resource, wi]);
+
+  // メニュー遷移スピナー：中身（週の選択まで）が出そろったら解除
+  useNavLoadingDone(resource === null || wi == null);
 
   const persons = resource?.persons || [];
   const week = resource && wi != null ? resource.weeks[wi] : "";
