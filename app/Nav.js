@@ -133,7 +133,7 @@ function ClockIcon() {
 
 const TABS = [
   { href: "/dashboard", label: "ダッシュボード", Icon: GridIcon },
-  { href: "/", label: "案件一覧", Icon: ListIcon },
+  { href: "/", label: "施設一覧", Icon: ListIcon },
   // グラフページは一旦削除（app/graphs を除去）
   { href: "/kosu", label: "工数管理", Icon: ClockIcon },
 ];

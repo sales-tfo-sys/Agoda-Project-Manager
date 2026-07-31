@@ -933,7 +933,8 @@ h1 {
 
 .tw {
   overflow: auto;
-  max-height: calc(100vh - 92px);
+  /* 表示範囲を1行分（約24px）狭める */
+  max-height: calc(100vh - 116px);
 }
 table {
   width: 100%;
