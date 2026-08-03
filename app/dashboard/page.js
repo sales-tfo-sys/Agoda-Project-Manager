@@ -1298,7 +1298,9 @@ export default function DashboardPage() {
                 ) : null;
               })()}
             </div>
-            <Calendar />
+            <div className="cal-slot">
+              <Calendar />
+            </div>
           </div>
           )}
 

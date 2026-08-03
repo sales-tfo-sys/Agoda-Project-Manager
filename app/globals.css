@@ -4905,15 +4905,19 @@ tbody tr.clickable {
   min-width: 0;
   margin-bottom: 0;
 }
-.overview-row > .cal-card {
-  flex: 0 0 auto;
+/* 残りスペースの中央にカレンダーを置いてバランスを取る */
+.overview-row > .cal-slot {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
 }
 @media (max-width: 1100px) {
   .overview-row {
     flex-direction: column;
   }
-  .overview-row > .cal-card {
-    align-self: stretch;
+  .overview-row > .cal-slot {
+    justify-content: flex-start;
   }
 }
 .cal-card {
