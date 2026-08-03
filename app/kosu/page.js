@@ -145,17 +145,28 @@ export default function KosuPage() {
     load();
   }, [load]);
 
-  // 既定は「データがある最新の週」
+  // 既定は「今週」。今週がデータに無ければ「データがある最新の週」。
   useEffect(() => {
     if (!resource || wi != null) return;
-    let last = 0;
-    resource.weeks.forEach((_, i) => {
-      const has = resource.persons.some(
-        (p) => (resource.regular[p]?.[i] || 0) + (resource.adhoc[p]?.[i] || 0) > 0
-      );
-      if (has) last = i;
-    });
-    setWi(last);
+    // 今週の月曜〜日曜のラベルを作り、週一覧から探す（APIと同じ書式）
+    const now = new Date();
+    const mon = new Date(now);
+    mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7));
+    const end = new Date(mon);
+    end.setDate(end.getDate() + 6);
+    const label = `${mon.getMonth() + 1}/${mon.getDate()}〜${end.getMonth() + 1}/${end.getDate()}`;
+    let idx = resource.weeks.indexOf(label);
+    if (idx < 0) {
+      let last = 0;
+      resource.weeks.forEach((_, i) => {
+        const has = resource.persons.some(
+          (p) => (resource.regular[p]?.[i] || 0) + (resource.adhoc[p]?.[i] || 0) > 0
+        );
+        if (has) last = i;
+      });
+      idx = last;
+    }
+    setWi(idx);
   }, [resource, wi]);
 
   const persons = resource?.persons || [];

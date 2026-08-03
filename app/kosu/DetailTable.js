@@ -334,14 +334,28 @@ export default function DetailTable({ title, compact = false }) {
 
   const months = data?.months || [];
 
-  // 既定は「実績がある最後の月」
+  // 既定は「当月」。当月のデータが無ければ「実績がある最後の月」。
   useEffect(() => {
     if (!data || monthIdx != null || !data.months?.length) return;
-    let last = 0;
-    (data.dateMonthIdx || []).forEach((mi, di) => {
-      if ((data.rows || []).some((r) => (r.daily?.[di] || 0) > 0)) last = mi;
-    });
-    setMonthIdx(last);
+    const iso = data.isoDates || [];
+    const mIdx = data.dateMonthIdx || [];
+    const now = new Date();
+    const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    let cur = null;
+    for (let di = 0; di < iso.length; di++) {
+      if (iso[di] && String(iso[di]).slice(0, 7) === ym) {
+        cur = mIdx[di];
+        break;
+      }
+    }
+    if (cur == null) {
+      let last = 0;
+      mIdx.forEach((mi, di) => {
+        if ((data.rows || []).some((r) => (r.daily?.[di] || 0) > 0)) last = mi;
+      });
+      cur = last;
+    }
+    setMonthIdx(cur);
   }, [data, monthIdx]);
 
   const dayCols = useMemo(() => {
