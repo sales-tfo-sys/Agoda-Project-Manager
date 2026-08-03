@@ -2084,6 +2084,17 @@ tbody tr.clickable {
 .dtable td.is-holiday.z {
   color: #d9a6ad;
 }
+/* 土曜（青系） */
+.dtable th.is-sat {
+  background: #dbe6fb;
+  color: #2a5bb0;
+}
+.dtable td.is-sat {
+  background: #eef4fe;
+}
+.dtable tbody tr:hover td.is-sat {
+  background: #e1ecfd;
+}
 .hol-dot {
   display: block;
   width: 4px;
@@ -2578,8 +2589,9 @@ tbody tr.clickable {
   flex-wrap: nowrap;
   justify-content: center;
   align-items: flex-start;
-  flex: 0 0 auto;
-  max-width: 118px;
+  /* 凡例幅を固定し、左右のグラフ（プロット領域）の大きさを揃える */
+  flex: 0 0 120px;
+  width: 120px;
   gap: 5px;
 }
 .res-row .side-legend .legend-item {

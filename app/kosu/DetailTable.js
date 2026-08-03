@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { holidayName, dowLabel } from "../../lib/holidays";
 
 // 完了タブで作業内容の右端に置く Complete バッジの幅（列幅の計算に使う）
 const BADGE_W = 82;
@@ -160,6 +161,7 @@ export default function DetailTable({ title, compact = false }) {
               total: Math.round(daily.reduce((a, b) => a + b, 0) * 10) / 10,
               monthly: monthly.map((v) => Math.round(v * 10) / 10),
               daily,
+              byIso: { ...vals }, // 日付→値（全月表示で日付から引く）
               unit: unit === "time" ? "time" : "count",
               fromDb: true, // シートではなくサイト側のデータ
             };
@@ -229,17 +231,16 @@ export default function DetailTable({ title, compact = false }) {
               const tid = taskIdOf.get(r.detail);
               perDates = tid != null && pid != null ? byTask.get(tid)?.get(pid) : null;
             }
-            if (!perDates) return r;
-            let changed = false;
+            // 日付→値。シートの値をベースに、kosu_entry(工数入力)があれば上書き。
+            const byIso = {};
             const daily = (r.daily || []).map((v, di) => {
               const d = iso[di];
-              if (d && perDates[d] != null) {
-                changed = true;
-                return perDates[d];
-              }
-              return v;
+              const nv = d && perDates && perDates[d] != null ? perDates[d] : v;
+              if (d) byIso[d] = nv;
+              return nv;
             });
-            if (!changed) return r;
+            // シート列に無い日付の入力も含める（全月表示のため）
+            if (perDates) for (const [d, v] of Object.entries(perDates)) byIso[d] = v;
             const monthly = new Array(mLen).fill(0);
             daily.forEach((v, di) => {
               if (v) monthly[mIdx[di]] = (monthly[mIdx[di]] || 0) + v;
@@ -247,6 +248,7 @@ export default function DetailTable({ title, compact = false }) {
             return {
               ...r,
               daily,
+              byIso,
               monthly: monthly.map((v) => Math.round(v * 10) / 10),
               total: Math.round(daily.reduce((a, b) => a + b, 0) * 10) / 10,
             };
@@ -416,20 +418,36 @@ export default function DetailTable({ title, compact = false }) {
     setMonthIdx(cur);
   }, [data, monthIdx]);
 
-  const dayCols = useMemo(() => {
-    if (!data?.dates) return [];
-    const out = [];
-    (data.dateMonthIdx || []).forEach((mi, di) => {
-      if (monthIdx == null || mi === monthIdx)
-        out.push({
-          di,
-          label: data.dates[di],
-          dow: data.dowOf?.[di] || "",
-          holiday: data.holidayOf?.[di] || null,
-        });
+  // 各月インデックス → その月の { 年, 月 }（シートの日付から求める）
+  const monthYM = useMemo(() => {
+    const map = {};
+    const iso = data?.isoDates || [];
+    const mIdx = data?.dateMonthIdx || [];
+    iso.forEach((d, di) => {
+      if (!d) return;
+      const mi = mIdx[di];
+      if (map[mi] == null) map[mi] = { y: Number(d.slice(0, 4)), m: Number(d.slice(5, 7)) };
     });
+    return map;
+  }, [data]);
+
+  // 選択月の全日を列にする（シートの列に依存しない＝月まるごと表示）
+  const dayCols = useMemo(() => {
+    if (monthIdx == null) return [];
+    const ym = monthYM[monthIdx];
+    if (!ym) return [];
+    const days = new Date(ym.y, ym.m, 0).getDate();
+    const out = [];
+    for (let d = 1; d <= days; d++) {
+      out.push({
+        iso: `${ym.y}-${String(ym.m).padStart(2, "0")}-${String(d).padStart(2, "0")}`,
+        label: `${ym.m}/${d}`,
+        dow: dowLabel(ym.y, ym.m, d),
+        holiday: holidayName(ym.y, ym.m, d),
+      });
+    }
     return out;
-  }, [data, monthIdx]);
+  }, [monthIdx, monthYM]);
 
   // 完了の判定：作業内容管理で完了にしたもの、または
   // 紐づいたダッシュボードの Ad Hoc タスクが全て Complete のもの
@@ -627,7 +645,7 @@ export default function DetailTable({ title, compact = false }) {
               <col style={{ width: contentW }} />
               <col style={{ width: 52 }} />
               {dayCols.map((d) => (
-                <col key={d.di} style={{ width: 42 }} />
+                <col key={d.iso} style={{ width: 42 }} />
               ))}
             </colgroup>
             <thead>
@@ -640,8 +658,12 @@ export default function DetailTable({ title, compact = false }) {
                 </th>
                 {dayCols.map((d) => (
                   <th
-                    key={d.di}
-                    className={"day-th" + (d.holiday ? " is-holiday" : "")}
+                    key={d.iso}
+                    className={
+                      "day-th" +
+                      (d.holiday || d.dow === "日" ? " is-holiday" : "") +
+                      (d.dow === "土" ? " is-sat" : "")
+                    }
                     title={d.holiday ? `${d.label}（${d.dow}）${d.holiday}` : undefined}
                   >
                     <span className="d-date">{d.label}</span>
@@ -707,11 +729,15 @@ export default function DetailTable({ title, compact = false }) {
                       );
                     })()}
                     {dayCols.map((d) => {
-                      const v = r.daily?.[d.di] || 0;
+                      const v = r.byIso?.[d.iso] || 0;
                       return (
                         <td
-                          key={d.di}
-                          className={(v === 0 ? "z" : "") + (d.holiday ? " is-holiday" : "")}
+                          key={d.iso}
+                          className={
+                            (v === 0 ? "z" : "") +
+                            (d.holiday || d.dow === "日" ? " is-holiday" : "") +
+                            (d.dow === "土" ? " is-sat" : "")
+                          }
                           title={d.holiday || undefined}
                         >
                           {v === 0 ? "" : v.toLocaleString("ja-JP")}

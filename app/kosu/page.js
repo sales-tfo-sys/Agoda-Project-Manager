@@ -68,21 +68,8 @@ function Stacked100({ persons, series, valuesFor, height = 250 }) {
                   )}
                 </g>
               );
-            } else {
-              const upper = yTop < padT + plotH / 2;
-              nodes.push(
-                <text
-                  key={s.key}
-                  x={cx}
-                  y={upper ? yTop - 7 : yTop + 14}
-                  className="zero-lbl"
-                  fill={s.color}
-                  textAnchor="middle"
-                >
-                  0% (0h)
-                </text>
-              );
             }
+            // 0% の系列は非表示（ラベルも出さない）
           }
         } else {
           nodes.push(
