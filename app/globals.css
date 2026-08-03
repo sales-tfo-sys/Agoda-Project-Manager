@@ -4879,6 +4879,42 @@ tbody tr.clickable {
   }
 }
 
+/* Ad Hoc：シート連携の設定ボタン（編集モード）とビュー時のマーク */
+.cfg-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.cfg-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.cfg-btn.on {
+  color: #1f8a5b;
+  border-color: #93cfab;
+  background: #eafaf1;
+}
+.sheet-mark {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 5px;
+  color: #1f8a5b;
+}
+/* シート連携の設定モーダル：受注/完了 × シート名/セル を2列で */
+.cfg-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
 /* ページ内の読み込み表示：白いカード枠を出さず、画面中央にスピナーだけ置く */
 .page-loading {
   display: grid;

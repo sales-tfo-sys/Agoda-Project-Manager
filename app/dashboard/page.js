@@ -696,6 +696,11 @@ export default function DashboardPage() {
         // 表示は「Kintone を取り込んだ時刻」（保存済みなら fetchedAt）
         setUpdatedAt(json.fetchedAt ? new Date(json.fetchedAt) : new Date());
       }
+      // Ad Hoc のシート連携（受注数・完了数）も取得。更新のたびに最新化する。
+      fetch("/api/adhoc-counts", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((j) => setSheetCounts(j.items || {}))
+        .catch(() => {});
     } catch (e) {
       setError(String(e?.message || e));
     } finally {
@@ -930,6 +935,10 @@ export default function DashboardPage() {
   // Ad Hoc Task（進捗シート由来）
   const [adhoc, setAdhoc] = useState(null);
   const [adhocTab, setAdhocTab] = useState("active"); // active（対応中）/ done（完了）
+  // 各Ad Hocタスクの受注数・完了数（登録シートのセルから取得）: { [task]: {total, done} }
+  const [sheetCounts, setSheetCounts] = useState({});
+  // シート連携の設定モーダル対象タスク
+  const [cfgTask, setCfgTask] = useState(null);
 
   // サイトで追加した Ad Hoc タスク（シート由来の分と結合して表示）
   const [customAdhoc, setCustomAdhoc] = useState([]);
@@ -1438,6 +1447,20 @@ export default function DashboardPage() {
                           const calcRest = hasCount ? nTotal - nDone : null;
                           const calcPct =
                             hasCount && nTotal > 0 ? `${Math.round((nDone / nTotal) * 100)}%` : "—";
+                          // シート連携タスク：登録シートのセルから取得した受注数・完了数を優先表示し、
+                          // 残件数・進捗率も自動計算する。
+                          const sc = sheetCounts[t.task];
+                          const scTotal = sc && sc.total != null ? sc.total : null;
+                          const scDone = sc && sc.done != null ? sc.done : null;
+                          const hasSheet = scTotal != null || scDone != null;
+                          const dispTotal = scTotal != null ? scTotal : val("total", t.total);
+                          const dispDone = scDone != null ? scDone : val("done", t.done);
+                          const dispRest =
+                            scTotal != null && scDone != null ? scTotal - scDone : null;
+                          const dispPct =
+                            scTotal != null && scDone != null && scTotal > 0
+                              ? `${Math.round((scDone / scTotal) * 100)}%`
+                              : null;
                           // 日付はカレンダーから選ぶ（保存は "YYYY/MM/DD" のまま）。
                           // ブラウザ標準の日付入力は表示書式が環境依存（曜日の括弧が付くなど）のため、
                           // 表示は自前で描き、カレンダーだけ標準のものを showPicker() で開く。
@@ -1525,6 +1548,19 @@ export default function DashboardPage() {
                                     contents={kosuContents}
                                     onChange={(v) => setOvField("adhoc", t.task, "kosuLink", v)}
                                   />
+                                  <button
+                                    type="button"
+                                    className={"cfg-btn" + (o.sheetUrl ? " on" : "")}
+                                    onClick={() => setCfgTask(t.task)}
+                                    title="シート連携（受注数・完了数）"
+                                    aria-label="シート連携を設定"
+                                  >
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                                      <line x1="3" y1="9" x2="21" y2="9" />
+                                      <line x1="9" y1="9" x2="9" y2="21" />
+                                    </svg>
+                                  </button>
                                   {t.customId && (
                                     <button
                                       type="button"
@@ -1548,16 +1584,38 @@ export default function DashboardPage() {
                                       </svg>
                                     </span>
                                   )}
+                                  {o.sheetUrl && (
+                                    <span className="sheet-mark" title="シート連携中（受注数・完了数を自動取得）" aria-hidden="true">
+                                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                                        <line x1="3" y1="9" x2="21" y2="9" />
+                                        <line x1="9" y1="9" x2="9" y2="21" />
+                                      </svg>
+                                    </span>
+                                  )}
                                 </>
                               )}
                             </td>
                             <td className="period">{ed ? dateIn("start", t.start) : cell(val("start", t.start))}</td>
                             <td className="period">{ed ? dateIn("end", t.end) : cell(val("end", t.end))}</td>
-                            {/* シート由来は集計値そのまま。サイト追加分は件数を入力し、残件数・進捗率を自動計算 */}
-                            <td>{t.customId && ed ? txt("total", t.total, "ed-input ed-num") : num(val("total", t.total))}</td>
-                            <td>{t.customId && ed ? txt("done", t.done, "ed-input ed-num") : num(val("done", t.done))}</td>
-                            <td>{num(t.customId ? calcRest : t.rest)}</td>
-                            <td>{t.customId ? calcPct : cell(t.pct)}</td>
+                            {/* シート連携＞サイト入力＞シート由来の集計値、の優先順で表示。
+                                連携時は残件数・進捗率も自動計算する。 */}
+                            <td className={hasSheet ? "v-auto" : ""} title={hasSheet ? "登録シートから取得" : undefined}>
+                              {hasSheet
+                                ? num(dispTotal)
+                                : t.customId && ed
+                                ? txt("total", t.total, "ed-input ed-num")
+                                : num(val("total", t.total))}
+                            </td>
+                            <td className={hasSheet ? "v-auto" : ""} title={hasSheet ? "登録シートから取得" : undefined}>
+                              {hasSheet
+                                ? num(dispDone)
+                                : t.customId && ed
+                                ? txt("done", t.done, "ed-input ed-num")
+                                : num(val("done", t.done))}
+                            </td>
+                            <td>{dispRest != null ? num(dispRest) : num(t.customId ? calcRest : t.rest)}</td>
+                            <td>{dispPct != null ? dispPct : t.customId ? calcPct : cell(t.pct)}</td>
                             <td>
                               {ed ? (
                                 <select
@@ -1852,6 +1910,81 @@ export default function DashboardPage() {
         <p className="modal-note">
           このタスクの優先順・対応者・編集した内容もあわせて削除されます。工数の入力が既にある場合、実績は残ります。
         </p>
+      </Modal>
+
+      {/* シート連携（受注数・完了数）の設定 */}
+      <Modal
+        open={!!cfgTask}
+        title="シート連携（受注数・完了数）"
+        onClose={() => setCfgTask(null)}
+        footer={
+          <button className="save-btn" onClick={() => setCfgTask(null)}>
+            閉じる
+          </button>
+        }
+      >
+        {cfgTask &&
+          (() => {
+            const o = ovOf("adhoc", cfgTask);
+            const set = (k, v) => setOvField("adhoc", cfgTask, k, v);
+            return (
+              <div className="modal-fields">
+                <div className="modal-strong">「{cfgTask}」</div>
+                <label className="fld">
+                  スプレッドシートURL
+                  <input
+                    type="text"
+                    value={o.sheetUrl || ""}
+                    onChange={(e) => set("sheetUrl", e.target.value)}
+                    placeholder="https://docs.google.com/spreadsheets/d/..."
+                  />
+                </label>
+                <div className="cfg-grid">
+                  <label className="fld">
+                    受注数：シート名
+                    <input
+                      type="text"
+                      value={o.orderSheet || ""}
+                      onChange={(e) => set("orderSheet", e.target.value)}
+                      placeholder="例：集計"
+                    />
+                  </label>
+                  <label className="fld">
+                    受注数：セル
+                    <input
+                      type="text"
+                      value={o.orderCell || ""}
+                      onChange={(e) => set("orderCell", e.target.value)}
+                      placeholder="例：B2"
+                    />
+                  </label>
+                  <label className="fld">
+                    完了数：シート名
+                    <input
+                      type="text"
+                      value={o.doneSheet || ""}
+                      onChange={(e) => set("doneSheet", e.target.value)}
+                      placeholder="例：集計"
+                    />
+                  </label>
+                  <label className="fld">
+                    完了数：セル
+                    <input
+                      type="text"
+                      value={o.doneCell || ""}
+                      onChange={(e) => set("doneCell", e.target.value)}
+                      placeholder="例：C2"
+                    />
+                  </label>
+                </div>
+                <p className="modal-note">
+                  対象シートは「リンクを知っている全員が閲覧可」にしてください。入力は自動保存されます。
+                  ダッシュボードの「更新」で最新の受注数・完了数を取得します。
+                  受注数と完了数が同じタブなら、シート名は同じ値を入れてください。
+                </p>
+              </div>
+            );
+          })()}
       </Modal>
     </div>
   );
