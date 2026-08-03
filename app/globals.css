@@ -4879,6 +4879,28 @@ tbody tr.clickable {
   }
 }
 
+/* Ad Hoc：同一優先度内のドラッグ並べ替え */
+.prio-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.adhoc-grip {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 22px;
+  flex: none;
+  color: var(--ink-3);
+  cursor: grab;
+}
+.adhoc-grip:active {
+  cursor: grabbing;
+}
+.adhoc-table tr.row-dragover td {
+  border-top: 2px solid var(--accent);
+}
+
 /* Ad Hoc：シート連携の設定ボタン（編集モード）とビュー時のマーク */
 .cfg-btn {
   display: inline-grid;

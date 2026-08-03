@@ -939,6 +939,9 @@ export default function DashboardPage() {
   const [sheetCounts, setSheetCounts] = useState({});
   // シート連携の設定モーダル対象タスク
   const [cfgTask, setCfgTask] = useState(null);
+  // Ad Hoc の手動並べ替え（同一優先度内の順番）
+  const adhocDragIndex = useRef(null);
+  const [adhocDragOver, setAdhocDragOver] = useState(null);
 
   // サイトで追加した Ad Hoc タスク（シート由来の分と結合して表示）
   const [customAdhoc, setCustomAdhoc] = useState([]);
@@ -1301,13 +1304,25 @@ export default function DashboardPage() {
               const m = s && String(s).match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
               return m ? Number(m[1]) * 10000 + Number(m[2]) * 100 + Number(m[3]) : -Infinity;
             };
+            // 同一優先度内の手動並び順（seq）。未設定は末尾扱い（元の順を保つ）
+            const seqOf = (t) => {
+              const s = ovOf("adhoc", t.task).seq;
+              const n = Number(s);
+              return s != null && Number.isFinite(n) ? n : null;
+            };
             const byPriority = (a, b) => {
               const pa = prioOf("adhoc", a.task, a.no);
               const pb = prioOf("adhoc", b.task, b.no);
-              if (pa == null && pb == null) return 0;
-              if (pa == null) return 1;
-              if (pb == null) return -1;
-              return pa - pb;
+              const na = pa == null ? Infinity : pa;
+              const nb = pb == null ? Infinity : pb;
+              if (na !== nb) return na - nb;
+              // 優先度が同じときは手動並び(seq)で決める
+              const sa = seqOf(a);
+              const sb = seqOf(b);
+              if (sa == null && sb == null) return 0;
+              if (sa == null) return 1;
+              if (sb == null) return -1;
+              return sa - sb;
             };
             // 対応中は優先順、完了は開始日の新しい順
             const list =
@@ -1315,6 +1330,15 @@ export default function DashboardPage() {
                 ? [...done].sort((a, b) => startKey(b) - startKey(a))
                 : [...active].sort(byPriority);
             const cell = (v) => (v === null || v === undefined || v === "" ? "—" : v);
+            // ドラッグで並べ替え：新しい並びを seq として保存する。
+            // 優先度が先に効くので、seq は同一優先度内の順番決めに使われる。
+            const moveAdhoc = (from, to) => {
+              if (from == null || to == null || from === to) return;
+              const arr = [...list];
+              const [m] = arr.splice(from, 1);
+              arr.splice(to, 0, m);
+              arr.forEach((t, idx) => setOvField("adhoc", t.task, "seq", idx));
+            };
             return (
               <div className="tab-panel">
                 <div className="sec-row">
@@ -1514,20 +1538,68 @@ export default function DashboardPage() {
                           );
                           // 完了したタスクは優先順を持たせない（入力欄も出さない）
                           const isDone = status === "Complete";
+                          const canDragRow = ed && adhocTab === "active";
                           return (
-                          <tr key={t.task + i} className={isDone ? "row-done" : ""}>
+                          <tr
+                            key={t.task + i}
+                            className={
+                              (isDone ? "row-done " : "") +
+                              (adhocDragOver === i ? "row-dragover" : "")
+                            }
+                            onDragOver={
+                              canDragRow
+                                ? (e) => {
+                                    e.preventDefault();
+                                    if (adhocDragOver !== i) setAdhocDragOver(i);
+                                  }
+                                : undefined
+                            }
+                            onDrop={
+                              canDragRow
+                                ? () => {
+                                    moveAdhoc(adhocDragIndex.current, i);
+                                    adhocDragIndex.current = null;
+                                    setAdhocDragOver(null);
+                                  }
+                                : undefined
+                            }
+                          >
                             <td className="prio-td">
                               {isDone ? (
                                 <span className="prio-none">—</span>
                               ) : ed ? (
-                                <input
-                                  className="prio-input"
-                                  type="number"
-                                  min="1"
-                                  value={prioOf("adhoc", t.task, t.no) ?? ""}
-                                  onChange={(e) => setPriority("adhoc", t.task, e.target.value)}
-                                  aria-label={`${t.task} の作業優先順`}
-                                />
+                                <span className="prio-edit">
+                                  <span
+                                    className="adhoc-grip"
+                                    draggable
+                                    onDragStart={() => {
+                                      adhocDragIndex.current = i;
+                                    }}
+                                    onDragEnd={() => {
+                                      adhocDragIndex.current = null;
+                                      setAdhocDragOver(null);
+                                    }}
+                                    title="ドラッグで並べ替え（同じ優先度内の順番）"
+                                    aria-hidden="true"
+                                  >
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                                      <circle cx="9" cy="5" r="1.7" />
+                                      <circle cx="15" cy="5" r="1.7" />
+                                      <circle cx="9" cy="12" r="1.7" />
+                                      <circle cx="15" cy="12" r="1.7" />
+                                      <circle cx="9" cy="19" r="1.7" />
+                                      <circle cx="15" cy="19" r="1.7" />
+                                    </svg>
+                                  </span>
+                                  <input
+                                    className="prio-input"
+                                    type="number"
+                                    min="1"
+                                    value={prioOf("adhoc", t.task, t.no) ?? ""}
+                                    onChange={(e) => setPriority("adhoc", t.task, e.target.value)}
+                                    aria-label={`${t.task} の作業優先順`}
+                                  />
+                                </span>
                               ) : (
                                 <span className="prio-view">{prioOf("adhoc", t.task, t.no) ?? "—"}</span>
                               )}
