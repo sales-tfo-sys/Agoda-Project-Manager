@@ -127,6 +127,23 @@ export default function DetailTable({ title, compact = false }) {
             if (!pm.has(e.person_id)) pm.set(e.person_id, {});
             pm.get(e.person_id)[String(e.entry_date).slice(0, 10)] = Number(e.value) || 0;
           }
+          // トータル作業時間（その他）を自動計算するための、担当者×日付の合計「時間」。
+          //   ＝ Regular の時間(作業時間) ＋ Ad Hoc の稼働時間。件数系は含めない。
+          const taskMeta = new Map(
+            (tk?.tasks || []).map((t) => [t.id, { type: t.task_type, unit: t.unit }])
+          );
+          const totalByPid = new Map(); // person_id → {date: 合計時間}
+          for (const e of ent?.entries || []) {
+            const meta = taskMeta.get(e.task_id);
+            if (!meta) continue;
+            const isReg = /regular/i.test(meta.type || "");
+            const isAd = /ad\s*hoc/i.test(meta.type || "");
+            if (!((isReg && meta.unit === "time") || isAd)) continue;
+            const d = String(e.entry_date).slice(0, 10);
+            if (!totalByPid.has(e.person_id)) totalByPid.set(e.person_id, {});
+            const m = totalByPid.get(e.person_id);
+            m[d] = (m[d] || 0) + (Number(e.value) || 0);
+          }
           const mIdx = json.dateMonthIdx || [];
           const mLen = (json.months || []).length;
           const mkRow = (type, detail, tanto, unit, vals) => {
@@ -201,10 +218,17 @@ export default function DetailTable({ title, compact = false }) {
           // これで工数入力がシートを介さず工数明細に反映される。
           const nameToId = new Map();
           for (const [pid, nm] of nameOfPerson) nameToId.set(nm, pid);
+          const isTotalRow = (r) => /トータル作業時間/.test(r.detail || "");
           const overlaidRows = (json.rows || []).map((r) => {
-            const tid = taskIdOf.get(r.detail);
-            const pid = tid != null ? nameToId.get(r.tanto) : null;
-            const perDates = tid != null && pid != null ? byTask.get(tid)?.get(pid) : null;
+            const pid = nameToId.get(r.tanto);
+            // トータル作業時間は入力値ではなく、担当者×日付の合計時間を自動表示する
+            let perDates;
+            if (isTotalRow(r)) {
+              perDates = pid != null ? totalByPid.get(pid) : null;
+            } else {
+              const tid = taskIdOf.get(r.detail);
+              perDates = tid != null && pid != null ? byTask.get(tid)?.get(pid) : null;
+            }
             if (!perDates) return r;
             let changed = false;
             const daily = (r.daily || []).map((v, di) => {

@@ -33,7 +33,7 @@ async function computeFromEntries() {
     sbAll(
       "kosu_entry?select=entry_date,task_id,person_id,value&order=entry_date,task_id,person_id"
     ),
-    sb("kosu_task?select=id,task_type,content"),
+    sb("kosu_task?select=id,task_type,content,unit"),
     sb("kosu_person?active=eq.true&order=sort_order&select=id,name,role"),
   ]);
   if (!Array.isArray(entries) || entries.length === 0) return null;
