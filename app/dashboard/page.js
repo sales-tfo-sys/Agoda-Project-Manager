@@ -7,6 +7,10 @@ import Modal from "../Modal";
 
 const TYPE_CODE = "ドロップダウン_13"; // 案件名（空欄は Hotel依頼）
 const STAGE_CODE = "ドロップダウン"; // Stage（ステータス）
+// IHM の Ad Hoc タスクは、シートではなく Kintone から集計する。
+//   案件名(ドロップダウン_13)="IHM" ＋ 作業区分(ドロップダウン_8)=Room/Plan/CM
+const WORK_TYPE_CODE = "ドロップダウン_8"; // ★作業区分（IHM用）
+const IHM_SUBTASKS = { IHM_Room: "Room", IHM_Plan: "Plan", IHM_CM: "CM" };
 const TYPE_ORDER = ["Hotel", "ACQ", "Liberty", "Temairazu", "IHM"];
 const EMPTY_IDS = []; // 参照を固定（未アサイン時の再レンダリング抑止）
 const EMPTY_OV = {};
@@ -1110,6 +1114,33 @@ export default function DashboardPage() {
     [records, year]
   );
 
+  // IHM の Ad Hoc（IHM_Room/Plan/CM）の受注数・完了数を Kintone から集計する。
+  //   受注数 = 該当件数 −（事前登録・失注・対応不要）／完了数 = Stage が「完了」
+  const kintoneCounts = useMemo(() => {
+    if (!records) return {};
+    const map = {};
+    for (const [taskKey, sub] of Object.entries(IHM_SUBTASKS)) {
+      const list = records.filter(
+        (r) =>
+          caseType(r) === "IHM" &&
+          String(r?.[WORK_TYPE_CODE]?.value || "").trim() === sub
+      );
+      let pre = 0;
+      let lost = 0;
+      let na = 0;
+      let done = 0;
+      for (const r of list) {
+        const stage = r?.[STAGE_CODE]?.value || "";
+        if (stage.includes("事前登録")) pre += 1;
+        else if (stage.includes("失注")) lost += 1;
+        else if (stage.includes("対応不要")) na += 1;
+        if (stage === "完了") done += 1;
+      }
+      map[taskKey] = { total: list.length - pre - lost - na, done };
+    }
+    return map;
+  }, [records]);
+
   // Regular Task サマリーの対象（IHM は Ad Hoc 扱いのため除外）
   const REGULAR_EXCLUDE = new Set(["IHM"]);
   const regularTypes = renderTypes.filter((t) => !REGULAR_EXCLUDE.has(t));
@@ -1471,9 +1502,14 @@ export default function DashboardPage() {
                           const calcRest = hasCount ? nTotal - nDone : null;
                           const calcPct =
                             hasCount && nTotal > 0 ? `${Math.round((nDone / nTotal) * 100)}%` : "—";
-                          // シート連携タスク：登録シートのセルから取得した受注数・完了数を優先表示し、
+                          // 自動集計（シート連携 or IHMのKintone集計）を優先表示し、
                           // 残件数・進捗率も自動計算する。
-                          const sc = sheetCounts[t.task];
+                          const sc = sheetCounts[t.task] || kintoneCounts[t.task];
+                          const scLabel = sheetCounts[t.task]
+                            ? "登録シートから取得"
+                            : kintoneCounts[t.task]
+                            ? "Kintoneから集計"
+                            : undefined;
                           const scTotal = sc && sc.total != null ? sc.total : null;
                           const scDone = sc && sc.done != null ? sc.done : null;
                           const hasSheet = scTotal != null || scDone != null;
@@ -1672,14 +1708,14 @@ export default function DashboardPage() {
                             <td className="period">{ed ? dateIn("end", t.end) : cell(val("end", t.end))}</td>
                             {/* シート連携＞サイト入力＞シート由来の集計値、の優先順で表示。
                                 連携時は残件数・進捗率も自動計算する。 */}
-                            <td className={hasSheet ? "v-auto" : ""} title={hasSheet ? "登録シートから取得" : undefined}>
+                            <td className={hasSheet ? "v-auto" : ""} title={scLabel}>
                               {hasSheet
                                 ? num(dispTotal)
                                 : t.customId && ed
                                 ? txt("total", t.total, "ed-input ed-num")
                                 : num(val("total", t.total))}
                             </td>
-                            <td className={hasSheet ? "v-auto" : ""} title={hasSheet ? "登録シートから取得" : undefined}>
+                            <td className={hasSheet ? "v-auto" : ""} title={scLabel}>
                               {hasSheet
                                 ? num(dispDone)
                                 : t.customId && ed
