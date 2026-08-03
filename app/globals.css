@@ -4879,6 +4879,124 @@ tbody tr.clickable {
   }
 }
 
+/* ダッシュボードの月間カレンダー（日本の祝日表示） */
+.cal-row {
+  display: flex;
+}
+.cal-card {
+  width: 340px;
+  max-width: 100%;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px 14px;
+  box-shadow: 0 1px 2px rgba(20, 30, 60, 0.05);
+}
+.cal-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.cal-title {
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--ink);
+  min-width: 96px;
+  text-align: center;
+}
+.cal-nav {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--border2);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.cal-nav:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.cal-today {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border: 1px solid var(--border2);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.cal-today:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+.cal-dowrow {
+  margin-bottom: 4px;
+}
+.cal-dowc {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-3);
+  padding: 2px 0;
+}
+.cal-dowc.sun {
+  color: #cf3b31;
+}
+.cal-dowc.sat {
+  color: #2f6fe0;
+}
+.cal-cell {
+  position: relative;
+  min-height: 40px;
+  border-radius: 7px;
+  padding: 3px 4px;
+  background: var(--zebra, #f7f9fc);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  overflow: hidden;
+}
+.cal-cell.empty {
+  background: transparent;
+}
+.cal-d {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.1;
+}
+.cal-cell.sun .cal-d {
+  color: #cf3b31;
+}
+.cal-cell.sat .cal-d {
+  color: #2f6fe0;
+}
+.cal-hol {
+  margin-top: 1px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #cf3b31;
+  line-height: 1.15;
+  white-space: normal;
+  word-break: break-all;
+}
+.cal-cell.today {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  background: var(--accent-soft, #eef4ff);
+}
+
 /* Ad Hoc：同一優先度内のドラッグ並べ替え */
 .prio-edit {
   display: inline-flex;

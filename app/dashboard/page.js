@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import Modal from "../Modal";
+import Calendar from "../Calendar";
 
 const TYPE_CODE = "ドロップダウン_13"; // 案件名（空欄は Hotel依頼）
 const STAGE_CODE = "ドロップダウン"; // Stage（ステータス）
@@ -1251,6 +1252,12 @@ export default function DashboardPage() {
             )}
             {/* アカウント管理はサイドバーのメニューに移設 */}
           </div>
+
+          {tab === "overview" && (
+          <div className="tab-panel cal-row">
+            <Calendar />
+          </div>
+          )}
 
           {tab === "overview" && (
           <div className="summary-row tab-panel">
