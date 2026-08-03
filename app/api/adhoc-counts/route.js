@@ -1,6 +1,6 @@
 import { cached } from "../../../lib/cache";
 import { sb, supabaseConfigured } from "../../../lib/supabase";
-import { extractSheetId, fetchSheetCell } from "../../../lib/sheetCell";
+import { extractSheetId, extractGid, fetchSheetCell } from "../../../lib/sheetCell";
 
 export const dynamic = "force-dynamic";
 
@@ -19,10 +19,10 @@ export async function GET() {
   try {
     const rows = await sb("task_override?scope=eq.adhoc&select=key,data");
     const items = {};
-    const cell = (id, sheet, ref) =>
+    const cell = (id, gid, ref) =>
       ref
-        ? cached(`sheetcell:${id}:${sheet || ""}:${ref}`, 60 * 1000, () =>
-            fetchSheetCell(id, sheet, ref)
+        ? cached(`sheetcell:${id}:${gid || ""}:${ref}`, 60 * 1000, () =>
+            fetchSheetCell(id, gid, ref)
           ).catch(() => null)
         : Promise.resolve(null);
 
@@ -30,10 +30,12 @@ export async function GET() {
       (rows || []).map(async (row) => {
         const d = row.data || {};
         const id = extractSheetId(d.sheetUrl);
+        // タブは URL の gid で特定する（受注数・完了数は同じタブ前提）
+        const gid = extractGid(d.sheetUrl);
         if (!id || (!d.orderCell && !d.doneCell)) return;
         const [order, done] = await Promise.all([
-          cell(id, d.orderSheet, d.orderCell),
-          cell(id, d.doneSheet, d.doneCell),
+          cell(id, gid, d.orderCell),
+          cell(id, gid, d.doneCell),
         ]);
         items[row.key] = { total: toNum(order), done: toNum(done) };
       })

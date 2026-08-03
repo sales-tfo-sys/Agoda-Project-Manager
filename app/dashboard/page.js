@@ -1931,56 +1931,39 @@ export default function DashboardPage() {
               <div className="modal-fields">
                 <div className="modal-strong">「{cfgTask}」</div>
                 <label className="fld">
-                  スプレッドシートURL
+                  スプレッドシートURL（対象のタブを開いた状態でコピー）
                   <input
                     type="text"
                     value={o.sheetUrl || ""}
                     onChange={(e) => set("sheetUrl", e.target.value)}
-                    placeholder="https://docs.google.com/spreadsheets/d/..."
+                    placeholder="https://docs.google.com/spreadsheets/d/.../edit#gid=..."
                   />
                 </label>
                 <div className="cfg-grid">
                   <label className="fld">
-                    受注数：シート名
-                    <input
-                      type="text"
-                      value={o.orderSheet || ""}
-                      onChange={(e) => set("orderSheet", e.target.value)}
-                      placeholder="例：集計"
-                    />
-                  </label>
-                  <label className="fld">
-                    受注数：セル
+                    受注数のセル
                     <input
                       type="text"
                       value={o.orderCell || ""}
                       onChange={(e) => set("orderCell", e.target.value)}
-                      placeholder="例：B2"
+                      placeholder="例：C2"
                     />
                   </label>
                   <label className="fld">
-                    完了数：シート名
-                    <input
-                      type="text"
-                      value={o.doneSheet || ""}
-                      onChange={(e) => set("doneSheet", e.target.value)}
-                      placeholder="例：集計"
-                    />
-                  </label>
-                  <label className="fld">
-                    完了数：セル
+                    完了数のセル
                     <input
                       type="text"
                       value={o.doneCell || ""}
                       onChange={(e) => set("doneCell", e.target.value)}
-                      placeholder="例：C2"
+                      placeholder="例：C3"
                     />
                   </label>
                 </div>
                 <p className="modal-note">
-                  対象シートは「リンクを知っている全員が閲覧可」にしてください。入力は自動保存されます。
-                  ダッシュボードの「更新」で最新の受注数・完了数を取得します。
-                  受注数と完了数が同じタブなら、シート名は同じ値を入れてください。
+                  対象シートは「リンクを知っている全員が閲覧可」にしてください。
+                  <b>読み取るタブを開いた状態のURL</b>を貼ってください（URL末尾の <code>gid</code> でタブを判別します）。
+                  受注数・完了数は<b>同じタブ</b>にある前提です。入力は自動保存され、ダッシュボードの「更新」で最新値を取得します。
+                  別タブに分かれている場合はお知らせください。
                 </p>
               </div>
             );
