@@ -1254,13 +1254,8 @@ export default function DashboardPage() {
           </div>
 
           {tab === "overview" && (
-          <div className="tab-panel cal-row">
-            <Calendar />
-          </div>
-          )}
-
-          {tab === "overview" && (
-          <div className="summary-row tab-panel">
+          <div className="tab-panel overview-row">
+            <div className="summary-row overview-tables">
             {summary && renderTypes.length > 0 && (
               <SummaryTable
                 title={`Regular Task ｜ ${year}年`}
@@ -1302,6 +1297,8 @@ export default function DashboardPage() {
                   />
                 ) : null;
               })()}
+            </div>
+            <Calendar />
           </div>
           )}
 
