@@ -1,4 +1,4 @@
-import { supabaseConfigured, sb } from "../../../lib/supabase";
+import { supabaseConfigured, sb, sbAll } from "../../../lib/supabase";
 import { getSession, SESSION_COOKIE } from "../../../lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -22,10 +22,12 @@ export async function GET(req) {
   }
   try {
     if (from && to) {
-      const entries = await sb(
+      // 期間が広いと1000件を超えるため全件を取り切る
+      const entries = await sbAll(
         `kosu_entry?entry_date=gte.${encodeURIComponent(from)}` +
           `&entry_date=lte.${encodeURIComponent(to)}` +
-          `&select=entry_date,task_id,person_id,value,done_count`
+          `&select=entry_date,task_id,person_id,value,done_count` +
+          `&order=entry_date,task_id,person_id`
       );
       return Response.json({ configured: true, entries: entries || [] });
     }

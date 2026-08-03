@@ -195,6 +195,40 @@ export default function DetailTable({ title, compact = false }) {
             }
           }
           const taskIdOf = new Map((tk?.tasks || []).map((t) => [t.content, t.id]));
+
+          // 工数入力(kosu_entry)を工数明細のグリッドに上書き反映する。
+          // シート行の該当セル（作業内容×担当×日付）に入力があれば、その値で置き換える。
+          // これで工数入力がシートを介さず工数明細に反映される。
+          const nameToId = new Map();
+          for (const [pid, nm] of nameOfPerson) nameToId.set(nm, pid);
+          const overlaidRows = (json.rows || []).map((r) => {
+            const tid = taskIdOf.get(r.detail);
+            const pid = tid != null ? nameToId.get(r.tanto) : null;
+            const perDates = tid != null && pid != null ? byTask.get(tid)?.get(pid) : null;
+            if (!perDates) return r;
+            let changed = false;
+            const daily = (r.daily || []).map((v, di) => {
+              const d = iso[di];
+              if (d && perDates[d] != null) {
+                changed = true;
+                return perDates[d];
+              }
+              return v;
+            });
+            if (!changed) return r;
+            const monthly = new Array(mLen).fill(0);
+            daily.forEach((v, di) => {
+              if (v) monthly[mIdx[di]] = (monthly[mIdx[di]] || 0) + v;
+            });
+            return {
+              ...r,
+              daily,
+              monthly: monthly.map((v) => Math.round(v * 10) / 10),
+              total: Math.round(daily.reduce((a, b) => a + b, 0) * 10) / 10,
+            };
+          });
+          setData({ ...json, rows: overlaidRows });
+
           const sheetOf = {}; // 作業内容 → { type, 既にある担当名 }
           for (const r of json.rows || []) {
             if (/regular/i.test(r.type || "")) continue; // Regular は連動対象外

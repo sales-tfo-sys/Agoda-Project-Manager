@@ -1,5 +1,5 @@
 import { cached } from "../../../lib/cache";
-import { sb, supabaseConfigured } from "../../../lib/supabase";
+import { sb, sbAll, supabaseConfigured } from "../../../lib/supabase";
 
 // 週次リソース（Regular / Ad Hoc 工数配分・担当者別）を返す API。
 //   通常は工数入力（kosu_entry）から集計する（スプレッドシート非依存）。
@@ -29,7 +29,10 @@ const mondayOf = (isoDate) => {
 
 async function computeFromEntries() {
   const [entries, tasks, personsRaw] = await Promise.all([
-    sb("kosu_entry?select=entry_date,task_id,person_id,value&limit=100000"),
+    // 1000件上限を超える全件を取り切る（安定した並びで offset ページング）
+    sbAll(
+      "kosu_entry?select=entry_date,task_id,person_id,value&order=entry_date,task_id,person_id"
+    ),
     sb("kosu_task?select=id,task_type,content"),
     sb("kosu_person?active=eq.true&order=sort_order&select=id,name,role"),
   ]);
