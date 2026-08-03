@@ -971,6 +971,17 @@ th:last-child,
 td:last-child {
   border-right: 0;
 }
+/* 施設一覧：ヘッダークリックで並べ替え（矢印マークは出さない） */
+th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+th.sortable:hover {
+  background: var(--header-bg-hover, rgba(255, 255, 255, 0.08));
+}
+th.sortable.sorted {
+  background: rgba(255, 255, 255, 0.14);
+}
 th {
   max-width: 280px;
   overflow: hidden;

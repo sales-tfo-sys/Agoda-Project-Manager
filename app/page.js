@@ -268,6 +268,12 @@ export default function Page() {
   const [statusFilter, setStatusFilter] = useState("active"); // active=完了以外（既定） / all=すべて
   const [canSync, setCanSync] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  // ヘッダークリックでの並べ替え（col=フィールドコード, dir=asc/desc）
+  const [sort, setSort] = useState({ col: null, dir: "asc" });
+  const clickSort = (c) =>
+    setSort((s) =>
+      s.col === c ? { col: c, dir: s.dir === "asc" ? "desc" : "asc" } : { col: c, dir: "asc" }
+    );
 
   useEffect(() => {
     fetch("/api/auth/me", { cache: "no-store" })
@@ -391,6 +397,29 @@ export default function Page() {
   const first = records[0] || {};
   const columns = COLUMN_ORDER.filter((code) => code in first);
 
+  // ヘッダークリックで並べ替え。数値は数値順、それ以外（日付・文字）は文字順。
+  // 空欄は常に末尾に回す。
+  const sortedShown = (() => {
+    if (!sort.col) return shown;
+    const c = sort.col;
+    const arr = [...shown];
+    arr.sort((a, b) => {
+      const sa = formatValue(a[c]);
+      const sb = formatValue(b[c]);
+      if (sa === "" && sb === "") return 0;
+      if (sa === "") return 1;
+      if (sb === "") return -1;
+      const na = Number(String(sa).replace(/,/g, ""));
+      const nb = Number(String(sb).replace(/,/g, ""));
+      const cmp =
+        Number.isFinite(na) && Number.isFinite(nb)
+          ? na - nb
+          : String(sa).localeCompare(String(sb), "ja");
+      return sort.dir === "asc" ? cmp : -cmp;
+    });
+    return arr;
+  })();
+
   return (
     <div className="wrap">
       <div className="head">
@@ -513,12 +542,19 @@ export default function Page() {
                 <thead>
                   <tr>
                     {columns.map((c) => (
-                      <th key={c}>{HEADER_LABEL[c] || labelOf(c)}</th>
+                      <th
+                        key={c}
+                        className={"sortable" + (sort.col === c ? " sorted" : "")}
+                        onClick={() => clickSort(c)}
+                        title="クリックで並べ替え"
+                      >
+                        {HEADER_LABEL[c] || labelOf(c)}
+                      </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {shown.map((r, i) => (
+                  {sortedShown.map((r, i) => (
                     <tr
                       key={r.$id?.value ?? i}
                       className="clickable"
