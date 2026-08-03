@@ -4900,7 +4900,8 @@ tbody tr.clickable {
   margin-bottom: 12px;
 }
 .overview-row > .summary-row {
-  flex: 1 1 auto;
+  /* テーブルを内容ぶんの幅にして、カレンダーを左（テーブルの右隣）に寄せる */
+  flex: 0 1 auto;
   min-width: 0;
   margin-bottom: 0;
 }
