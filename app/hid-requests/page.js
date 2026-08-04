@@ -4,16 +4,18 @@ import { useCallback, useEffect, useState } from "react";
 import Modal from "../Modal";
 import { useUi } from "../Ui";
 
-// HID新規発行依頼の列定義（すべて手動入力）。※項目はあとで調整可能。
+// HID新規発行依頼の列定義（すべて手動入力）。実シートの項目に合わせる。
 const COLUMNS = [
   { key: "requestDate", label: "依頼日", type: "date", w: 130 },
-  { key: "hotelName", label: "施設名", type: "text", w: 220 },
-  { key: "siteController", label: "サイトコントローラー", type: "text", w: 150 },
-  { key: "assignee", label: "担当者", type: "text", w: 120 },
-  { key: "status", label: "ステータス", type: "select", options: ["依頼中", "発行済", "完了"], w: 120 },
-  { key: "hid", label: "発行HID", type: "text", w: 130 },
-  { key: "doneDate", label: "完了日", type: "date", w: 130 },
-  { key: "note", label: "備考", type: "text", w: 220 },
+  { key: "hid", label: "HID", type: "text", w: 110 },
+  { key: "hotelName", label: "施設名", type: "text", w: 240 },
+  { key: "pref", label: "都道府県", type: "text", w: 90 },
+  { key: "applyDate", label: "申請日", type: "date", w: 130 },
+  { key: "applyStatus", label: "申請状況", type: "select", options: ["未申請", "申請中", "申請済み"], w: 120 },
+  { key: "roomPlanOff", label: "Room削除/Plan無効化", type: "check", w: 130 },
+  { key: "promoOff", label: "プロモ無効化", type: "check", w: 110 },
+  { key: "agodaReport", label: "Agoda完了報告", type: "select", options: ["未報告", "報告済み"], w: 130 },
+  { key: "memo", label: "Memo", type: "text", w: 220 },
 ];
 
 export default function HidRequestsPage() {
@@ -168,8 +170,21 @@ export default function HidRequestsPage() {
                       const v = it.fields?.[c.key] ?? "";
                       if (!canEdit) {
                         return (
-                          <td key={c.key} title={v || undefined}>
-                            {v}
+                          <td key={c.key} className={c.type === "check" ? "wr-center" : undefined} title={c.type === "check" ? undefined : v || undefined}>
+                            {c.type === "check" ? (v ? "✓" : "") : v}
+                          </td>
+                        );
+                      }
+                      if (c.type === "check") {
+                        return (
+                          <td key={c.key} className="wr-center">
+                            <input
+                              type="checkbox"
+                              className="wr-chk"
+                              checked={!!v}
+                              onChange={(e) => saveField(it.id, c.key, e.target.checked)}
+                              aria-label={c.label}
+                            />
                           </td>
                         );
                       }
