@@ -5111,7 +5111,7 @@ tbody tr.clickable {
   color: #cf3b31;
 }
 .forms-tw {
-  max-height: calc(100vh - 160px);
+  max-height: calc(100vh - 108px);
 }
 td.forms-rownum,
 th.forms-rownum {
