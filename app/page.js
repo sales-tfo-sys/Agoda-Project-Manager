@@ -282,6 +282,7 @@ export default function Page() {
   const [statusFilter, setStatusFilter] = useState("active"); // active=完了以外（既定） / all=すべて
   const [periodYear, setPeriodYear] = useState("all"); // "all" or 年
   const [periodQ, setPeriodQ] = useState("all"); // "all" or 1〜4
+  const [q, setQ] = useState(""); // HID / Hotel Name 検索
   const [canSync, setCanSync] = useState(false);
   const [syncing, setSyncing] = useState(false);
   // ヘッダークリックでの並べ替え（col=フィールドコード, dir=asc/desc）
@@ -378,9 +379,16 @@ export default function Page() {
     return [...set].sort((a, b) => b - a);
   })();
 
+  const kw = q.trim().toLowerCase();
   const shown = records.filter((r) => {
     if (!(typeFilter === "all" || caseTypeOf(r) === typeFilter)) return false;
     if (!(statusFilter === "all" || !DONE_STAGES.has(stageOf(r)))) return false;
+    if (kw) {
+      // HID（文字列__1行_）と Hotel Name（文字列__1行__0）で検索
+      const hid = formatValue(r["文字列__1行_"]).toLowerCase();
+      const hotel = formatValue(r["文字列__1行__0"]).toLowerCase();
+      if (!hid.includes(kw) && !hotel.includes(kw)) return false;
+    }
     if (periodYear !== "all") {
       const p = periodOf(r);
       if (!p || p.year !== Number(periodYear)) return false;
@@ -502,6 +510,20 @@ export default function Page() {
       {/* 絞り込みは表の直前に置く（ヘッダーはアイコンと更新だけにする） */}
       {data && !error && (
         <div className="detail-tools list-tools">
+          {records.length > 0 && (
+            <label className="search-box" aria-label="HID・Hotel Name で検索">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" />
+                <line x1="16.5" y1="16.5" x2="21" y2="21" />
+              </svg>
+              <input
+                type="search"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="HID・Hotel Name で検索..."
+              />
+            </label>
+          )}
           {records.length > 0 && (
             <label className="head-year">
               案件名
