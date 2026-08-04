@@ -196,9 +196,9 @@ const TABS = [
   { href: "/", label: "施設一覧", Icon: ListIcon },
   // グラフページは一旦削除（app/graphs を除去）
   { href: "/kosu", label: "工数管理", Icon: ClockIcon },
-  { href: "/forms", label: "フォーム回答", Icon: FormIcon },
-  { href: "/work-requests", label: "新規作業依頼", Icon: WorkReqIcon },
   { href: "/hid-requests", label: "HID新規発行依頼", Icon: HidIcon },
+  { href: "/work-requests", label: "新規作業依頼", Icon: WorkReqIcon },
+  { href: "/forms", label: "フォーム回答", Icon: FormIcon },
 ];
 
 export default function Sidebar() {
