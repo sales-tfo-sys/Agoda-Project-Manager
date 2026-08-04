@@ -306,11 +306,6 @@ export default function FormsPage() {
                 <>
                   <div className="forms-content-head">
                     <span className="forms-content-title">{cur.title}</span>
-                    {cur.url && (
-                      <a className="forms-open" href={cur.url} target="_blank" rel="noreferrer">
-                        シートを開く ↗
-                      </a>
-                    )}
                     {grid && !grid.error && (
                       <span className="forms-count">
                         {grid.total?.toLocaleString("ja-JP")} 件
