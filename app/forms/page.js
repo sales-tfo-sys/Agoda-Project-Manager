@@ -365,29 +365,32 @@ export default function FormsPage() {
                   </span>
                 )}
 
-                <span className="form-card-ico" aria-hidden="true">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-4" />
-                    <rect x="9" y="2" width="6" height="4" rx="1" />
-                    <line x1="8" y1="11" x2="16" y2="11" />
-                    <line x1="8" y1="15" x2="14" y2="15" />
-                  </svg>
+                <span className="form-card-head">
+                  <span className="form-card-ico" aria-hidden="true">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-4" />
+                      <rect x="9" y="2" width="6" height="4" rx="1" />
+                      <line x1="8" y1="11" x2="16" y2="11" />
+                      <line x1="8" y1="15" x2="14" y2="15" />
+                    </svg>
+                  </span>
+                  <span className="form-card-title" title={f.title}>
+                    {f.title}
+                  </span>
                 </span>
 
-                <span className="form-card-title" title={f.title}>
-                  {f.title}
-                </span>
-
-                <span className="form-card-count">
+                <span className="form-card-metric">
                   {c?.error ? (
                     <span className="form-card-err" title={c.error}>取得エラー</span>
                   ) : c ? (
                     <>
-                      <b>{Number(c.total || 0).toLocaleString("ja-JP")}</b> 件
+                      <span className="form-card-num">{Number(c.total || 0).toLocaleString("ja-JP")}</span>
+                      <span className="form-card-unit">件</span>
                     </>
                   ) : (
-                    <span className="form-card-dim">件数取得中…</span>
+                    <span className="form-card-dim">— 件</span>
                   )}
+                  <span className="form-card-caption">回答数</span>
                 </span>
 
                 {canEdit && (
