@@ -5139,6 +5139,149 @@ th.forms-rownum {
   }
 }
 
+/* フォーム回答トップ：ヒーロー見出し */
+.forms-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 4px 14px;
+  overflow: hidden;
+}
+.forms-hero-title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.forms-hero-sub {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.forms-hero-art {
+  flex: none;
+  line-height: 0;
+}
+@media (max-width: 720px) {
+  .forms-hero-art {
+    display: none;
+  }
+}
+
+/* 集計バー */
+.forms-stats {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  flex-wrap: wrap;
+}
+.fstat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 160px;
+  min-width: 150px;
+}
+.fstat + .fstat {
+  border-left: 1px solid var(--border);
+  padding-left: 14px;
+}
+.fstat-ico {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+}
+.fstat-blue { background: #eaf0ff; color: #3b63e6; }
+.fstat-green { background: #e4f7ee; color: #1ca35e; }
+.fstat-purple { background: #f0eafe; color: #7c4de0; }
+.fstat-orange { background: #fdefe1; color: #e08421; }
+.fstat-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.fstat-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.fstat-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+.fstat-value-sm {
+  font-size: 15px;
+}
+.fstat-unit {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-3);
+  margin-left: 3px;
+}
+.fstat-add {
+  flex: none;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--accent);
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: filter 0.12s;
+}
+.fstat-add:hover {
+  filter: brightness(1.06);
+}
+@media (max-width: 620px) {
+  .fstat + .fstat {
+    border-left: 0;
+    padding-left: 0;
+  }
+  .fstat-add {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* レコードカードの説明文 */
+.form-card-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.form-card-desc {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink-3);
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* 新規作業依頼：手動入力の3列＋HID発行依頼の編集セル */
 .tw table th.wr-mancol,
 .tw table td.wr-mancol {

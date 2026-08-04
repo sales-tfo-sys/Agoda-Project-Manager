@@ -15,6 +15,7 @@ export async function GET() {
         id: r.key,
         title: r.data?.title || "(無題)",
         url: r.data?.url || "",
+        description: r.data?.description || "",
         sort: r.data?.sort ?? 0,
       }))
       .sort((a, b) => a.sort - b.sort || a.title.localeCompare(b.title, "ja"));
@@ -32,13 +33,14 @@ export async function POST(req) {
     const b = await req.json();
     const title = String(b?.title || "").trim();
     const url = String(b?.url || "").trim();
+    const description = String(b?.description || "").trim();
     if (!title || !url) return Response.json({ error: "名前とURLは必須です" }, { status: 200 });
     const rows = await sb("task_override?scope=eq.form&select=data");
     const maxSort = (rows || []).reduce((m, r) => Math.max(m, r.data?.sort || 0), 0);
     const key = randomUUID();
     await sb("task_override", {
       method: "POST",
-      body: { scope: "form", key, data: { title, url, sort: maxSort + 1 } },
+      body: { scope: "form", key, data: { title, url, description, sort: maxSort + 1 } },
       prefer: "return=minimal",
     });
     return Response.json({ ok: true, id: key });
@@ -62,6 +64,7 @@ export async function PATCH(req) {
     const next = { ...cur };
     if (b.title !== undefined) next.title = String(b.title).trim();
     if (b.url !== undefined) next.url = String(b.url).trim();
+    if (b.description !== undefined) next.description = String(b.description).trim();
     if (b.sort !== undefined) next.sort = Number(b.sort);
     await sb(`task_override?scope=eq.form&key=eq.${encodeURIComponent(id)}`, {
       method: "PATCH",

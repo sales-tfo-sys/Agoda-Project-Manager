@@ -4,23 +4,34 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Modal from "../Modal";
 import { useUi } from "../Ui";
 
+// 最終回答日時のラベル整形（今日 HH:MM / 昨日 HH:MM / M/D HH:MM）
+function fmtUpdated(ms) {
+  if (!ms) return "—";
+  const d = new Date(ms);
+  const now = new Date();
+  const hhmm = d.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
+  if (d.toDateString() === now.toDateString()) return `今日 ${hhmm}`;
+  const y = new Date(now);
+  y.setDate(now.getDate() - 1);
+  if (d.toDateString() === y.toDateString()) return `昨日 ${hhmm}`;
+  return `${d.toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" })} ${hhmm}`;
+}
+
 export default function FormsPage() {
-  const [items, setItems] = useState(null); // 登録フォーム一覧
-  const [counts, setCounts] = useState({}); // { id: {total} | {error} }
-  const [selected, setSelected] = useState(null); // 詳細表示中のフォームid（null=カード一覧）
-  const [grid, setGrid] = useState(null); // 選択フォームの中身 {headers, rows, total, truncated} or {error}
+  const [items, setItems] = useState(null);
+  const [counts, setCounts] = useState({}); // { id: {total, month, latest} | {error} }
+  const [selected, setSelected] = useState(null);
+  const [grid, setGrid] = useState(null);
   const [gridLoading, setGridLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [canEdit, setCanEdit] = useState(false);
 
-  // 追加・編集モーダル
-  const [editTarget, setEditTarget] = useState(null); // { id?, title, url } or null
+  const [editTarget, setEditTarget] = useState(null); // { id?, title, url, description }
   const [saving, setSaving] = useState(false);
   const [delTarget, setDelTarget] = useState(null);
-  const [cfg, setCfg] = useState(null); // { mode, serviceEmail }
+  const [cfg, setCfg] = useState(null);
   const { setBusy, flashDone, showToast, busy } = useUi();
-  // ドラッグ並べ替え
   const dragIndex = useRef(null);
   const [dragOver, setDragOver] = useState(null);
 
@@ -44,12 +55,8 @@ export default function FormsPage() {
   };
 
   useEffect(() => {
-    fetch("/api/form-config", { cache: "no-store" })
-      .then((r) => r.json())
-      .then(setCfg)
-      .catch(() => {});
+    fetch("/api/form-config", { cache: "no-store" }).then((r) => r.json()).then(setCfg).catch(() => {});
   }, []);
-
   useEffect(() => {
     fetch("/api/auth/me", { cache: "no-store" })
       .then((r) => r.json())
@@ -57,13 +64,12 @@ export default function FormsPage() {
       .catch(() => {});
   }, []);
 
-  // カード一覧用の件数をまとめて取得
   const loadCounts = useCallback(async () => {
     try {
       const j = await fetch("/api/form-sheet-counts", { cache: "no-store" }).then((r) => r.json());
       setCounts(j.counts || {});
     } catch {
-      /* 件数は無くても一覧は表示する */
+      /* noop */
     }
   }, []);
 
@@ -73,8 +79,7 @@ export default function FormsPage() {
     try {
       const j = await fetch("/api/form-sheets", { cache: "no-store" }).then((r) => r.json());
       if (j.error) setError(j.error);
-      const list = j.items || [];
-      setItems(list);
+      setItems(j.items || []);
     } catch (e) {
       setError(String(e?.message || e));
     } finally {
@@ -87,7 +92,6 @@ export default function FormsPage() {
     loadCounts();
   }, [loadList, loadCounts]);
 
-  // 選択フォームの中身を取得
   const loadGrid = useCallback(async (id) => {
     if (!id) {
       setGrid(null);
@@ -95,12 +99,8 @@ export default function FormsPage() {
     }
     setGridLoading(true);
     try {
-      const j = await fetch(`/api/form-sheet-data?id=${encodeURIComponent(id)}`, {
-        cache: "no-store",
-      }).then((r) => r.json());
+      const j = await fetch(`/api/form-sheet-data?id=${encodeURIComponent(id)}`, { cache: "no-store" }).then((r) => r.json());
       setGrid(j);
-      // 件数を最新化
-      setCounts((c) => ({ ...c, [id]: j?.error ? { error: j.error } : { total: j?.total ?? 0 } }));
     } catch (e) {
       setGrid({ error: String(e?.message || e) });
     } finally {
@@ -122,12 +122,13 @@ export default function FormsPage() {
     if (!editTarget) return;
     const title = editTarget.title.trim();
     const url = editTarget.url.trim();
+    const description = (editTarget.description || "").trim();
     if (!title || !url) return;
     setSaving(true);
     setBusy("保存中…");
     try {
       const method = editTarget.id ? "PATCH" : "POST";
-      const body = editTarget.id ? { id: editTarget.id, title, url } : { title, url };
+      const body = editTarget.id ? { id: editTarget.id, title, url, description } : { title, url, description };
       const res = await fetch("/api/form-sheets", {
         method,
         headers: { "Content-Type": "application/json" },
@@ -157,9 +158,7 @@ export default function FormsPage() {
     setSaving(true);
     setBusy("削除中…");
     try {
-      await fetch(`/api/form-sheets?id=${encodeURIComponent(delTarget.id)}`, {
-        method: "DELETE",
-      }).catch(() => {});
+      await fetch(`/api/form-sheets?id=${encodeURIComponent(delTarget.id)}`, { method: "DELETE" }).catch(() => {});
       if (delTarget.id === selected) backToList();
       setDelTarget(null);
       await loadList();
@@ -172,271 +171,292 @@ export default function FormsPage() {
 
   const current = items?.find((x) => x.id === selected) || null;
 
+  // 集計バー用のサマリー
+  const cvals = Object.values(counts);
+  const totalForms = items?.length || 0;
+  const totalResponses = cvals.reduce((s, c) => s + (c && !c.error ? c.total || 0 : 0), 0);
+  const monthResponses = cvals.reduce((s, c) => s + (c && !c.error ? c.month || 0 : 0), 0);
+  const latestMs = cvals.reduce((m, c) => (c && !c.error && c.latest ? Math.max(m, c.latest) : m), 0);
+
   return (
     <div className="wrap page-compact forms-page">
-      <div className="head">
-        <div className="head-left">
-          {selected ? (
+      {/* 詳細表示のときだけ上部バー（戻る・編集・再読み込み） */}
+      {selected && (
+        <div className="head">
+          <div className="head-left">
             <button className="icon-btn forms-back" onClick={backToList} title="一覧へ戻る" aria-label="一覧へ戻る">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="15 18 9 12 15 6" />
               </svg>
             </button>
-          ) : (
-            <span className="conn ok" title="フォーム回答" aria-hidden="true">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-4" />
-                <rect x="9" y="2" width="6" height="4" rx="1" />
-                <line x1="8" y1="11" x2="16" y2="11" />
-                <line x1="8" y1="15" x2="14" y2="15" />
-              </svg>
-            </span>
-          )}
-          <span className="page-h page-h-gap">{selected ? current?.title || "フォーム回答" : "フォーム回答"}</span>
-          {selected && grid && !grid.error && (
-            <span className="forms-count-pill">
-              {grid.total?.toLocaleString("ja-JP")} 件{grid.truncated && "（先頭のみ）"}
-            </span>
-          )}
-        </div>
-        <div className="head-right">
-          {canEdit && !selected && (
-            <button
-              className="icon-btn"
-              onClick={() => setEditTarget({ title: "", url: "" })}
-              title="フォームを追加"
-              aria-label="フォームを追加"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
+            <span className="page-h page-h-gap">{current?.title || "フォーム回答"}</span>
+            {grid && !grid.error && (
+              <span className="forms-count-pill">
+                {grid.total?.toLocaleString("ja-JP")} 件{grid.truncated && "（先頭のみ）"}
+              </span>
+            )}
+          </div>
+          <div className="head-right">
+            {canEdit && current && (
+              <button className="icon-btn" onClick={() => setEditTarget({ id: current.id, title: current.title, url: current.url, description: current.description })} title="このフォームを編集" aria-label="編集">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                </svg>
+              </button>
+            )}
+            <button className="icon-btn" onClick={() => loadGrid(selected)} disabled={gridLoading} title="再読み込み" aria-label="再読み込み">
+              <svg className={gridLoading ? "spin" : ""} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="23 4 23 10 17 10" />
+                <polyline points="1 20 1 14 7 14" />
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
               </svg>
             </button>
-          )}
-          {canEdit && selected && current && (
-            <button
-              className="icon-btn"
-              onClick={() => setEditTarget({ id: current.id, title: current.title, url: current.url })}
-              title="このフォームを編集"
-              aria-label="編集"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 20h9" />
-                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-              </svg>
-            </button>
-          )}
-          <button
-            className="icon-btn"
-            onClick={() => {
-              if (selected) loadGrid(selected);
-              else {
-                loadList();
-                loadCounts();
-              }
-            }}
-            disabled={loading || gridLoading}
-            title="再読み込み"
-            aria-label="再読み込み"
-          >
-            <svg className={loading || gridLoading ? "spin" : ""} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="23 4 23 10 17 10" />
-              <polyline points="1 20 1 14 7 14" />
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-            </svg>
-          </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {error && <div className="banner err-banner">エラー：{error}</div>}
 
-      {items === null && !busy ? (
-        <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>
-      ) : !items || items.length === 0 ? (
-        <div className="card">
-          <div className="notice">
-            フォームがまだ登録されていません。
-            {canEdit
-              ? "右上の＋から、GoogleスプレッドシートのURLを登録してください。"
-              : "編集権限のあるユーザーが登録すると、ここに表示されます。"}
-          </div>
-        </div>
-      ) : selected ? (
+      {selected ? (
         /* ===== 詳細（回答テーブル） ===== */
-        <>
-          {gridLoading && !busy ? (
-            <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>
-          ) : grid?.error ? (
-            <div className="banner warn-banner">{grid.error}</div>
-          ) : !grid || (grid.headers || []).length === 0 ? (
-            <div className="notice">データがありません。</div>
-          ) : (
-            <div className="card no-pad">
-              <div className="tw forms-tw">
-                <table>
-                  <thead>
-                    <tr>
-                      <th className="forms-rownum">#</th>
-                      {grid.headers.map((h, ci) => (
-                        <th key={ci}>{h || ""}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {grid.rows.map((r, ri) => (
-                      <tr key={ri}>
-                        <td className="forms-rownum">{ri + 1}</td>
-                        {grid.headers.map((_, ci) => {
-                          const v = r[ci] ?? "";
-                          return (
-                            <td key={ci} title={v || undefined}>
-                              {v}
-                            </td>
-                          );
-                        })}
-                      </tr>
+        gridLoading && !busy ? (
+          <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>
+        ) : grid?.error ? (
+          <div className="banner warn-banner">{grid.error}</div>
+        ) : !grid || (grid.headers || []).length === 0 ? (
+          <div className="notice">データがありません。</div>
+        ) : (
+          <div className="card no-pad">
+            <div className="tw forms-tw">
+              <table>
+                <thead>
+                  <tr>
+                    <th className="forms-rownum">#</th>
+                    {grid.headers.map((h, ci) => (
+                      <th key={ci}>{h || ""}</th>
                     ))}
-                  </tbody>
-                </table>
+                  </tr>
+                </thead>
+                <tbody>
+                  {grid.rows.map((r, ri) => (
+                    <tr key={ri}>
+                      <td className="forms-rownum">{ri + 1}</td>
+                      {grid.headers.map((_, ci) => {
+                        const v = r[ci] ?? "";
+                        return (
+                          <td key={ci} title={v || undefined}>
+                            {v}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )
+      ) : items === null && !busy ? (
+        <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>
+      ) : (
+        /* ===== 一覧（ヒーロー＋集計＋レコード） ===== */
+        <>
+          <div className="forms-hero">
+            <div className="forms-hero-text">
+              <h1 className="forms-hero-title">フォーム回答一覧</h1>
+              <p className="forms-hero-sub">各フォームの回答状況を確認・管理できます</p>
+            </div>
+            <div className="forms-hero-art" aria-hidden="true">
+              <svg width="220" height="150" viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="150" cy="70" r="66" fill="#eef1fe" />
+                <circle cx="46" cy="30" r="4" fill="#c7d2fe" />
+                <circle cx="30" cy="52" r="3" fill="#dbe3ff" />
+                <circle cx="205" cy="118" r="4" fill="#c7d2fe" />
+                <g>
+                  <rect x="112" y="30" width="72" height="92" rx="9" fill="#ffffff" stroke="#c7d2fe" strokeWidth="2" />
+                  <rect x="132" y="24" width="32" height="14" rx="5" fill="#93a4f4" />
+                  <rect x="124" y="52" width="10" height="10" rx="2.5" fill="#7c9cf6" />
+                  <rect x="140" y="55" width="30" height="5" rx="2.5" fill="#dbe3ff" />
+                  <rect x="124" y="70" width="10" height="10" rx="2.5" fill="#7c9cf6" />
+                  <rect x="140" y="73" width="30" height="5" rx="2.5" fill="#dbe3ff" />
+                  <rect x="124" y="88" width="10" height="10" rx="2.5" fill="#a9b8f8" />
+                  <rect x="140" y="91" width="24" height="5" rx="2.5" fill="#e6ebff" />
+                </g>
+                <g>
+                  <rect x="150" y="96" width="8" height="18" rx="2" fill="#a9b8f8" />
+                  <rect x="162" y="86" width="8" height="28" rx="2" fill="#7c9cf6" />
+                  <rect x="174" y="78" width="8" height="36" rx="2" fill="#5b7cf3" />
+                </g>
+                <circle cx="150" cy="118" r="12" fill="#5b7cf3" />
+                <path d="M145 118l3.5 3.5 6-7" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M40 120c8-10 22-10 30 0" stroke="#c7d2fe" strokeWidth="3" strokeLinecap="round" />
+                <path d="M55 120c0-14 0-22 0-22" stroke="#c7d2fe" strokeWidth="3" strokeLinecap="round" />
+              </svg>
+            </div>
+          </div>
+
+          {/* 集計バー */}
+          <div className="forms-stats">
+            <div className="fstat">
+              <span className="fstat-ico fstat-blue" aria-hidden="true">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-4" />
+                  <rect x="9" y="2" width="6" height="4" rx="1" />
+                  <line x1="8" y1="11" x2="16" y2="11" /><line x1="8" y1="15" x2="14" y2="15" />
+                </svg>
+              </span>
+              <span className="fstat-body">
+                <span className="fstat-label">合計フォーム数</span>
+                <span className="fstat-value">{totalForms.toLocaleString("ja-JP")}<span className="fstat-unit">件</span></span>
+              </span>
+            </div>
+            <div className="fstat">
+              <span className="fstat-ico fstat-green" aria-hidden="true">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 11l3 3L22 4" />
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                </svg>
+              </span>
+              <span className="fstat-body">
+                <span className="fstat-label">総回答数</span>
+                <span className="fstat-value">{totalResponses.toLocaleString("ja-JP")}<span className="fstat-unit">件</span></span>
+              </span>
+            </div>
+            <div className="fstat">
+              <span className="fstat-ico fstat-purple" aria-hidden="true">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="4" y1="20" x2="4" y2="10" /><line x1="12" y1="20" x2="12" y2="4" />
+                  <line x1="20" y1="20" x2="20" y2="14" /><line x1="2" y1="20" x2="22" y2="20" />
+                </svg>
+              </span>
+              <span className="fstat-body">
+                <span className="fstat-label">今月の回答数</span>
+                <span className="fstat-value">{monthResponses.toLocaleString("ja-JP")}<span className="fstat-unit">件</span></span>
+              </span>
+            </div>
+            <div className="fstat">
+              <span className="fstat-ico fstat-orange" aria-hidden="true">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 16 14" />
+                </svg>
+              </span>
+              <span className="fstat-body">
+                <span className="fstat-label">最終更新</span>
+                <span className="fstat-value fstat-value-sm">{fmtUpdated(latestMs)}</span>
+              </span>
+            </div>
+            {canEdit && (
+              <button className="fstat-add" onClick={() => setEditTarget({ title: "", url: "", description: "" })} title="フォームを追加">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                フォーム追加
+              </button>
+            )}
+          </div>
+
+          {!items || items.length === 0 ? (
+            <div className="card">
+              <div className="notice">
+                フォームがまだ登録されていません。
+                {canEdit ? "「フォーム追加」から、GoogleスプレッドシートのURLを登録してください。" : "編集権限のあるユーザーが登録すると、ここに表示されます。"}
               </div>
+            </div>
+          ) : (
+            <div className="forms-grid">
+              {items.map((f, i) => {
+                const c = counts[f.id];
+                return (
+                  <div
+                    key={f.id}
+                    className={"form-card" + (dragOver === i ? " dragover" : "")}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => openDetail(f.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        openDetail(f.id);
+                      }
+                    }}
+                    onDragOver={canEdit ? (e) => { e.preventDefault(); if (dragOver !== i) setDragOver(i); } : undefined}
+                    onDrop={canEdit ? () => { reorder(dragIndex.current, i); dragIndex.current = null; setDragOver(null); } : undefined}
+                  >
+                    {canEdit && (
+                      <span
+                        className="form-card-grip"
+                        draggable
+                        onClick={(e) => e.stopPropagation()}
+                        onDragStart={(e) => { e.stopPropagation(); dragIndex.current = i; }}
+                        onDragEnd={() => { dragIndex.current = null; setDragOver(null); }}
+                        title="ドラッグで並べ替え"
+                        aria-hidden="true"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                          <circle cx="9" cy="5" r="1.7" /><circle cx="15" cy="5" r="1.7" />
+                          <circle cx="9" cy="12" r="1.7" /><circle cx="15" cy="12" r="1.7" />
+                          <circle cx="9" cy="19" r="1.7" /><circle cx="15" cy="19" r="1.7" />
+                        </svg>
+                      </span>
+                    )}
+
+                    <span className="form-card-head">
+                      <span className="form-card-ico" aria-hidden="true">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-4" />
+                          <rect x="9" y="2" width="6" height="4" rx="1" />
+                          <line x1="8" y1="11" x2="16" y2="11" /><line x1="8" y1="15" x2="14" y2="15" />
+                        </svg>
+                      </span>
+                      <span className="form-card-body">
+                        <span className="form-card-title" title={f.title}>{f.title}</span>
+                        {f.description && <span className="form-card-desc">{f.description}</span>}
+                      </span>
+                    </span>
+
+                    <span className="form-card-metric">
+                      <span className="form-card-caption">回答数</span>
+                      {c?.error ? (
+                        <span className="form-card-err" title={c.error}>取得エラー</span>
+                      ) : c ? (
+                        <>
+                          <span className="form-card-num">{Number(c.total || 0).toLocaleString("ja-JP")}</span>
+                          <span className="form-card-unit">件</span>
+                        </>
+                      ) : (
+                        <span className="form-card-dim">—</span>
+                      )}
+                    </span>
+
+                    {canEdit && (
+                      <span className="form-card-ops">
+                        <button className="forms-op" onClick={(e) => { e.stopPropagation(); setEditTarget({ id: f.id, title: f.title, url: f.url, description: f.description }); }} title="編集" aria-label="編集">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                          </svg>
+                        </button>
+                        <button className="forms-op danger" onClick={(e) => { e.stopPropagation(); setDelTarget(f); }} title="削除" aria-label="削除">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            <line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" />
+                          </svg>
+                        </button>
+                      </span>
+                    )}
+
+                    <span className="form-card-chev" aria-hidden="true">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="9 18 15 12 9 6" />
+                      </svg>
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           )}
         </>
-      ) : (
-        /* ===== カード一覧 ===== */
-        <div className="forms-grid">
-          {items.map((f, i) => {
-            const c = counts[f.id];
-            return (
-              <div
-                key={f.id}
-                className={"form-card" + (dragOver === i ? " dragover" : "")}
-                role="button"
-                tabIndex={0}
-                onClick={() => openDetail(f.id)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    openDetail(f.id);
-                  }
-                }}
-                onDragOver={
-                  canEdit
-                    ? (e) => {
-                        e.preventDefault();
-                        if (dragOver !== i) setDragOver(i);
-                      }
-                    : undefined
-                }
-                onDrop={
-                  canEdit
-                    ? () => {
-                        reorder(dragIndex.current, i);
-                        dragIndex.current = null;
-                        setDragOver(null);
-                      }
-                    : undefined
-                }
-              >
-                {canEdit && (
-                  <span
-                    className="form-card-grip"
-                    draggable
-                    onClick={(e) => e.stopPropagation()}
-                    onDragStart={(e) => {
-                      e.stopPropagation();
-                      dragIndex.current = i;
-                    }}
-                    onDragEnd={() => {
-                      dragIndex.current = null;
-                      setDragOver(null);
-                    }}
-                    title="ドラッグで並べ替え"
-                    aria-hidden="true"
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                      <circle cx="9" cy="5" r="1.7" />
-                      <circle cx="15" cy="5" r="1.7" />
-                      <circle cx="9" cy="12" r="1.7" />
-                      <circle cx="15" cy="12" r="1.7" />
-                      <circle cx="9" cy="19" r="1.7" />
-                      <circle cx="15" cy="19" r="1.7" />
-                    </svg>
-                  </span>
-                )}
-
-                <span className="form-card-head">
-                  <span className="form-card-ico" aria-hidden="true">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-4" />
-                      <rect x="9" y="2" width="6" height="4" rx="1" />
-                      <line x1="8" y1="11" x2="16" y2="11" />
-                      <line x1="8" y1="15" x2="14" y2="15" />
-                    </svg>
-                  </span>
-                  <span className="form-card-title" title={f.title}>
-                    {f.title}
-                  </span>
-                </span>
-
-                <span className="form-card-metric">
-                  <span className="form-card-caption">回答数</span>
-                  {c?.error ? (
-                    <span className="form-card-err" title={c.error}>取得エラー</span>
-                  ) : c ? (
-                    <>
-                      <span className="form-card-num">{Number(c.total || 0).toLocaleString("ja-JP")}</span>
-                      <span className="form-card-unit">件</span>
-                    </>
-                  ) : (
-                    <span className="form-card-dim">—</span>
-                  )}
-                </span>
-
-                {canEdit && (
-                  <span className="form-card-ops">
-                    <button
-                      className="forms-op"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditTarget({ id: f.id, title: f.title, url: f.url });
-                      }}
-                      title="編集"
-                      aria-label="編集"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 20h9" />
-                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                      </svg>
-                    </button>
-                    <button
-                      className="forms-op danger"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDelTarget(f);
-                      }}
-                      title="削除"
-                      aria-label="削除"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                        <line x1="10" y1="11" x2="10" y2="17" />
-                        <line x1="14" y1="11" x2="14" y2="17" />
-                      </svg>
-                    </button>
-                  </span>
-                )}
-
-                <span className="form-card-chev" aria-hidden="true">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                </span>
-              </div>
-            );
-          })}
-        </div>
       )}
 
       {/* 追加・編集モーダル */}
@@ -446,14 +466,8 @@ export default function FormsPage() {
         onClose={() => setEditTarget(null)}
         footer={
           <>
-            <button className="mini-btn" onClick={() => setEditTarget(null)} disabled={saving}>
-              キャンセル
-            </button>
-            <button
-              className="save-btn"
-              onClick={save}
-              disabled={saving || !editTarget?.title.trim() || !editTarget?.url.trim()}
-            >
+            <button className="mini-btn" onClick={() => setEditTarget(null)} disabled={saving}>キャンセル</button>
+            <button className="save-btn" onClick={save} disabled={saving || !editTarget?.title.trim() || !editTarget?.url.trim()}>
               {saving ? "保存中…" : "保存"}
             </button>
           </>
@@ -463,21 +477,15 @@ export default function FormsPage() {
           <div className="modal-fields">
             <label className="fld">
               名前
-              <input
-                type="text"
-                value={editTarget.title}
-                onChange={(e) => setEditTarget({ ...editTarget, title: e.target.value })}
-                placeholder="例：施設アンケート"
-              />
+              <input type="text" value={editTarget.title} onChange={(e) => setEditTarget({ ...editTarget, title: e.target.value })} placeholder="例：施設アンケート" />
+            </label>
+            <label className="fld">
+              説明（任意）
+              <input type="text" value={editTarget.description || ""} onChange={(e) => setEditTarget({ ...editTarget, description: e.target.value })} placeholder="例：CM掲載に関する情報を収集するフォームです" />
             </label>
             <label className="fld">
               スプレッドシートURL（対象タブを開いた状態でコピー）
-              <input
-                type="text"
-                value={editTarget.url}
-                onChange={(e) => setEditTarget({ ...editTarget, url: e.target.value })}
-                placeholder="https://docs.google.com/spreadsheets/d/.../edit#gid=..."
-              />
+              <input type="text" value={editTarget.url} onChange={(e) => setEditTarget({ ...editTarget, url: e.target.value })} placeholder="https://docs.google.com/spreadsheets/d/.../edit#gid=..." />
             </label>
             <p className="modal-note">
               {cfg?.mode === "service" ? (
@@ -503,12 +511,8 @@ export default function FormsPage() {
         onClose={() => setDelTarget(null)}
         footer={
           <>
-            <button className="mini-btn" onClick={() => setDelTarget(null)} disabled={saving}>
-              キャンセル
-            </button>
-            <button className="save-btn danger-btn" onClick={doDelete} disabled={saving}>
-              削除する
-            </button>
+            <button className="mini-btn" onClick={() => setDelTarget(null)} disabled={saving}>キャンセル</button>
+            <button className="save-btn danger-btn" onClick={doDelete} disabled={saving}>削除する</button>
           </>
         }
       >
