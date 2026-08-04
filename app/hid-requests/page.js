@@ -14,6 +14,7 @@ const COLUMNS = [
   { key: "applyStatus", label: "申請状況", type: "select", options: ["未申請", "申請中", "申請済み"], w: 120 },
   { key: "roomPlanOff", label: "Room削除/Plan無効化", type: "check", w: 130 },
   { key: "promoOff", label: "プロモ無効化", type: "check", w: 110 },
+  { key: "hideListing", label: "非掲載", type: "check", w: 90 },
   { key: "agodaReport", label: "Agoda完了報告", type: "select", options: ["未報告", "報告済み"], w: 130 },
   { key: "memo", label: "Memo", type: "text", w: 220 },
 ];
