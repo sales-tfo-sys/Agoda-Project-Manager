@@ -380,6 +380,7 @@ export default function FormsPage() {
                 </span>
 
                 <span className="form-card-metric">
+                  <span className="form-card-caption">回答数</span>
                   {c?.error ? (
                     <span className="form-card-err" title={c.error}>取得エラー</span>
                   ) : c ? (
@@ -388,9 +389,8 @@ export default function FormsPage() {
                       <span className="form-card-unit">件</span>
                     </>
                   ) : (
-                    <span className="form-card-dim">— 件</span>
+                    <span className="form-card-dim">—</span>
                   )}
-                  <span className="form-card-caption">回答数</span>
                 </span>
 
                 {canEdit && (
