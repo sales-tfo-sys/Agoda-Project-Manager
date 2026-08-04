@@ -5116,11 +5116,12 @@ tbody tr.clickable {
   gap: 10px;
 }
 
-/* ページ内の読み込み表示：白いカード枠を出さず、画面中央にスピナーだけ置く */
+/* ページ内の読み込み表示：白いカード枠を出さず、画面中央にスピナーだけ置く。
+   ヘッダーぶんを差し引いた高さの中央に置き、上寄りにならないようにする。 */
 .page-loading {
   display: grid;
   place-items: center;
-  min-height: 60vh;
+  min-height: calc(100vh - 150px);
   padding: 0;
 }
 /* 読み込みスピナーだけを含むカードは、背景・枠・余白を消して透明にする */
