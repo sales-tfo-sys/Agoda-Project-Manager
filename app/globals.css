@@ -4939,27 +4939,27 @@ tbody tr.clickable {
 .forms-grid {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 .form-card {
   position: relative;
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 12px;
-  min-height: 58px;
-  padding: 12px 14px 12px 16px;
+  gap: 14px;
+  min-height: 78px;
+  padding: 16px 20px;
   background: #fff;
   border: 1px solid var(--border);
-  border-left: 3px solid var(--border);
-  border-radius: 10px;
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
   cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
 }
 .form-card:hover {
-  border-color: var(--accent);
-  border-left-color: var(--accent);
-  background: var(--accent-soft, #f4f8ff);
+  border-color: #c9d8f5;
+  box-shadow: 0 8px 22px rgba(37, 71, 158, 0.12);
+  transform: translateY(-1px);
 }
 .form-card:focus-visible {
   outline: 2px solid var(--accent);
@@ -4969,39 +4969,44 @@ tbody tr.clickable {
   outline: 2px dashed var(--accent);
   outline-offset: -2px;
 }
-/* 左：アイコン＋タイトル */
+/* 左：アイコンチップ＋タイトル */
 .form-card-head {
   flex: 1 1 auto;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 14px;
   min-width: 0;
 }
 .form-card-ico {
   flex: none;
-  color: var(--ink-3);
-}
-.form-card:hover .form-card-ico {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: var(--accent-soft, #eef2fb);
   color: var(--accent);
 }
 .form-card-title {
   flex: 1 1 auto;
   min-width: 0;
-  font-size: 13.5px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 800;
   line-height: 1.35;
   color: var(--ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* 右：件数（主役の数字） */
+/* 右：件数ピル */
 .form-card-metric {
   flex: none;
-  display: flex;
+  display: inline-flex;
   align-items: baseline;
-  gap: 5px;
-  margin-right: 4px;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 12px;
+  background: var(--accent-soft, #eef2fb);
 }
 .form-card-caption {
   font-size: 11px;
@@ -5015,13 +5020,13 @@ tbody tr.clickable {
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.01em;
-  color: var(--ink);
+  color: var(--accent);
   font-variant-numeric: tabular-nums;
 }
 .form-card-unit {
   font-size: 12px;
   font-weight: 700;
-  color: var(--ink-2);
+  color: var(--ink-3);
 }
 .form-card-dim {
   font-size: 20px;
@@ -5034,16 +5039,28 @@ tbody tr.clickable {
   color: #cf3b31;
   font-weight: 700;
 }
+.form-card-chev {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  color: #b7c2d6;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+.form-card:hover .form-card-chev {
+  color: var(--accent);
+  transform: translateX(2px);
+}
 .form-card-grip {
   display: inline-grid;
   place-items: center;
-  width: 18px;
+  width: 16px;
   flex: none;
   color: var(--ink-3);
   opacity: 0;
   cursor: grab;
   transition: opacity 0.12s;
   order: -1;
+  margin: -4px -8px -4px -6px;
 }
 .form-card:hover .form-card-grip {
   opacity: 0.5;
