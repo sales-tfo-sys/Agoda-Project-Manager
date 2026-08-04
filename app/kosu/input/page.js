@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useUi } from "../../Ui";
 
 // Regular task は従来どおり固定表示（完了・対応者による絞り込みの対象外）
 function isRegular(t) {
@@ -25,8 +26,8 @@ export default function KosuInputPage() {
   const [date, setDate] = useState(todayStr());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState(null);
   const [error, setError] = useState(null);
+  const { setBusy, showToast } = useUi();
   // ダッシュボードのアサイン・進捗（作業内容ごと）
   const [link, setLink] = useState({ idsByContent: {}, statusByContent: {}, completedAtByContent: {}, startByContent: {}, endByContent: {}, ready: true });
   // ログイン中の利用者（管理者以外は自分ぶんだけ入力できる）
@@ -210,26 +211,17 @@ export default function KosuInputPage() {
     if (configured != null) loadEntries();
   }, [configured, date, loadEntries]);
 
-  // 保存などの完了メッセージは数秒で自動的に消す（エラーは操作するまで残す）
-  useEffect(() => {
-    if (!msg) return;
-    const t = setTimeout(() => setMsg(null), 4000);
-    return () => clearTimeout(t);
-  }, [msg]);
-
   const setVal = (taskId, person, raw) => {
     setValues((prev) => ({
       ...prev,
       [taskId]: { ...(prev[taskId] || {}), [person]: raw },
     }));
-    setMsg(null);
   };
   const setCnt = (taskId, person, raw) => {
     setCounts((prev) => ({
       ...prev,
       [taskId]: { ...(prev[taskId] || {}), [person]: raw },
     }));
-    setMsg(null);
   };
 
   // 作業ごとの担当者ID。アサインが1件も無いとき（未設定・テーブル未作成）は
@@ -369,10 +361,11 @@ export default function KosuInputPage() {
 
   const save = async () => {
     if (!configured) {
-      setMsg("demo");
+      showToast("デモモードのため保存されません（Supabase未接続）", "warn");
       return;
     }
     setSaving(true);
+    setBusy("保存中…");
     setError(null);
     try {
       const entries = [];
@@ -417,14 +410,15 @@ export default function KosuInputPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ date, entries }),
       }).then((r) => r.json());
-      if (res.error) setError(res.error);
+      if (res.error) showToast(res.error, "err");
       else {
-        setMsg("saved:" + res.saved);
+        showToast(res.saved === 0 ? "保存しました（変更なし）" : `${res.saved}件を保存しました`);
         await loadEntries(); // 保存後の状態を再読込（削除判定の基準を更新）
       }
     } catch (e) {
-      setError(String(e?.message || e));
+      showToast(String(e?.message || e), "err");
     } finally {
+      setBusy(null);
       setSaving(false);
     }
   };
@@ -442,7 +436,7 @@ export default function KosuInputPage() {
         </div>
         <div className="head-right">
           <button className="save-btn" onClick={save} disabled={saving || loading}>
-            {saving ? "保存中…" : "保存"}
+            保存
           </button>
         </div>
       </div>
@@ -451,13 +445,6 @@ export default function KosuInputPage() {
         <div className="banner warn-banner">
           Supabase 未接続のため<b>保存はできません</b>（画面確認用のデモ）。接続すると入力・保存が有効になります。
         </div>
-      )}
-      {msg === "saved:0" && <div className="banner ok-banner">保存しました（変更なし）。</div>}
-      {msg && msg.startsWith("saved:") && msg !== "saved:0" && (
-        <div className="banner ok-banner">{msg.slice(6)} 件を保存しました。</div>
-      )}
-      {msg === "demo" && (
-        <div className="banner warn-banner">デモモードのため保存されません。Supabase 接続後に有効になります。</div>
       )}
       {error && <div className="banner err-banner">エラー：{error}</div>}
 

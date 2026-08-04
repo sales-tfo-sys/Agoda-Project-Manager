@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Modal from "../../Modal";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useUi } from "../../Ui";
 
 const PAGE_SIZE = 10;
 
@@ -40,6 +41,7 @@ export default function KosuPersonsPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [msg, setMsg] = useState(null);
+  const { showToast } = useUi();
   const [addOpen, setAddOpen] = useState(false);
 
   const [name, setName] = useState("");
@@ -92,7 +94,7 @@ export default function KosuPersonsPage() {
   const removePerson = async () => {
     if (!delTarget) return;
     if (!configured) {
-      setMsg("demo");
+      showToast("デモモードのため保存されません", "warn");
       setDelTarget(null);
       return;
     }
@@ -106,7 +108,7 @@ export default function KosuPersonsPage() {
       ).then((r) => r.json());
       if (res.error) setError(res.error);
       else {
-        setMsg("deleted");
+        showToast("担当者を削除しました");
         await load();
       }
     } catch (e) {
@@ -157,7 +159,7 @@ export default function KosuPersonsPage() {
       return;
     }
     if (!configured) {
-      setMsg("demo");
+      showToast("デモモードのため保存されません", "warn");
       setPersons((p) => [
         ...p,
         {
@@ -204,7 +206,7 @@ export default function KosuPersonsPage() {
         setAddEditAccounts(false);
         setAddEditTasks(false);
         setAddOpen(false);
-        setMsg("added");
+        showToast("担当者を追加しました");
         await load();
       }
     } catch (e) {
@@ -216,7 +218,7 @@ export default function KosuPersonsPage() {
 
   const patch = async (id, body) => {
     if (!configured) {
-      setMsg("demo");
+      showToast("デモモードのため保存されません", "warn");
       return;
     }
     setBusy(true);
@@ -258,7 +260,7 @@ export default function KosuPersonsPage() {
         .sort((a, b) => Number(b.active) - Number(a.active) || a.sort_order - b.sort_order)
     );
     if (!configured) {
-      setMsg("demo");
+      showToast("デモモードのため保存されません", "warn");
       return;
     }
     setBusy(true);
@@ -402,8 +404,6 @@ export default function KosuPersonsPage() {
           Supabase 未接続のため<b>変更は保存されません</b>（デモ表示）。接続すると担当者の追加・改名・退職処理が有効になります。
         </div>
       )}
-      {msg === "added" && <div className="banner ok-banner">担当者を追加しました。</div>}
-      {msg === "deleted" && <div className="banner ok-banner">担当者を削除しました。</div>}
 
       <Modal
         open={!!delTarget}
@@ -432,7 +432,6 @@ export default function KosuPersonsPage() {
           工数の実績が登録されている場合は削除できません。その場合は「退職」をご利用ください（実績は残ります）。
         </p>
       </Modal>
-      {msg === "demo" && <div className="banner warn-banner">デモモードのため保存されません。</div>}
       {error && <div className="banner err-banner">エラー：{error}</div>}
 
       <Modal

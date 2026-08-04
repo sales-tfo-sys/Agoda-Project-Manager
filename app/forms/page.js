@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Modal from "../Modal";
+import { useUi } from "../Ui";
 
 export default function FormsPage() {
   const [items, setItems] = useState(null); // 登録フォーム一覧
@@ -16,6 +17,7 @@ export default function FormsPage() {
   const [editTarget, setEditTarget] = useState(null); // { id?, title, url } or null
   const [saving, setSaving] = useState(false);
   const [delTarget, setDelTarget] = useState(null);
+  const { setBusy, showToast } = useUi();
 
   useEffect(() => {
     fetch("/api/auth/me", { cache: "no-store" })
@@ -73,6 +75,7 @@ export default function FormsPage() {
     const url = editTarget.url.trim();
     if (!title || !url) return;
     setSaving(true);
+    setBusy("保存中…");
     try {
       const method = editTarget.id ? "PATCH" : "POST";
       const body = editTarget.id ? { id: editTarget.id, title, url } : { title, url };
@@ -82,16 +85,18 @@ export default function FormsPage() {
         body: JSON.stringify(body),
       }).then((r) => r.json());
       if (res.error) {
-        setError(res.error);
+        showToast(res.error, "err");
       } else {
         setEditTarget(null);
         await loadList();
         if (res.id) setSelected(res.id);
         else if (editTarget.id === selected) loadGrid(selected);
+        showToast("保存しました");
       }
     } catch (e) {
-      setError(String(e?.message || e));
+      showToast(String(e?.message || e), "err");
     } finally {
+      setBusy(null);
       setSaving(false);
     }
   };
@@ -99,13 +104,16 @@ export default function FormsPage() {
   const doDelete = async () => {
     if (!delTarget) return;
     setSaving(true);
+    setBusy("削除中…");
     try {
       await fetch(`/api/form-sheets?id=${encodeURIComponent(delTarget.id)}`, {
         method: "DELETE",
       }).catch(() => {});
       setDelTarget(null);
       await loadList();
+      showToast("削除しました");
     } finally {
+      setBusy(null);
       setSaving(false);
     }
   };
