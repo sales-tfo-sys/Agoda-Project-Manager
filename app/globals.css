@@ -5139,6 +5139,74 @@ th.forms-rownum {
   }
 }
 
+/* 新規作業依頼：手動入力の3列＋HID発行依頼の編集セル */
+.tw table th.wr-mancol,
+.tw table td.wr-mancol {
+  background: #fbfcff;
+  border-left: 1px solid var(--border);
+}
+.tw table th.wr-mancol {
+  color: var(--accent);
+}
+td.wr-center,
+th.wr-center {
+  text-align: center;
+}
+.wr-input {
+  width: 100%;
+  min-width: 90px;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 6px;
+  border: 1px solid var(--border2, #dbe2ee);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+}
+.wr-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.wr-input:disabled {
+  background: transparent;
+  border-color: transparent;
+  color: var(--ink-2);
+  padding-left: 0;
+}
+.wr-date {
+  min-width: 130px;
+}
+.wr-chk {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.wr-chk:disabled {
+  cursor: default;
+}
+/* HID発行依頼テーブル */
+.hid-table th,
+.hid-table td {
+  white-space: nowrap;
+}
+.hid-select {
+  min-width: 110px;
+}
+.hid-opcol {
+  width: 40px;
+  text-align: center;
+  position: sticky;
+  right: 0;
+  background: #fff;
+  z-index: 1;
+}
+th.hid-opcol {
+  z-index: 3;
+}
+
 /* ダッシュボードの月間カレンダー（日本の祝日表示） */
 /* Regular Task の右側にカレンダーを並べる */
 .overview-row {

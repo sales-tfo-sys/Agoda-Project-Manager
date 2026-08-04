@@ -133,6 +133,45 @@ function FormIcon() {
   );
 }
 
+function WorkReqIcon() {
+  return (
+    <svg
+      width="17"
+      height="17"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M9 11l3 3L22 4" />
+      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+    </svg>
+  );
+}
+
+function HidIcon() {
+  return (
+    <svg
+      width="17"
+      height="17"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <line x1="2" y1="9" x2="22" y2="9" />
+      <line x1="7" y1="14" x2="9" y2="14" />
+    </svg>
+  );
+}
+
 function ClockIcon() {
   return (
     <svg
@@ -158,6 +197,8 @@ const TABS = [
   // グラフページは一旦削除（app/graphs を除去）
   { href: "/kosu", label: "工数管理", Icon: ClockIcon },
   { href: "/forms", label: "フォーム回答", Icon: FormIcon },
+  { href: "/work-requests", label: "新規作業依頼", Icon: WorkReqIcon },
+  { href: "/hid-requests", label: "HID新規発行依頼", Icon: HidIcon },
 ];
 
 export default function Sidebar() {
