@@ -4935,12 +4935,15 @@ tbody tr.clickable {
   border-radius: 6px;
   user-select: all;
 }
+/* フォーム回答トップ：全体を共通幅のコンテナに収める */
+.forms-listwrap {
+  max-width: 1060px;
+}
 /* 一覧（フォーム回答トップ）：縦積みの横長レコード */
 .forms-grid {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-width: 920px;
 }
 .form-card {
   position: relative;
@@ -5116,6 +5119,11 @@ tbody tr.clickable {
 }
 .wrap.forms-page {
   padding-bottom: 8px;
+}
+/* 一覧表示のときだけ、淡いラベンダーのグラデ背景を敷く */
+.wrap.forms-page:has(.forms-listwrap) {
+  min-height: 100vh;
+  background: linear-gradient(165deg, #e8ecfb 0%, #eff2fd 42%, #fbfcff 100%);
 }
 .forms-tw {
   max-height: calc(100vh - 72px);

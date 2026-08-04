@@ -261,7 +261,7 @@ export default function FormsPage() {
         <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>
       ) : (
         /* ===== 一覧（ヒーロー＋集計＋レコード） ===== */
-        <>
+        <div className="forms-listwrap">
           <div className="forms-hero">
             <div className="forms-hero-text">
               <h1 className="forms-hero-title">フォーム回答一覧</h1>
@@ -456,7 +456,7 @@ export default function FormsPage() {
               })}
             </div>
           )}
-        </>
+        </div>
       )}
 
       {/* 追加・編集モーダル */}
