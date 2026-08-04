@@ -197,9 +197,9 @@ export default function FormsPage() {
 
       {error && <div className="banner err-banner">エラー：{error}</div>}
 
-      {loading ? (
+      {items === null ? (
         <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>
-      ) : !items || items.length === 0 ? (
+      ) : items.length === 0 ? (
         <div className="card">
           <div className="notice">
             フォームがまだ登録されていません。
