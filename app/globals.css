@@ -116,11 +116,11 @@ body {
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: #f0f3f9;
-  padding: 4px 6px 12px;
+  padding: 3px 6px 8px;
   margin-bottom: 8px;
   border-bottom: 1px solid #333d52;
 }
@@ -129,8 +129,8 @@ body {
 }
 .brand-mark {
   flex: 0 0 auto;
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 9px;
   background: linear-gradient(140deg, #5b8dff 0%, #2f6bff 46%, #6a5cff 100%);
   display: grid;
@@ -214,7 +214,7 @@ body {
      高さはメニューバーのロゴ帯（＝サイドバー上部）と揃えて 57px 固定にし、
      下端の白線がロゴ帯の下線と一直線になるようにしている */
   box-sizing: border-box;
-  min-height: 57px;
+  min-height: 50px;
   padding: 0 18px;
   margin: 0 -16px 10px;
   /* sticky なので不透明にする必要がある。
@@ -2440,10 +2440,10 @@ tbody tr.clickable {
 .wrap.page-compact .page-h {
   font-size: 14px;
 }
-/* コンパクト表示でもヘッダーの高さ・余白は共通（ロゴ帯と同じ 57px）。
+/* コンパクト表示でもヘッダーの高さ・余白は共通（ロゴ帯と同じ 50px）。
    以前ここだけ padding-left が 2px でアイコン位置が 16px ずれていた */
 .wrap.page-compact .head {
-  min-height: 57px;
+  min-height: 50px;
   padding: 0 18px;
   margin-bottom: 10px;
 }
