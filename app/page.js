@@ -20,6 +20,17 @@ function stageOf(r) {
   return r?.["ドロップダウン"]?.value || "";
 }
 
+// 作成日時 → { year, q }（年・四半期の絞り込み用）。判別不能は null
+function periodOf(r) {
+  const v = r?.["作成日時"]?.value;
+  if (!v) return null;
+  const m = String(v).match(/^(\d{4})-(\d{2})/);
+  if (m) return { year: Number(m[1]), q: Math.floor((Number(m[2]) - 1) / 3) + 1 };
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return null;
+  return { year: d.getFullYear(), q: Math.floor(d.getMonth() / 3) + 1 };
+}
+
 // Kintone のフィールド値（{ type, value }）を人が読める文字列にする
 function formatValue(field) {
   if (!field) return "";
@@ -266,6 +277,8 @@ export default function Page() {
   const [selected, setSelected] = useState(null);
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("active"); // active=完了以外（既定） / all=すべて
+  const [periodYear, setPeriodYear] = useState("all"); // "all" or 年
+  const [periodQ, setPeriodQ] = useState("all"); // "all" or 1〜4
   const [canSync, setCanSync] = useState(false);
   const [syncing, setSyncing] = useState(false);
   // ヘッダークリックでの並べ替え（col=フィールドコード, dir=asc/desc）
@@ -352,11 +365,26 @@ export default function Page() {
     ...TYPE_ORDER.filter((t) => typeCounts[t]),
     ...Object.keys(typeCounts).filter((t) => !TYPE_ORDER.includes(t)),
   ];
-  const shown = records.filter(
-    (r) =>
-      (typeFilter === "all" || caseTypeOf(r) === typeFilter) &&
-      (statusFilter === "all" || !DONE_STAGES.has(stageOf(r)))
-  );
+  // 絞り込みに使える年（作成日時ベース・降順）
+  const years = (() => {
+    const set = new Set();
+    for (const r of records) {
+      const p = periodOf(r);
+      if (p) set.add(p.year);
+    }
+    return [...set].sort((a, b) => b - a);
+  })();
+
+  const shown = records.filter((r) => {
+    if (!(typeFilter === "all" || caseTypeOf(r) === typeFilter)) return false;
+    if (!(statusFilter === "all" || !DONE_STAGES.has(stageOf(r)))) return false;
+    if (periodYear !== "all") {
+      const p = periodOf(r);
+      if (!p || p.year !== Number(periodYear)) return false;
+      if (periodQ !== "all" && p.q !== Number(periodQ)) return false;
+    }
+    return true;
+  });
 
   // フィールドコード → 表示ラベル
   const labelOf = (key) => {
@@ -499,9 +527,39 @@ export default function Page() {
               </select>
             </label>
           )}
+          {years.length > 0 && (
+            <label className="head-year">
+              年
+              <select value={periodYear} onChange={(e) => setPeriodYear(e.target.value)}>
+                <option value="all">すべて</option>
+                {years.map((y) => (
+                  <option key={y} value={y}>
+                    {y}年
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {records.length > 0 && (
+            <label className="head-year">
+              四半期
+              <select
+                value={periodQ}
+                onChange={(e) => setPeriodQ(e.target.value)}
+                disabled={periodYear === "all"}
+                title={periodYear === "all" ? "先に年を選んでください" : undefined}
+              >
+                <option value="all">通年</option>
+                <option value="1">Q1（1〜3月）</option>
+                <option value="2">Q2（4〜6月）</option>
+                <option value="3">Q3（7〜9月）</option>
+                <option value="4">Q4（10〜12月）</option>
+              </select>
+            </label>
+          )}
           <span className="count">
             表示件数： <b>{shown.length.toLocaleString("ja-JP")}</b> 件
-            {typeFilter !== "all" && (
+            {shown.length !== records.length && (
               <span className="count-sub">
                 {" "}
                 / 全 {records.length.toLocaleString("ja-JP")} 件
