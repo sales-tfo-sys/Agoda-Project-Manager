@@ -17,7 +17,15 @@ export default function FormsPage() {
   const [editTarget, setEditTarget] = useState(null); // { id?, title, url } or null
   const [saving, setSaving] = useState(false);
   const [delTarget, setDelTarget] = useState(null);
+  const [cfg, setCfg] = useState(null); // { mode, serviceEmail }
   const { setBusy, showToast } = useUi();
+
+  useEffect(() => {
+    fetch("/api/form-config", { cache: "no-store" })
+      .then((r) => r.json())
+      .then(setCfg)
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch("/api/auth/me", { cache: "no-store" })
@@ -259,8 +267,8 @@ export default function FormsPage() {
                                 {grid.headers.map((_, ci) => {
                                   const v = r[ci] ?? "";
                                   return (
-                                    <td key={ci} title={v}>
-                                      {v === "" ? <span className="empty">—</span> : v}
+                                    <td key={ci} title={v || undefined}>
+                                      {v}
                                     </td>
                                   );
                                 })}
@@ -319,7 +327,16 @@ export default function FormsPage() {
               />
             </label>
             <p className="modal-note">
-              対象シートは「リンクを知っている全員が閲覧可」にしてください。
+              {cfg?.mode === "service" ? (
+                <>
+                  対象シートを、次の<b>サービスアカウントに「閲覧者」で共有</b>してください（公開不要）：
+                  <br />
+                  <code className="sa-email">{cfg.serviceEmail}</code>
+                </>
+              ) : (
+                <>対象シートは「リンクを知っている全員が閲覧可」にしてください。</>
+              )}
+              <br />
               URL末尾の <code>gid</code> で読み取るタブを判別します（フォーム回答タブを開いた状態でコピー）。
             </p>
           </div>
