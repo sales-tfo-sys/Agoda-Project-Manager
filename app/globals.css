@@ -971,6 +971,10 @@ th:last-child,
 td:last-child {
   border-right: 0;
 }
+/* 施設一覧：CM代行設定より右の本文セルは中央揃え */
+td.tc {
+  text-align: center;
+}
 /* 施設一覧：ヘッダークリックで並べ替え（矢印マークは出さない） */
 th.sortable {
   cursor: pointer;

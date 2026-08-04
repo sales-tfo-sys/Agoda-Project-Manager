@@ -5,7 +5,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 const TYPE_ORDER = ["Hotel", "ACQ", "Liberty", "Temairazu", "IHM"];
 
 // 一覧の列見出しの表示名を上書き（Kintoneの実ラベルを別名で表示）
-const HEADER_LABEL = { "ドロップダウン": "ステータス" };
+const HEADER_LABEL = { "ドロップダウン": "ステータス", "ドロップダウン_4": "CM代行設定" };
+
+// この列から右のセル（本文）は中央揃えにする
+const CENTER_FROM_CODE = "ドロップダウン_4"; // CM代行設定
 
 // 完了扱いのステータス（「完了以外を表示」フィルタで除外）
 const DONE_STAGES = new Set(["7.販売開始確認（完了）", "完了"]);
@@ -424,6 +427,8 @@ export default function Page() {
   // 実在する列だけを、指定順で表示
   const first = records[0] || {};
   const columns = COLUMN_ORDER.filter((code) => code in first);
+  // CM代行設定の列位置。ここから右のセルは中央揃えにする
+  const centerFrom = columns.indexOf(CENTER_FROM_CODE);
 
   // ヘッダークリックで並べ替え。数値は数値順、それ以外（日付・文字）は文字順。
   // 空欄は常に末尾に回す。
@@ -618,12 +623,15 @@ export default function Page() {
                       className="clickable"
                       onClick={() => setSelected(r)}
                     >
-                      {columns.map((c) => {
+                      {columns.map((c, ci) => {
                         const text = formatValue(r[c]);
+                        const center = centerFrom >= 0 && ci >= centerFrom;
                         return (
                           <td
                             key={c}
-                            className={c === "$id" ? "idcol" : ""}
+                            className={
+                              (c === "$id" ? "idcol" : "") + (center ? " tc" : "")
+                            }
                             title={text}
                           >
                             {text === "" ? <span className="empty">—</span> : text}
