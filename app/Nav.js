@@ -112,6 +112,27 @@ function ChartIcon() {
 }
 
 
+function FormIcon() {
+  return (
+    <svg
+      width="17"
+      height="17"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-4" />
+      <rect x="9" y="2" width="6" height="4" rx="1" />
+      <line x1="8" y1="12" x2="16" y2="12" />
+      <line x1="8" y1="16" x2="13" y2="16" />
+    </svg>
+  );
+}
+
 function ClockIcon() {
   return (
     <svg
@@ -136,6 +157,7 @@ const TABS = [
   { href: "/", label: "施設一覧", Icon: ListIcon },
   // グラフページは一旦削除（app/graphs を除去）
   { href: "/kosu", label: "工数管理", Icon: ClockIcon },
+  { href: "/forms", label: "フォーム回答", Icon: FormIcon },
 ];
 
 export default function Sidebar() {
