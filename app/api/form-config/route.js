@@ -10,5 +10,8 @@ export async function GET() {
   return Response.json({
     mode: service ? "service" : "public",
     serviceEmail: service ? serviceAccountEmail() : null,
+    // 診断用（値は返さない）：どの環境変数が読めているか
+    hasEmail: !!process.env.GOOGLE_SA_EMAIL,
+    hasKey: !!process.env.GOOGLE_SA_PRIVATE_KEY,
   });
 }
