@@ -5110,8 +5110,15 @@ tbody tr.clickable {
   border-color: #e0574e;
   color: #cf3b31;
 }
+/* 詳細テーブルはヘッダー直下から画面下端までピッタリ広げる */
+.wrap.page-compact.forms-page .head {
+  margin-bottom: 6px;
+}
+.wrap.forms-page {
+  padding-bottom: 8px;
+}
 .forms-tw {
-  max-height: calc(100vh - 108px);
+  max-height: calc(100vh - 72px);
 }
 td.forms-rownum,
 th.forms-rownum {
