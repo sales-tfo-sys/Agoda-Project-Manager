@@ -5252,6 +5252,16 @@ td.v-strong,
   margin-left: auto;
   font-size: 12.5px;
 }
+/* 検索バーとプルダウンの高さをそろえる */
+.list-tools .search-box,
+.list-tools .head-year select {
+  height: 30px;
+  box-sizing: border-box;
+}
+.list-tools .head-year select {
+  padding-top: 0;
+  padding-bottom: 0;
+}
 
 /* ── ヘッダーはメニューバーと同じ濃紺なので、中身を明るい色に反転する ── */
 .head h1,
