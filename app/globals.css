@@ -5321,6 +5321,27 @@ th.forms-rownum {
   font-weight: 700;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
 }
+.busy-check {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #2f9e6f;
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+  animation: busy-pop 0.18s ease both;
+}
+@keyframes busy-pop {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
 /* 上部に浮かぶ通知（レイアウトを崩さない・自動で消える） */
 .toast {
   position: fixed;

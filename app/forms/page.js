@@ -18,7 +18,7 @@ export default function FormsPage() {
   const [saving, setSaving] = useState(false);
   const [delTarget, setDelTarget] = useState(null);
   const [cfg, setCfg] = useState(null); // { mode, serviceEmail }
-  const { setBusy, showToast } = useUi();
+  const { setBusy, flashDone, showToast, busy } = useUi();
   // ドラッグ並べ替え
   const dragIndex = useRef(null);
   const [dragOver, setDragOver] = useState(null);
@@ -115,18 +115,19 @@ export default function FormsPage() {
         body: JSON.stringify(body),
       }).then((r) => r.json());
       if (res.error) {
+        setBusy(null);
         showToast(res.error, "err");
       } else {
         setEditTarget(null);
         await loadList();
         if (res.id) setSelected(res.id);
-        else if (editTarget.id === selected) loadGrid(selected);
-        showToast("保存しました");
+        else if (editTarget.id === selected) await loadGrid(selected);
+        flashDone("保存完了");
       }
     } catch (e) {
+      setBusy(null);
       showToast(String(e?.message || e), "err");
     } finally {
-      setBusy(null);
       setSaving(false);
     }
   };
@@ -141,9 +142,8 @@ export default function FormsPage() {
       }).catch(() => {});
       setDelTarget(null);
       await loadList();
-      showToast("削除しました");
+      flashDone("削除完了");
     } finally {
-      setBusy(null);
       setSaving(false);
     }
   };
@@ -197,9 +197,9 @@ export default function FormsPage() {
 
       {error && <div className="banner err-banner">エラー：{error}</div>}
 
-      {items === null ? (
+      {items === null && !busy ? (
         <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>
-      ) : items.length === 0 ? (
+      ) : !items || items.length === 0 ? (
         <div className="card">
           <div className="notice">
             フォームがまだ登録されていません。
@@ -319,7 +319,7 @@ export default function FormsPage() {
                     )}
                   </div>
 
-                  {gridLoading ? (
+                  {gridLoading && !busy ? (
                     <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>
                   ) : grid?.error ? (
                     <div className="banner warn-banner">{grid.error}</div>

@@ -4,18 +4,33 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import { createPortal } from "react-dom";
 
 // 全ページ共通の UI 補助：
-//  ・setBusy(text)…画面中央にスピナー＋メッセージのオーバーレイ（保存中など）
-//  ・showToast(msg, type)…画面上部に浮かぶ通知（レイアウトを崩さない・自動で消える）
+//  ・setBusy(text)…画面中央にスピナー＋メッセージ（保存中など）
+//  ・flashDone(text)…画面中央にチェック＋メッセージを一瞬表示（保存完了など・自動で消える）
+//  ・showToast(msg,type)…画面上部の通知（主にエラー・レイアウトを崩さない）
+//  ・busy…オーバーレイ表示中かどうか（各ページの二重スピナー抑止に使う）
 const Ctx = createContext(null);
 
 export function UiProvider({ children }) {
-  const [busy, setBusy] = useState(null); // 文字列 or null
+  const [overlay, setOverlay] = useState(null); // { kind:"busy"|"done", text }
   const [toast, setToast] = useState(null); // { msg, type }
 
+  const setBusy = useCallback((text) => {
+    setOverlay(text == null ? null : { kind: "busy", text: typeof text === "string" ? text : "" });
+  }, []);
+  const flashDone = useCallback((text) => {
+    setOverlay({ kind: "done", text: text || "完了" });
+  }, []);
   const showToast = useCallback((msg, type = "ok") => {
     if (!msg) return;
     setToast({ msg, type });
   }, []);
+
+  // 完了オーバーレイは一瞬で自動的に消す
+  useEffect(() => {
+    if (overlay?.kind !== "done") return;
+    const t = setTimeout(() => setOverlay(null), 1200);
+    return () => clearTimeout(t);
+  }, [overlay]);
 
   // トーストは数秒で自動的に消す
   useEffect(() => {
@@ -24,15 +39,25 @@ export function UiProvider({ children }) {
     return () => clearTimeout(t);
   }, [toast]);
 
+  const busy = overlay != null;
+
   return (
-    <Ctx.Provider value={{ setBusy, showToast }}>
+    <Ctx.Provider value={{ setBusy, flashDone, showToast, busy }}>
       {children}
-      {busy != null &&
+      {overlay &&
         typeof document !== "undefined" &&
         createPortal(
           <div className="busy-overlay" role="status" aria-live="polite">
-            <span className="nav-loading-spinner" aria-hidden="true" />
-            {typeof busy === "string" && busy && <span className="busy-text">{busy}</span>}
+            {overlay.kind === "done" ? (
+              <span className="busy-check" aria-hidden="true">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
+            ) : (
+              <span className="nav-loading-spinner" aria-hidden="true" />
+            )}
+            {overlay.text && <span className="busy-text">{overlay.text}</span>}
           </div>,
           document.body
         )}
@@ -49,5 +74,5 @@ export function UiProvider({ children }) {
 }
 
 export function useUi() {
-  return useContext(Ctx) || { setBusy() {}, showToast() {} };
+  return useContext(Ctx) || { setBusy() {}, flashDone() {}, showToast() {}, busy: false };
 }

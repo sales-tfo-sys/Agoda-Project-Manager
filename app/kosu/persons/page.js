@@ -41,7 +41,7 @@ export default function KosuPersonsPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [msg, setMsg] = useState(null);
-  const { showToast } = useUi();
+  const { showToast, flashDone } = useUi();
   const [addOpen, setAddOpen] = useState(false);
 
   const [name, setName] = useState("");
@@ -108,8 +108,8 @@ export default function KosuPersonsPage() {
       ).then((r) => r.json());
       if (res.error) setError(res.error);
       else {
-        showToast("担当者を削除しました");
         await load();
+        flashDone("削除完了");
       }
     } catch (e) {
       setError(String(e?.message || e));
@@ -206,8 +206,8 @@ export default function KosuPersonsPage() {
         setAddEditAccounts(false);
         setAddEditTasks(false);
         setAddOpen(false);
-        showToast("担当者を追加しました");
         await load();
+        flashDone("追加完了");
       }
     } catch (e) {
       setError(String(e?.message || e));

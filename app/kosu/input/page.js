@@ -27,7 +27,7 @@ export default function KosuInputPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const { setBusy, showToast } = useUi();
+  const { setBusy, flashDone, showToast } = useUi();
   // ダッシュボードのアサイン・進捗（作業内容ごと）
   const [link, setLink] = useState({ idsByContent: {}, statusByContent: {}, completedAtByContent: {}, startByContent: {}, endByContent: {}, ready: true });
   // ログイン中の利用者（管理者以外は自分ぶんだけ入力できる）
@@ -410,15 +410,17 @@ export default function KosuInputPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ date, entries }),
       }).then((r) => r.json());
-      if (res.error) showToast(res.error, "err");
-      else {
-        showToast(res.saved === 0 ? "保存しました（変更なし）" : `${res.saved}件を保存しました`);
+      if (res.error) {
+        setBusy(null);
+        showToast(res.error, "err");
+      } else {
         await loadEntries(); // 保存後の状態を再読込（削除判定の基準を更新）
+        flashDone("保存完了");
       }
     } catch (e) {
+      setBusy(null);
       showToast(String(e?.message || e), "err");
     } finally {
-      setBusy(null);
       setSaving(false);
     }
   };
