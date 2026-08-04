@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Modal from "../Modal";
 import { useUi } from "../Ui";
 
@@ -19,6 +19,28 @@ export default function FormsPage() {
   const [delTarget, setDelTarget] = useState(null);
   const [cfg, setCfg] = useState(null); // { mode, serviceEmail }
   const { setBusy, showToast } = useUi();
+  // ドラッグ並べ替え
+  const dragIndex = useRef(null);
+  const [dragOver, setDragOver] = useState(null);
+
+  const reorder = (from, to) => {
+    if (from == null || to == null || from === to) return;
+    const arr = [...items];
+    const [m] = arr.splice(from, 1);
+    arr.splice(to, 0, m);
+    const withSort = arr.map((f, idx) => ({ ...f, sort: idx + 1 }));
+    const prev = new Map(items.map((f) => [f.id, f.sort]));
+    setItems(withSort);
+    for (const f of withSort) {
+      if (prev.get(f.id) !== f.sort) {
+        fetch("/api/form-sheets", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: f.id, sort: f.sort }),
+        }).catch(() => {});
+      }
+    }
+  };
 
   useEffect(() => {
     fetch("/api/form-config", { cache: "no-store" })
@@ -190,29 +212,84 @@ export default function FormsPage() {
         <div className="forms-layout">
           {/* 左：登録フォーム一覧 */}
           <aside className="forms-list">
-            {items.map((f) => (
+            {items.map((f, i) => (
               <div
                 key={f.id}
-                className={"forms-item" + (selected === f.id ? " active" : "")}
+                className={
+                  "forms-item" +
+                  (selected === f.id ? " active" : "") +
+                  (dragOver === i ? " dragover" : "")
+                }
+                onDragOver={
+                  canEdit
+                    ? (e) => {
+                        e.preventDefault();
+                        if (dragOver !== i) setDragOver(i);
+                      }
+                    : undefined
+                }
+                onDrop={
+                  canEdit
+                    ? () => {
+                        reorder(dragIndex.current, i);
+                        dragIndex.current = null;
+                        setDragOver(null);
+                      }
+                    : undefined
+                }
               >
+                {canEdit && (
+                  <span
+                    className="forms-grip"
+                    draggable
+                    onDragStart={() => {
+                      dragIndex.current = i;
+                    }}
+                    onDragEnd={() => {
+                      dragIndex.current = null;
+                      setDragOver(null);
+                    }}
+                    title="ドラッグで並べ替え"
+                    aria-hidden="true"
+                  >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+                      <circle cx="9" cy="5" r="1.7" />
+                      <circle cx="15" cy="5" r="1.7" />
+                      <circle cx="9" cy="12" r="1.7" />
+                      <circle cx="15" cy="12" r="1.7" />
+                      <circle cx="9" cy="19" r="1.7" />
+                      <circle cx="15" cy="19" r="1.7" />
+                    </svg>
+                  </span>
+                )}
                 <button className="forms-item-name" onClick={() => setSelected(f.id)} title={f.title}>
                   {f.title}
                 </button>
                 {canEdit && (
                   <span className="forms-item-ops">
                     <button
-                      className="mini-btn"
+                      className="forms-op"
                       onClick={() => setEditTarget({ id: f.id, title: f.title, url: f.url })}
                       title="編集"
+                      aria-label="編集"
                     >
-                      編集
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 20h9" />
+                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                      </svg>
                     </button>
                     <button
-                      className="mini-btn danger"
+                      className="forms-op danger"
                       onClick={() => setDelTarget(f)}
                       title="削除"
+                      aria-label="削除"
                     >
-                      削除
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        <line x1="10" y1="11" x2="10" y2="17" />
+                        <line x1="14" y1="11" x2="14" y2="17" />
+                      </svg>
                     </button>
                   </span>
                 )}
