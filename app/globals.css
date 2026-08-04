@@ -4940,6 +4940,7 @@ tbody tr.clickable {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-width: 920px;
 }
 .form-card {
   position: relative;
@@ -4981,9 +4982,9 @@ tbody tr.clickable {
   flex: none;
   display: inline-grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 11px;
+  width: 48px;
+  height: 48px;
+  border-radius: 13px;
   background: var(--accent-soft, #eef2fb);
   color: var(--accent);
 }
