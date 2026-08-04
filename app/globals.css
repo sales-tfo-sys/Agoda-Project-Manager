@@ -2361,20 +2361,23 @@ tbody tr.clickable {
   font-size: 11px;
   font-weight: 800;
 }
-/* アカウント表示はレールを閉じている間は出さない（展開時だけ表示） */
+/* 折りたたみ時はアバターだけ中央に表示。展開時に名前・メールも出す */
 .side-user {
-  display: none;
+  display: flex;
+  justify-content: center;
 }
 .sidebar:hover .side-user,
 .sidebar:has(:focus-visible) .side-user {
-  display: flex;
+  justify-content: flex-start;
 }
-.side-user > span:last-child {
+.side-user-text {
+  display: none;
   opacity: 0;
   transition: opacity 0.16s ease;
 }
-.sidebar:hover .side-user > span:last-child,
-.sidebar:has(:focus-visible) .side-user > span:last-child {
+.sidebar:hover .side-user-text,
+.sidebar:has(:focus-visible) .side-user-text {
+  display: flex;
   opacity: 1;
   transition-delay: 0.06s;
 }
