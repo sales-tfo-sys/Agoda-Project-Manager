@@ -5366,6 +5366,11 @@ th.wr-opcol {
   background: var(--zebra);
   background-clip: padding-box;
 }
+/* border-collapse の共有ボーダーは sticky セルの背景に負けて消えるため、
+   固定列の右側の縦線は box-shadow で描く（スクロールしても残る）。 */
+.tw table td.wr-freeze {
+  box-shadow: inset -1px 0 0 0 var(--border);
+}
 .tw table td.wr-freeze-last,
 .tw table th.wr-freeze-last {
   box-shadow: inset -2px 0 0 0 var(--border);
