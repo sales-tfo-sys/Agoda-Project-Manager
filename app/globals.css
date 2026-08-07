@@ -5328,7 +5328,6 @@ th.forms-rownum {
   text-align: center;
   position: sticky;
   right: 0;
-  background: #fff;
   z-index: 2;
 }
 th.wr-opcol {
@@ -5341,14 +5340,25 @@ th.wr-opcol {
 .tw table th.wr-mancell {
   color: #dfe8ff;
 }
-/* 左側の列を固定（# 〜 施設名(日本語)）。left はJSで実測して付与する */
+/* 左側の列を固定（シート先頭〜施設名(日本語)）。left はJSで実測して付与する */
 .tw table td.wr-freeze {
   position: sticky;
-  background: #fff;
   z-index: 2;
 }
 .tw table th.wr-freeze {
   z-index: 5;
+}
+/* 固定セル（左固定列・右操作列）の背景を行色に合わせて不透明にする。
+   これをしないと横スクロール時に後ろの本文が透けて見える。 */
+.tw table td.wr-freeze,
+.tw table td.wr-opcol {
+  background: var(--surface);
+  background-clip: padding-box;
+}
+.tw table tbody tr:nth-child(even) td.wr-freeze,
+.tw table tbody tr:nth-child(even) td.wr-opcol {
+  background: var(--zebra);
+  background-clip: padding-box;
 }
 .tw table td.wr-freeze-last,
 .tw table th.wr-freeze-last {
