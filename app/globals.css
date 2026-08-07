@@ -5290,23 +5290,29 @@ th.forms-rownum {
   text-overflow: ellipsis;
 }
 
-/* 新規作業依頼：表示フィルター（すべて/完了以外） */
+/* 新規作業依頼：表示フィルター（すべて/完了以外）。高さは icon-btn(22px) に合わせる */
 .wr-filter {
   display: inline-flex;
+  align-items: stretch;
+  height: 22px;
+  box-sizing: border-box;
   padding: 2px;
   background: var(--surface-soft, #eef2f8);
-  border-radius: 9px;
+  border-radius: 8px;
   margin-left: 4px;
 }
 .wr-filter-btn {
+  display: inline-flex;
+  align-items: center;
   font: inherit;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
+  line-height: 1;
   color: var(--ink-2);
   background: transparent;
   border: 0;
-  padding: 5px 12px;
-  border-radius: 7px;
+  padding: 0 12px;
+  border-radius: 6px;
   cursor: pointer;
   transition: background 0.12s, color 0.12s;
 }
