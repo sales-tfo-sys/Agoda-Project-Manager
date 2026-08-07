@@ -5347,7 +5347,7 @@ th.wr-center {
   min-width: 110px;
 }
 .hid-opcol {
-  width: 40px;
+  width: 72px;
   text-align: center;
   position: sticky;
   right: 0;
@@ -5356,6 +5356,30 @@ th.wr-center {
 }
 th.hid-opcol {
   z-index: 3;
+}
+.hid-ops {
+  display: inline-flex;
+  gap: 4px;
+}
+.hid-op-done {
+  border-color: #37b26b;
+  color: #1ca35e;
+}
+.hid-op-done:hover {
+  border-color: #1ca35e;
+  color: #158049;
+}
+/* 編集中の行を薄くハイライト＋固定セルの背景も合わせる */
+.hid-row-editing td {
+  background: var(--accent-soft, #eef2fb);
+}
+.hid-row-editing td.hid-opcol,
+.hid-row-editing td.forms-rownum {
+  background: var(--accent-soft, #eef2fb);
+}
+.hid-check-on {
+  color: #1ca35e;
+  font-weight: 800;
 }
 
 /* ダッシュボードの月間カレンダー（日本の祝日表示） */
