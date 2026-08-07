@@ -5296,7 +5296,7 @@ th.forms-rownum {
   padding: 2px;
   background: var(--surface-soft, #eef2f8);
   border-radius: 9px;
-  margin-right: 4px;
+  margin-left: 4px;
 }
 .wr-filter-btn {
   font: inherit;
@@ -5322,20 +5322,37 @@ th.forms-rownum {
   background: #fbfcff;
   border-left: 1px solid var(--border);
 }
-/* 編集ボタン列 */
+/* 編集ボタン列（右端に固定） */
 .wr-opcol {
   width: 44px;
   text-align: center;
   position: sticky;
   right: 0;
   background: #fff;
-  z-index: 1;
+  z-index: 2;
 }
 th.wr-opcol {
-  z-index: 3;
+  z-index: 5;
 }
-.wr-row-editing td {
-  background: var(--accent-soft, #eef2fb) !important;
+/* サイト入力を反映する既存3列（レコード作成/レコードNo/作業完了日）を淡く強調 */
+.tw table td.wr-mancell {
+  background: #f4f8ff;
+}
+.tw table th.wr-mancell {
+  color: #dfe8ff;
+}
+/* 左側の列を固定（# 〜 施設名(日本語)）。left はJSで実測して付与する */
+.tw table td.wr-freeze {
+  position: sticky;
+  background: #fff;
+  z-index: 2;
+}
+.tw table th.wr-freeze {
+  z-index: 5;
+}
+.tw table td.wr-freeze-last,
+.tw table th.wr-freeze-last {
+  box-shadow: inset -2px 0 0 0 var(--border);
 }
 .tw table th.wr-mancol {
   color: var(--accent);

@@ -1,15 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Modal from "../Modal";
 import { useUi } from "../Ui";
 
-// 手動入力の3列
+// 手動入力の3項目
 const EMPTY_CELL = { created: false, recordNo: "", doneDate: "" };
-// 「完了」の定義：作業完了日が入っている行
-const isDone = (cell) => !!(cell && String(cell.doneDate || "").trim());
 // ISO(YYYY-MM-DD) → 表示用 YYYY/MM/DD
 const fmtDate = (v) => (v ? String(v).replace(/-/g, "/") : "");
+// 日付文字列（2025/10/10 等）→ ISO(YYYY-MM-DD)
+const toISO = (v) => {
+  const m = String(v || "").trim().match(/(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/);
+  return m ? `${m[1]}-${String(m[2]).padStart(2, "0")}-${String(m[3]).padStart(2, "0")}` : "";
+};
+// レコード作成の印（〇 等）を真偽に解釈
+const isMaru = (v) => {
+  const s = String(v || "").trim();
+  return s !== "" && !/^(×|✗|false|no|0|-)$/i.test(s);
+};
 
 export default function WorkRequestsPage() {
   const [item, setItem] = useState(null); // 単一の登録シート（固定ページ）
@@ -20,12 +28,17 @@ export default function WorkRequestsPage() {
   const [error, setError] = useState(null);
   const [canEdit, setCanEdit] = useState(false);
   const [filter, setFilter] = useState("all"); // "all" | "pending"（完了以外）
-  const [editingKey, setEditingKey] = useState(null); // 編集中の行キー
 
-  const [editTarget, setEditTarget] = useState(null);
+  const [editTarget, setEditTarget] = useState(null); // シート設定モーダル
+  const [editRow, setEditRow] = useState(null); // 3項目の編集モーダル { rk }
+  const [mform, setMform] = useState(EMPTY_CELL); // 編集モーダルの入力値
   const [saving, setSaving] = useState(false);
   const [cfg, setCfg] = useState(null);
   const { setBusy, flashDone, showToast, busy } = useUi();
+
+  // 列固定用（# 〜 施設名(日本語)）の left をJSで実測
+  const tableRef = useRef(null);
+  const [lefts, setLefts] = useState([]);
 
   useEffect(() => {
     fetch("/api/form-config", { cache: "no-store" }).then((r) => r.json()).then(setCfg).catch(() => {});
@@ -57,7 +70,6 @@ export default function WorkRequestsPage() {
     }
   }, []);
 
-  // 登録シート（先頭1件）を固定ページとして読み込む
   const loadItem = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -131,6 +143,108 @@ export default function WorkRequestsPage() {
     }
   };
 
+  // 3項目の編集モーダル。overlay があればそれを、無ければシートの元値で初期化する。
+  const openEdit = (rk, r) => {
+    const ov = cells[rk];
+    if (ov) {
+      setMform({ ...EMPTY_CELL, ...ov });
+    } else {
+      setMform({
+        created: cols.recCreate >= 0 ? isMaru(r[cols.recCreate]) : false,
+        recordNo: cols.recNo >= 0 ? String(r[cols.recNo] || "").trim() : "",
+        doneDate: cols.done >= 0 ? toISO(r[cols.done]) : "",
+      });
+    }
+    setEditRow({ rk });
+  };
+  const saveEdit = async () => {
+    if (!editRow) return;
+    setSaving(true);
+    setBusy("保存中…");
+    try {
+      await saveCell(editRow.rk, mform);
+      setEditRow(null);
+      flashDone("保存完了");
+    } catch (e) {
+      setBusy(null);
+      showToast(String(e?.message || e), "err");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // シート列の役割を特定（ステータス / 施設名(日本語) / 既存の3列）
+  const cols = useMemo(() => {
+    const h = (grid?.headers || []).map((x) => String(x || ""));
+    const find = (pred) => h.findIndex(pred);
+    let name = find((x) => x.includes("日本語"));
+    if (name < 0) name = find((x) => x.includes("施設名") || x.toLowerCase().includes("hotel name"));
+    return {
+      status: find((x) => x.includes("ステータス")),
+      name,
+      recCreate: find((x) => x.replace(/\s/g, "").includes("レコード作成")),
+      recNo: find((x) => x.replace(/\s/g, "").includes("レコードNo")),
+      done: find((x) => x.includes("作業完了日")),
+    };
+  }, [grid]);
+
+  // 「完了」判定：ステータスが「完了」を含む（例：完了 / 7.販売開始確認（完了））、
+  // または「対応不要」。もしくは作業完了日が入っている行。
+  const isDone = (r, cell) => {
+    const st = cols.status >= 0 ? String(r[cols.status] || "") : "";
+    if (st.includes("完了") || st.includes("対応不要")) return true;
+    const dd = cell && cell.doneDate ? cell.doneDate : cols.done >= 0 ? r[cols.done] : "";
+    if (String(dd || "").trim()) return true;
+    return false;
+  };
+
+  // 既存の3列（レコード作成/レコードNo/作業完了日）はサイト入力（overlay）を優先表示。
+  // overlay 未保存ならシートの元の値を表示する。
+  const cellDisplay = (r, ci, rk) => {
+    const ov = cells[rk];
+    if (ov) {
+      if (ci === cols.recCreate) return ov.created ? "〇" : "";
+      if (ci === cols.recNo) return ov.recordNo || "";
+      if (ci === cols.done) return fmtDate(ov.doneDate);
+    }
+    return r[ci] ?? "";
+  };
+
+  // 固定する列数（# ＋ シート列 0..name）
+  const freezeCount = cols.name >= 0 ? cols.name + 2 : 1;
+
+  // ヘッダーの実幅から固定列の left を算出
+  useEffect(() => {
+    const measure = () => {
+      const tbl = tableRef.current;
+      const hr = tbl && tbl.querySelector("thead tr");
+      if (!hr) {
+        setLefts([]);
+        return;
+      }
+      const kids = hr.children;
+      const arr = [];
+      let acc = 0;
+      for (let i = 0; i < freezeCount && i < kids.length; i++) {
+        arr.push(acc);
+        acc += kids[i].offsetWidth;
+      }
+      setLefts(arr);
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [grid, freezeCount, filter]);
+
+  const freezeProps = (pos) => {
+    if (pos >= freezeCount) return {};
+    const last = pos === freezeCount - 1;
+    return {
+      className: "wr-freeze" + (last ? " wr-freeze-last" : ""),
+      style: { left: lefts[pos] ?? 0 },
+    };
+  };
+
   return (
     <div className="wrap page-compact forms-page">
       <div className="head">
@@ -147,14 +261,14 @@ export default function WorkRequestsPage() {
               {grid.total?.toLocaleString("ja-JP")} 件{grid.truncated && "（先頭のみ）"}
             </span>
           )}
-        </div>
-        <div className="head-right">
           {item && grid && !grid.error && (
             <div className="wr-filter" role="group" aria-label="表示フィルター">
               <button className={"wr-filter-btn" + (filter === "all" ? " active" : "")} onClick={() => setFilter("all")}>すべて</button>
               <button className={"wr-filter-btn" + (filter === "pending" ? " active" : "")} onClick={() => setFilter("pending")}>完了以外</button>
             </div>
           )}
+        </div>
+        <div className="head-right">
           {canEdit && item && (
             <button className="icon-btn" onClick={() => setEditTarget({ id: item.id, title: item.title, url: item.url })} title="シートを設定" aria-label="シートを設定">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
@@ -199,16 +313,18 @@ export default function WorkRequestsPage() {
       ) : (
         <div className="card no-pad">
           <div className="tw forms-tw">
-            <table>
+            <table ref={tableRef}>
               <thead>
                 <tr>
                   <th className="forms-rownum">#</th>
-                  {grid.headers.map((h, ci) => (
-                    <th key={ci}>{h || ""}</th>
-                  ))}
-                  <th className="wr-mancol">レコード作成</th>
-                  <th className="wr-mancol">レコードNo</th>
-                  <th className="wr-mancol">作業完了日</th>
+                  {grid.headers.map((h, ci) => {
+                    const isMan = ci === cols.recCreate || ci === cols.recNo || ci === cols.done;
+                    const fp = freezeProps(ci + 1);
+                    const cn = [fp.className, isMan ? "wr-mancell" : ""].filter(Boolean).join(" ");
+                    return (
+                      <th key={ci} style={fp.style} className={cn || undefined}>{h || ""}</th>
+                    );
+                  })}
                   {canEdit && <th className="wr-opcol" />}
                 </tr>
               </thead>
@@ -216,80 +332,29 @@ export default function WorkRequestsPage() {
                 {grid.rows.map((r, ri) => {
                   const rk = grid.rowKeys?.[ri] ?? `#${ri}`;
                   const cell = cells[rk] || EMPTY_CELL;
-                  if (filter === "pending" && isDone(cell)) return null;
-                  const editing = canEdit && editingKey === rk;
+                  if (filter === "pending" && isDone(r, cell)) return null;
                   return (
-                    <tr key={ri} className={editing ? "wr-row-editing" : undefined}>
+                    <tr key={ri}>
                       <td className="forms-rownum">{ri + 1}</td>
                       {grid.headers.map((_, ci) => {
-                        const v = r[ci] ?? "";
+                        const v = cellDisplay(r, ci, rk);
+                        const isMan = ci === cols.recCreate || ci === cols.recNo || ci === cols.done;
+                        const fp = freezeProps(ci + 1);
+                        const cn = [fp.className, isMan ? "wr-mancell" : ""].filter(Boolean).join(" ");
                         return (
-                          <td key={ci} title={v || undefined}>
+                          <td key={ci} style={fp.style} className={cn || undefined} title={v || undefined}>
                             {v}
                           </td>
                         );
                       })}
-                      {/* レコード作成 */}
-                      <td className="wr-mancol wr-center">
-                        {editing ? (
-                          <input
-                            type="checkbox"
-                            className="wr-chk"
-                            checked={!!cell.created}
-                            onChange={(e) => saveCell(rk, { created: e.target.checked })}
-                            aria-label="レコード作成"
-                          />
-                        ) : cell.created ? (
-                          <span className="hid-check-on" aria-label="作成済">✓</span>
-                        ) : (
-                          ""
-                        )}
-                      </td>
-                      {/* レコードNo */}
-                      <td className="wr-mancol">
-                        {editing ? (
-                          <input
-                            type="text"
-                            className="wr-input"
-                            defaultValue={cell.recordNo}
-                            onBlur={(e) => {
-                              if ((e.target.value || "") !== (cell.recordNo || "")) saveCell(rk, { recordNo: e.target.value });
-                            }}
-                            placeholder="—"
-                          />
-                        ) : (
-                          cell.recordNo || ""
-                        )}
-                      </td>
-                      {/* 作業完了日 */}
-                      <td className="wr-mancol wr-center">
-                        {editing ? (
-                          <input
-                            type="date"
-                            className="wr-input wr-date"
-                            value={cell.doneDate || ""}
-                            onChange={(e) => saveCell(rk, { doneDate: e.target.value })}
-                          />
-                        ) : (
-                          fmtDate(cell.doneDate)
-                        )}
-                      </td>
                       {canEdit && (
                         <td className="wr-opcol">
-                          {editing ? (
-                            <button className="forms-op hid-op-done" onClick={() => setEditingKey(null)} title="編集を終了" aria-label="編集を終了">
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="20 6 9 17 4 12" />
-                              </svg>
-                            </button>
-                          ) : (
-                            <button className="forms-op" onClick={() => setEditingKey(rk)} title="編集" aria-label="編集">
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M12 20h9" />
-                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                              </svg>
-                            </button>
-                          )}
+                          <button className="forms-op" onClick={() => openEdit(rk, r)} title="レコード作成・レコードNo・作業完了日を編集" aria-label="編集">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M12 20h9" />
+                              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                            </svg>
+                          </button>
                         </td>
                       )}
                     </tr>
@@ -301,6 +366,37 @@ export default function WorkRequestsPage() {
         </div>
       )}
 
+      {/* 3項目の編集モーダル */}
+      <Modal
+        open={!!editRow}
+        title="作業状況を編集"
+        onClose={() => setEditRow(null)}
+        footer={
+          <>
+            <button className="mini-btn" onClick={() => setEditRow(null)} disabled={saving}>キャンセル</button>
+            <button className="save-btn" onClick={saveEdit} disabled={saving}>{saving ? "保存中…" : "保存"}</button>
+          </>
+        }
+      >
+        <div className="modal-fields">
+          <div className="chk-fld">
+            <label className="chk">
+              <input type="checkbox" checked={!!mform.created} onChange={(e) => setMform((m) => ({ ...m, created: e.target.checked }))} />
+              レコード作成
+            </label>
+          </div>
+          <label className="fld">
+            レコードNo
+            <input type="text" value={mform.recordNo} onChange={(e) => setMform((m) => ({ ...m, recordNo: e.target.value }))} placeholder="例：12345" />
+          </label>
+          <label className="fld">
+            作業完了日
+            <input type="date" value={mform.doneDate} onChange={(e) => setMform((m) => ({ ...m, doneDate: e.target.value }))} />
+          </label>
+        </div>
+      </Modal>
+
+      {/* シート設定モーダル */}
       <Modal
         open={!!editTarget}
         title={editTarget?.id ? "作業依頼シートを設定" : "作業依頼シートを登録"}
@@ -335,7 +431,7 @@ export default function WorkRequestsPage() {
                 <>対象シートは「リンクを知っている全員が閲覧可」にしてください。</>
               )}
               <br />
-              「レコード作成 / レコードNo / 作業完了日」はこのサイト上で手動入力します（各行の先頭列＝タイムスタンプに紐づけて保存）。
+              「レコード作成 / レコードNo / 作業完了日」は各行の編集ボタンから入力します（先頭列＝タイムスタンプに紐づけて保存）。
             </p>
           </div>
         )}
