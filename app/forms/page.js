@@ -180,41 +180,72 @@ export default function FormsPage() {
 
   return (
     <div className="wrap page-compact forms-page">
-      {/* 詳細表示のときだけ上部バー（戻る・編集・再読み込み） */}
-      {selected && (
-        <div className="head">
-          <div className="head-left">
-            <button className="icon-btn forms-back" onClick={backToList} title="一覧へ戻る" aria-label="一覧へ戻る">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-            </button>
-            <span className="page-h page-h-gap">{current?.title || "フォーム回答"}</span>
-            {grid && !grid.error && (
-              <span className="forms-count-pill">
-                {grid.total?.toLocaleString("ja-JP")} 件{grid.truncated && "（先頭のみ）"}
-              </span>
-            )}
-          </div>
-          <div className="head-right">
-            {canEdit && current && (
-              <button className="icon-btn" onClick={() => setEditTarget({ id: current.id, title: current.title, url: current.url, description: current.description })} title="このフォームを編集" aria-label="編集">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 20h9" />
-                  <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+      {/* 上部ヘッダー（他ページと共通スタイル）。一覧と詳細で内容を出し分ける */}
+      <div className="head">
+        {selected ? (
+          <>
+            <div className="head-left">
+              <button className="icon-btn forms-back" onClick={backToList} title="一覧へ戻る" aria-label="一覧へ戻る">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="15 18 9 12 15 6" />
                 </svg>
               </button>
-            )}
-            <button className="icon-btn" onClick={() => loadGrid(selected)} disabled={gridLoading} title="再読み込み" aria-label="再読み込み">
-              <svg className={gridLoading ? "spin" : ""} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="23 4 23 10 17 10" />
-                <polyline points="1 20 1 14 7 14" />
-                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
+              <span className="page-h page-h-gap">{current?.title || "フォーム回答"}</span>
+              {grid && !grid.error && (
+                <span className="forms-count-pill">
+                  {grid.total?.toLocaleString("ja-JP")} 件{grid.truncated && "（先頭のみ）"}
+                </span>
+              )}
+            </div>
+            <div className="head-right">
+              {canEdit && current && (
+                <button className="icon-btn" onClick={() => setEditTarget({ id: current.id, title: current.title, url: current.url, description: current.description })} title="このフォームを編集" aria-label="編集">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                  </svg>
+                </button>
+              )}
+              <button className="icon-btn" onClick={() => loadGrid(selected)} disabled={gridLoading} title="再読み込み" aria-label="再読み込み">
+                <svg className={gridLoading ? "spin" : ""} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="23 4 23 10 17 10" />
+                  <polyline points="1 20 1 14 7 14" />
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                </svg>
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="head-left">
+              <span className="conn ok" title="フォーム回答" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-4" />
+                  <rect x="9" y="2" width="6" height="4" rx="1" />
+                  <line x1="8" y1="11" x2="16" y2="11" /><line x1="8" y1="15" x2="14" y2="15" />
+                </svg>
+              </span>
+              <span className="page-h page-h-gap">フォーム回答</span>
+            </div>
+            <div className="head-right">
+              {canEdit && (
+                <button className="icon-btn" onClick={() => setEditTarget({ title: "", url: "", description: "" })} title="フォームを追加" aria-label="フォームを追加">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                </button>
+              )}
+              <button className="icon-btn" onClick={() => { loadList(); loadCounts(); }} disabled={loading} title="再読み込み" aria-label="再読み込み">
+                <svg className={loading ? "spin" : ""} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="23 4 23 10 17 10" />
+                  <polyline points="1 20 1 14 7 14" />
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                </svg>
+              </button>
+            </div>
+          </>
+        )}
+      </div>
 
       {error && <div className="banner err-banner">エラー：{error}</div>}
 
@@ -260,42 +291,8 @@ export default function FormsPage() {
       ) : items === null && !busy ? (
         <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>
       ) : (
-        /* ===== 一覧（ヒーロー＋集計＋レコード） ===== */
+        /* ===== 一覧（集計＋レコード） ===== */
         <div className="forms-listwrap">
-          <div className="forms-hero">
-            <div className="forms-hero-text">
-              <h1 className="forms-hero-title">フォーム回答一覧</h1>
-              <p className="forms-hero-sub">各フォームの回答状況を確認・管理できます</p>
-            </div>
-            <div className="forms-hero-art" aria-hidden="true">
-              <svg width="220" height="150" viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="150" cy="70" r="66" fill="#eef1fe" />
-                <circle cx="46" cy="30" r="4" fill="#c7d2fe" />
-                <circle cx="30" cy="52" r="3" fill="#dbe3ff" />
-                <circle cx="205" cy="118" r="4" fill="#c7d2fe" />
-                <g>
-                  <rect x="112" y="30" width="72" height="92" rx="9" fill="#ffffff" stroke="#c7d2fe" strokeWidth="2" />
-                  <rect x="132" y="24" width="32" height="14" rx="5" fill="#93a4f4" />
-                  <rect x="124" y="52" width="10" height="10" rx="2.5" fill="#7c9cf6" />
-                  <rect x="140" y="55" width="30" height="5" rx="2.5" fill="#dbe3ff" />
-                  <rect x="124" y="70" width="10" height="10" rx="2.5" fill="#7c9cf6" />
-                  <rect x="140" y="73" width="30" height="5" rx="2.5" fill="#dbe3ff" />
-                  <rect x="124" y="88" width="10" height="10" rx="2.5" fill="#a9b8f8" />
-                  <rect x="140" y="91" width="24" height="5" rx="2.5" fill="#e6ebff" />
-                </g>
-                <g>
-                  <rect x="150" y="96" width="8" height="18" rx="2" fill="#a9b8f8" />
-                  <rect x="162" y="86" width="8" height="28" rx="2" fill="#7c9cf6" />
-                  <rect x="174" y="78" width="8" height="36" rx="2" fill="#5b7cf3" />
-                </g>
-                <circle cx="150" cy="118" r="12" fill="#5b7cf3" />
-                <path d="M145 118l3.5 3.5 6-7" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M40 120c8-10 22-10 30 0" stroke="#c7d2fe" strokeWidth="3" strokeLinecap="round" />
-                <path d="M55 120c0-14 0-22 0-22" stroke="#c7d2fe" strokeWidth="3" strokeLinecap="round" />
-              </svg>
-            </div>
-          </div>
-
           {/* 集計バー */}
           <div className="forms-stats">
             <div className="fstat">
@@ -346,21 +343,13 @@ export default function FormsPage() {
                 <span className="fstat-value fstat-value-sm">{fmtUpdated(latestMs)}</span>
               </span>
             </div>
-            {canEdit && (
-              <button className="fstat-add" onClick={() => setEditTarget({ title: "", url: "", description: "" })} title="フォームを追加">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                フォーム追加
-              </button>
-            )}
           </div>
 
           {!items || items.length === 0 ? (
             <div className="card">
               <div className="notice">
                 フォームがまだ登録されていません。
-                {canEdit ? "「フォーム追加」から、GoogleスプレッドシートのURLを登録してください。" : "編集権限のあるユーザーが登録すると、ここに表示されます。"}
+                {canEdit ? "右上の＋から、GoogleスプレッドシートのURLを登録してください。" : "編集権限のあるユーザーが登録すると、ここに表示されます。"}
               </div>
             </div>
           ) : (
