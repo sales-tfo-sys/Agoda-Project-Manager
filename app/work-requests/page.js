@@ -6,6 +6,10 @@ import { useUi } from "../Ui";
 
 // 手動入力の3列
 const EMPTY_CELL = { created: false, recordNo: "", doneDate: "" };
+// 「完了」の定義：作業完了日が入っている行
+const isDone = (cell) => !!(cell && String(cell.doneDate || "").trim());
+// ISO(YYYY-MM-DD) → 表示用 YYYY/MM/DD
+const fmtDate = (v) => (v ? String(v).replace(/-/g, "/") : "");
 
 export default function WorkRequestsPage() {
   const [item, setItem] = useState(null); // 単一の登録シート（固定ページ）
@@ -15,6 +19,8 @@ export default function WorkRequestsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [canEdit, setCanEdit] = useState(false);
+  const [filter, setFilter] = useState("all"); // "all" | "pending"（完了以外）
+  const [editingKey, setEditingKey] = useState(null); // 編集中の行キー
 
   const [editTarget, setEditTarget] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -143,6 +149,12 @@ export default function WorkRequestsPage() {
           )}
         </div>
         <div className="head-right">
+          {item && grid && !grid.error && (
+            <div className="wr-filter" role="group" aria-label="表示フィルター">
+              <button className={"wr-filter-btn" + (filter === "all" ? " active" : "")} onClick={() => setFilter("all")}>すべて</button>
+              <button className={"wr-filter-btn" + (filter === "pending" ? " active" : "")} onClick={() => setFilter("pending")}>完了以外</button>
+            </div>
+          )}
           {canEdit && item && (
             <button className="icon-btn" onClick={() => setEditTarget({ id: item.id, title: item.title, url: item.url })} title="シートを設定" aria-label="シートを設定">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
@@ -197,14 +209,17 @@ export default function WorkRequestsPage() {
                   <th className="wr-mancol">レコード作成</th>
                   <th className="wr-mancol">レコードNo</th>
                   <th className="wr-mancol">作業完了日</th>
+                  {canEdit && <th className="wr-opcol" />}
                 </tr>
               </thead>
               <tbody>
                 {grid.rows.map((r, ri) => {
                   const rk = grid.rowKeys?.[ri] ?? `#${ri}`;
                   const cell = cells[rk] || EMPTY_CELL;
+                  if (filter === "pending" && isDone(cell)) return null;
+                  const editing = canEdit && editingKey === rk;
                   return (
-                    <tr key={ri}>
+                    <tr key={ri} className={editing ? "wr-row-editing" : undefined}>
                       <td className="forms-rownum">{ri + 1}</td>
                       {grid.headers.map((_, ci) => {
                         const v = r[ci] ?? "";
@@ -214,37 +229,69 @@ export default function WorkRequestsPage() {
                           </td>
                         );
                       })}
+                      {/* レコード作成 */}
                       <td className="wr-mancol wr-center">
-                        <input
-                          type="checkbox"
-                          className="wr-chk"
-                          checked={!!cell.created}
-                          disabled={!canEdit}
-                          onChange={(e) => saveCell(rk, { created: e.target.checked })}
-                          aria-label="レコード作成"
-                        />
+                        {editing ? (
+                          <input
+                            type="checkbox"
+                            className="wr-chk"
+                            checked={!!cell.created}
+                            onChange={(e) => saveCell(rk, { created: e.target.checked })}
+                            aria-label="レコード作成"
+                          />
+                        ) : cell.created ? (
+                          <span className="hid-check-on" aria-label="作成済">✓</span>
+                        ) : (
+                          ""
+                        )}
                       </td>
+                      {/* レコードNo */}
                       <td className="wr-mancol">
-                        <input
-                          type="text"
-                          className="wr-input"
-                          defaultValue={cell.recordNo}
-                          disabled={!canEdit}
-                          onBlur={(e) => {
-                            if ((e.target.value || "") !== (cell.recordNo || "")) saveCell(rk, { recordNo: e.target.value });
-                          }}
-                          placeholder="—"
-                        />
+                        {editing ? (
+                          <input
+                            type="text"
+                            className="wr-input"
+                            defaultValue={cell.recordNo}
+                            onBlur={(e) => {
+                              if ((e.target.value || "") !== (cell.recordNo || "")) saveCell(rk, { recordNo: e.target.value });
+                            }}
+                            placeholder="—"
+                          />
+                        ) : (
+                          cell.recordNo || ""
+                        )}
                       </td>
+                      {/* 作業完了日 */}
                       <td className="wr-mancol wr-center">
-                        <input
-                          type="date"
-                          className="wr-input wr-date"
-                          value={cell.doneDate || ""}
-                          disabled={!canEdit}
-                          onChange={(e) => saveCell(rk, { doneDate: e.target.value })}
-                        />
+                        {editing ? (
+                          <input
+                            type="date"
+                            className="wr-input wr-date"
+                            value={cell.doneDate || ""}
+                            onChange={(e) => saveCell(rk, { doneDate: e.target.value })}
+                          />
+                        ) : (
+                          fmtDate(cell.doneDate)
+                        )}
                       </td>
+                      {canEdit && (
+                        <td className="wr-opcol">
+                          {editing ? (
+                            <button className="forms-op hid-op-done" onClick={() => setEditingKey(null)} title="編集を終了" aria-label="編集を終了">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                            </button>
+                          ) : (
+                            <button className="forms-op" onClick={() => setEditingKey(rk)} title="編集" aria-label="編集">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 20h9" />
+                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                              </svg>
+                            </button>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
