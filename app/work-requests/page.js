@@ -210,8 +210,8 @@ export default function WorkRequestsPage() {
     return r[ci] ?? "";
   };
 
-  // 固定する列数（# ＋ シート列 0..name）
-  const freezeCount = cols.name >= 0 ? cols.name + 2 : 1;
+  // 固定する列数（シート列 0..name）※#列は無し
+  const freezeCount = cols.name >= 0 ? cols.name + 1 : 0;
 
   // ヘッダーの実幅から固定列の left を算出
   useEffect(() => {
@@ -316,10 +316,9 @@ export default function WorkRequestsPage() {
             <table ref={tableRef}>
               <thead>
                 <tr>
-                  <th className="forms-rownum">#</th>
                   {grid.headers.map((h, ci) => {
                     const isMan = ci === cols.recCreate || ci === cols.recNo || ci === cols.done;
-                    const fp = freezeProps(ci + 1);
+                    const fp = freezeProps(ci);
                     const cn = [fp.className, isMan ? "wr-mancell" : ""].filter(Boolean).join(" ");
                     return (
                       <th key={ci} style={fp.style} className={cn || undefined}>{h || ""}</th>
@@ -335,11 +334,10 @@ export default function WorkRequestsPage() {
                   if (filter === "pending" && isDone(r, cell)) return null;
                   return (
                     <tr key={ri}>
-                      <td className="forms-rownum">{ri + 1}</td>
                       {grid.headers.map((_, ci) => {
                         const v = cellDisplay(r, ci, rk);
                         const isMan = ci === cols.recCreate || ci === cols.recNo || ci === cols.done;
-                        const fp = freezeProps(ci + 1);
+                        const fp = freezeProps(ci);
                         const cn = [fp.className, isMan ? "wr-mancell" : ""].filter(Boolean).join(" ");
                         return (
                           <td key={ci} style={fp.style} className={cn || undefined} title={v || undefined}>
