@@ -291,7 +291,7 @@ export default function Page() {
 
   // ページネーション用
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [itemsPerPage, setItemsPerPage] = useState(15);
 
   // 絞り込みや並べ替えが変わったら1ページ目に戻す
   useEffect(() => {
@@ -620,10 +620,10 @@ export default function Page() {
               value={itemsPerPage}
               onChange={(e) => setItemsPerPage(Number(e.target.value))}
             >
+              <option value="15">15件</option>
               <option value="20">20件</option>
               <option value="50">50件</option>
               <option value="100">100件</option>
-              <option value="500">500件</option>
             </select>
           </label>
           <span className="count">
@@ -710,9 +710,9 @@ export default function Page() {
             
             {/* ページネーション・コントロール */}
             {totalPages > 1 && (
-              <div className="pagination">
+              <div className="pagination-modern">
                 <button
-                  className="page-btn"
+                  className="page-btn-modern"
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   title="前のページへ"
@@ -721,12 +721,12 @@ export default function Page() {
                   <span>前へ</span>
                 </button>
                 
-                <span className="page-info">
+                <span className="page-info-modern">
                   <b>{currentPage}</b> / {totalPages}
                 </span>
 
                 <button
-                  className="page-btn"
+                  className="page-btn-modern"
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   title="次のページへ"
