@@ -31,7 +31,6 @@ export default function WorkRequestsPage() {
 
   const [editTarget, setEditTarget] = useState(null); // シート設定モーダル
   const [editRow, setEditRow] = useState(null); // 3項目の編集モーダル { rk }
-  const [mform, setMform] = useState(EMPTY_CELL); // 編集モーダルの入力値
   const [saving, setSaving] = useState(false);
   const [cfg, setCfg] = useState(null);
   const { setBusy, flashDone, showToast, busy } = useUi();
@@ -144,25 +143,25 @@ export default function WorkRequestsPage() {
   };
 
   // 3項目の編集モーダル。overlay があればそれを、無ければシートの元値で初期化する。
+  // 初期値を editRow に持たせ、フォームの状態は子コンポーネント側に閉じ込める
+  // （入力のたびに巨大なテーブルを再描画しないため）。
   const openEdit = (rk, r) => {
     const ov = cells[rk];
-    if (ov) {
-      setMform({ ...EMPTY_CELL, ...ov });
-    } else {
-      setMform({
-        created: cols.recCreate >= 0 ? isMaru(r[cols.recCreate]) : false,
-        recordNo: cols.recNo >= 0 ? String(r[cols.recNo] || "").trim() : "",
-        doneDate: cols.done >= 0 ? toISO(r[cols.done]) : "",
-      });
-    }
-    setEditRow({ rk });
+    const initial = ov
+      ? { ...EMPTY_CELL, ...ov }
+      : {
+          created: cols.recCreate >= 0 ? isMaru(r[cols.recCreate]) : false,
+          recordNo: cols.recNo >= 0 ? String(r[cols.recNo] || "").trim() : "",
+          doneDate: cols.done >= 0 ? toISO(r[cols.done]) : "",
+        };
+    setEditRow({ rk, initial });
   };
-  const saveEdit = async () => {
+  const saveEdit = async (vals) => {
     if (!editRow) return;
     setSaving(true);
     setBusy("保存中…");
     try {
-      await saveCell(editRow.rk, mform);
+      await saveCell(editRow.rk, vals);
       setEditRow(null);
       flashDone("保存完了");
     } catch (e) {
@@ -364,35 +363,15 @@ export default function WorkRequestsPage() {
         </div>
       )}
 
-      {/* 3項目の編集モーダル */}
-      <Modal
+      {/* 3項目の編集モーダル（フォーム状態は子に閉じ込め、テーブルを再描画させない） */}
+      <CellEditModal
+        key={editRow?.rk || "closed"}
         open={!!editRow}
-        title="作業状況を編集"
-        onClose={() => setEditRow(null)}
-        footer={
-          <>
-            <button className="mini-btn" onClick={() => setEditRow(null)} disabled={saving}>キャンセル</button>
-            <button className="save-btn" onClick={saveEdit} disabled={saving}>{saving ? "保存中…" : "保存"}</button>
-          </>
-        }
-      >
-        <div className="modal-fields">
-          <div className="chk-fld">
-            <label className="chk">
-              <input type="checkbox" checked={!!mform.created} onChange={(e) => setMform((m) => ({ ...m, created: e.target.checked }))} />
-              レコード作成
-            </label>
-          </div>
-          <label className="fld">
-            レコードNo
-            <input type="text" value={mform.recordNo} onChange={(e) => setMform((m) => ({ ...m, recordNo: e.target.value }))} placeholder="例：12345" />
-          </label>
-          <label className="fld">
-            作業完了日
-            <input type="date" value={mform.doneDate} onChange={(e) => setMform((m) => ({ ...m, doneDate: e.target.value }))} />
-          </label>
-        </div>
-      </Modal>
+        initial={editRow?.initial}
+        saving={saving}
+        onCancel={() => setEditRow(null)}
+        onSave={saveEdit}
+      />
 
       {/* シート設定モーダル */}
       <Modal
@@ -435,5 +414,41 @@ export default function WorkRequestsPage() {
         )}
       </Modal>
     </div>
+  );
+}
+
+// 編集モーダル本体。入力状態をこの中に閉じ込めることで、
+// 1文字ごとの再描画が親（巨大なテーブル）に波及しないようにする。
+function CellEditModal({ open, initial, saving, onCancel, onSave }) {
+  const [m, setM] = useState(initial || EMPTY_CELL);
+  return (
+    <Modal
+      open={open}
+      title="作業状況を編集"
+      onClose={onCancel}
+      footer={
+        <>
+          <button className="mini-btn" onClick={onCancel} disabled={saving}>キャンセル</button>
+          <button className="save-btn" onClick={() => onSave(m)} disabled={saving}>{saving ? "保存中…" : "保存"}</button>
+        </>
+      }
+    >
+      <div className="modal-fields">
+        <div className="chk-fld">
+          <label className="chk">
+            <input type="checkbox" checked={!!m.created} onChange={(e) => setM((s) => ({ ...s, created: e.target.checked }))} />
+            レコード作成
+          </label>
+        </div>
+        <label className="fld">
+          レコードNo
+          <input type="text" value={m.recordNo} onChange={(e) => setM((s) => ({ ...s, recordNo: e.target.value }))} placeholder="例：12345" />
+        </label>
+        <label className="fld">
+          作業完了日
+          <input type="date" value={m.doneDate} onChange={(e) => setM((s) => ({ ...s, doneDate: e.target.value }))} />
+        </label>
+      </div>
+    </Modal>
   );
 }

@@ -282,11 +282,18 @@ export default function Page() {
   const [statusFilter, setStatusFilter] = useState("active"); // active=完了以外（既定） / all=すべて
   const [periodYear, setPeriodYear] = useState("all"); // "all" or 年
   const [periodQ, setPeriodQ] = useState("all"); // "all" or 1〜4
-  const [q, setQ] = useState(""); // HID / Hotel Name 検索
+  const [q, setQ] = useState(""); // HID / Hotel Name 検索（入力用・即時反映）
+  const [qDeb, setQDeb] = useState(""); // 実際の絞り込みに使う値（デバウンス）
   const [canSync, setCanSync] = useState(false);
   const [syncing, setSyncing] = useState(false);
   // ヘッダークリックでの並べ替え（col=フィールドコード, dir=asc/desc）
   const [sort, setSort] = useState({ col: null, dir: "asc" });
+
+  // 入力のたびに全件フィルタ＋ソートが走るとカクつくので、少し待ってから反映する
+  useEffect(() => {
+    const t = setTimeout(() => setQDeb(q), 200);
+    return () => clearTimeout(t);
+  }, [q]);
   const clickSort = (c) =>
     setSort((s) =>
       s.col === c ? { col: c, dir: s.dir === "asc" ? "desc" : "asc" } : { col: c, dir: "asc" }
@@ -370,32 +377,36 @@ export default function Page() {
     ...Object.keys(typeCounts).filter((t) => !TYPE_ORDER.includes(t)),
   ];
   // 絞り込みに使える年（作成日時ベース・降順）
-  const years = (() => {
+  const years = useMemo(() => {
     const set = new Set();
     for (const r of records) {
       const p = periodOf(r);
       if (p) set.add(p.year);
     }
     return [...set].sort((a, b) => b - a);
-  })();
+  }, [records]);
 
-  const kw = q.trim().toLowerCase();
-  const shown = records.filter((r) => {
-    if (!(typeFilter === "all" || caseTypeOf(r) === typeFilter)) return false;
-    if (!(statusFilter === "all" || !DONE_STAGES.has(stageOf(r)))) return false;
-    if (kw) {
-      // HID（文字列__1行_）と Hotel Name（文字列__1行__0）で検索
-      const hid = formatValue(r["文字列__1行_"]).toLowerCase();
-      const hotel = formatValue(r["文字列__1行__0"]).toLowerCase();
-      if (!hid.includes(kw) && !hotel.includes(kw)) return false;
-    }
-    if (periodYear !== "all") {
-      const p = periodOf(r);
-      if (!p || p.year !== Number(periodYear)) return false;
-      if (periodQ !== "all" && p.q !== Number(periodQ)) return false;
-    }
-    return true;
-  });
+  const kw = qDeb.trim().toLowerCase();
+  const shown = useMemo(
+    () =>
+      records.filter((r) => {
+        if (!(typeFilter === "all" || caseTypeOf(r) === typeFilter)) return false;
+        if (!(statusFilter === "all" || !DONE_STAGES.has(stageOf(r)))) return false;
+        if (kw) {
+          // HID（文字列__1行_）と Hotel Name（文字列__1行__0）で検索
+          const hid = formatValue(r["文字列__1行_"]).toLowerCase();
+          const hotel = formatValue(r["文字列__1行__0"]).toLowerCase();
+          if (!hid.includes(kw) && !hotel.includes(kw)) return false;
+        }
+        if (periodYear !== "all") {
+          const p = periodOf(r);
+          if (!p || p.year !== Number(periodYear)) return false;
+          if (periodQ !== "all" && p.q !== Number(periodQ)) return false;
+        }
+        return true;
+      }),
+    [records, typeFilter, statusFilter, kw, periodYear, periodQ]
+  );
 
   // フィールドコード → 表示ラベル
   const labelOf = (key) => {
@@ -433,14 +444,17 @@ export default function Page() {
   ];
 
   // 実在する列だけを、指定順で表示
-  const first = records[0] || {};
-  const columns = COLUMN_ORDER.filter((code) => code in first);
+  const columns = useMemo(() => {
+    const first = records[0] || {};
+    return COLUMN_ORDER.filter((code) => code in first);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [records]);
   // CM代行設定の列位置。ここから右のセルは中央揃えにする
   const centerFrom = columns.indexOf(CENTER_FROM_CODE);
 
   // ヘッダークリックで並べ替え。数値は数値順、それ以外（日付・文字）は文字順。
   // 空欄は常に末尾に回す。
-  const sortedShown = (() => {
+  const sortedShown = useMemo(() => {
     if (!sort.col) return shown;
     const c = sort.col;
     const arr = [...shown];
@@ -459,7 +473,7 @@ export default function Page() {
       return sort.dir === "asc" ? cmp : -cmp;
     });
     return arr;
-  })();
+  }, [shown, sort]);
 
   return (
     <div className="wrap">
