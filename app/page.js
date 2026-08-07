@@ -289,6 +289,15 @@ export default function Page() {
   // ヘッダークリックでの並べ替え（col=フィールドコード, dir=asc/desc）
   const [sort, setSort] = useState({ col: null, dir: "asc" });
 
+  // ページネーション用
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
+
+  // 絞り込みや並べ替えが変わったら1ページ目に戻す
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [typeFilter, statusFilter, qDeb, periodYear, periodQ, sort, itemsPerPage]);
+
   // 入力のたびに全件フィルタ＋ソートが走るとカクつくので、少し待ってから反映する
   useEffect(() => {
     const t = setTimeout(() => setQDeb(q), 200);
@@ -475,6 +484,13 @@ export default function Page() {
     return arr;
   }, [shown, sort]);
 
+  // ページネーション用の表示データ抽出
+  const totalPages = Math.ceil(sortedShown.length / itemsPerPage) || 1;
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return sortedShown.slice(start, start + itemsPerPage);
+  }, [sortedShown, currentPage, itemsPerPage]);
+
   return (
     <div className="wrap">
       <div className="head">
@@ -598,8 +614,20 @@ export default function Page() {
               </select>
             </label>
           )}
+          <label className="head-year">
+            表示件数
+            <select
+              value={itemsPerPage}
+              onChange={(e) => setItemsPerPage(Number(e.target.value))}
+            >
+              <option value="20">20件</option>
+              <option value="50">50件</option>
+              <option value="100">100件</option>
+              <option value="500">500件</option>
+            </select>
+          </label>
           <span className="count">
-            表示件数： <b>{shown.length.toLocaleString("ja-JP")}</b> 件
+            絞り込み： <b>{shown.length.toLocaleString("ja-JP")}</b> 件
             {shown.length !== records.length && (
               <span className="count-sub">
                 {" "}
@@ -653,7 +681,7 @@ export default function Page() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedShown.map((r, i) => (
+                  {paginatedData.map((r, i) => (
                     <tr
                       key={r.$id?.value ?? i}
                       className="clickable"
@@ -679,6 +707,35 @@ export default function Page() {
                 </tbody>
               </table>
             </div>
+            
+            {/* ページネーション・コントロール */}
+            {totalPages > 1 && (
+              <div className="pagination">
+                <button
+                  className="page-btn"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  title="前のページへ"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                  <span>前へ</span>
+                </button>
+                
+                <span className="page-info">
+                  <b>{currentPage}</b> / {totalPages}
+                </span>
+
+                <button
+                  className="page-btn"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  title="次のページへ"
+                >
+                  <span>次へ</span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
