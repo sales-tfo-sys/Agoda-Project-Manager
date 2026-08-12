@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const TYPE_ORDER = ["Hotel", "ACQ", "Liberty", "Temairazu", "IHM"];
 
@@ -292,11 +292,12 @@ export default function Page() {
   // ページネーション用
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(15);
+  const twRef = useRef(null); // 表スクロール領域（1ページ件数の自動計算に使う）
 
-  // 絞り込みや並べ替えが変わったら1ページ目に戻す
+  // 絞り込みや並べ替えが変わったら1ページ目に戻す（表示件数の自動調整では戻さない）
   useEffect(() => {
     setCurrentPage(1);
-  }, [typeFilter, statusFilter, qDeb, periodYear, periodQ, sort, itemsPerPage]);
+  }, [typeFilter, statusFilter, qDeb, periodYear, periodQ, sort]);
 
   // 入力のたびに全件フィルタ＋ソートが走るとカクつくので、少し待ってから反映する
   useEffect(() => {
@@ -491,6 +492,29 @@ export default function Page() {
     return sortedShown.slice(start, start + itemsPerPage);
   }, [sortedShown, currentPage, itemsPerPage]);
 
+  // 表示件数は手動選択をやめ、表の表示領域の高さに収まる行数を自動計算する
+  useEffect(() => {
+    const el = twRef.current;
+    if (!el) return;
+    const calc = () => {
+      const thead = el.querySelector("thead");
+      const row = el.querySelector("tbody tr");
+      const rowH = (row && row.offsetHeight) || 30;
+      const headH = (thead && thead.offsetHeight) || 34;
+      const n = Math.max(5, Math.floor((el.clientHeight - headH) / rowH));
+      setItemsPerPage((cur) => (cur === n ? cur : n));
+    };
+    calc();
+    const ro = new ResizeObserver(calc);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [loading, records.length]);
+
+  // 件数が減って現在ページが範囲外になったら最終ページへ寄せる
+  useEffect(() => {
+    setCurrentPage((p) => Math.min(p, totalPages));
+  }, [totalPages]);
+
   return (
     <div className="wrap page-fill">
       <div className="head">
@@ -615,18 +639,6 @@ export default function Page() {
               </select>
             </label>
           )}
-          <label className="head-year">
-            表示件数
-            <select
-              value={itemsPerPage}
-              onChange={(e) => setItemsPerPage(Number(e.target.value))}
-            >
-              <option value="15">15件</option>
-              <option value="20">20件</option>
-              <option value="50">50件</option>
-              <option value="100">100件</option>
-            </select>
-          </label>
           <span className="count">
             絞り込み： <b>{shown.length.toLocaleString("ja-JP")}</b> 件
             {shown.length !== records.length && (
@@ -665,7 +677,7 @@ export default function Page() {
                 </ol>
               </div>
             )}
-            <div className="tw">
+            <div className="tw list-tw" ref={twRef}>
               <table>
                 <thead>
                   <tr>

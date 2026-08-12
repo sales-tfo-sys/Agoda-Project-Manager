@@ -2157,6 +2157,10 @@ tbody tr.clickable {
   min-height: 0;
   max-height: none; /* 固定 calc をやめて残り全部を使う */
 }
+/* 施設一覧の表はゼブラ無し（フラット） */
+.list-tw table tbody tr:nth-child(even) {
+  background: transparent;
+}
 /* ヘッダー・絞り込み・ページネーションは縮めず固定。表だけが伸縮＋内部スクロール */
 .wrap.page-fill > .detail-tools,
 .wrap.page-fill > .list-tools {
