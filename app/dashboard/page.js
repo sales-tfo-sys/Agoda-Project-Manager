@@ -1938,9 +1938,7 @@ export default function DashboardPage() {
                       </svg>
                     </span>
                   </div>
-                  <div className="qprogress" aria-hidden="true">
-                    <span style={{ width: `${kRate}%` }} />
-                  </div>
+                  <div className="qcard-line" aria-hidden="true" />
                   <div className="tw2" hidden={!isOpen}>
                     <table className="qtable">
                       <thead>

@@ -2041,16 +2041,10 @@ tbody tr.clickable {
   transform: rotate(0deg);
 }
 /* 完了率の細いプログレスバー（カード上部の視覚アンカー） */
-.qprogress {
-  height: 3px;
+/* タイトル下の区切り線（％連動をやめて、普通の1本線に） */
+.qcard-line {
+  height: 1px;
   background: var(--border);
-  overflow: hidden;
-}
-.qprogress span {
-  display: block;
-  height: 100%;
-  background: var(--type-accent, var(--accent));
-  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .qcard-foot {
   padding: 5px 11px;
