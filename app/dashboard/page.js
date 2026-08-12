@@ -1859,13 +1859,6 @@ export default function DashboardPage() {
               const kRate = juchu > 0 ? Math.round((kDone / juchu) * 100) : 0;
               const accent = TYPE_ACCENT[t] || ACCENT_FALLBACK;
               const isOpen = !collapsed[t];
-              // ヒートマップ用の最大値（件数が多いほど濃く）
-              const maxQ = Math.max(1, ...rows.flatMap((r) => r.q));
-              const maxTotal = Math.max(1, ...rows.map((r) => r.total));
-              const heat = (v, max) =>
-                v > 0
-                  ? `rgba(37,99,196,${(0.06 + 0.5 * Math.min(1, v / max)).toFixed(3)})`
-                  : undefined;
               return (
                 <div
                   className={
@@ -1971,18 +1964,11 @@ export default function DashboardPage() {
                               {row.stage}
                             </td>
                             {row.q.map((v, i) => (
-                              <td
-                                key={i}
-                                className={v === 0 ? "z" : ""}
-                                style={{ background: heat(v, maxQ) }}
-                              >
+                              <td key={i} className={v === 0 ? "z" : ""}>
                                 {num(v)}
                               </td>
                             ))}
-                            <td
-                              className={"sum" + (row.total === 0 ? " z" : "")}
-                              style={{ background: heat(row.total, maxTotal) }}
-                            >
+                            <td className={"sum" + (row.total === 0 ? " z" : "")}>
                               {num(row.total)}
                             </td>
                           </tr>
