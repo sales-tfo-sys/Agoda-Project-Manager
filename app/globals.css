@@ -5967,25 +5967,23 @@ td.v-strong,
 .list-tools .count {
   margin-left: auto;
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
   gap: 4px;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
-  color: var(--ink);
+  color: var(--ink-2);
   background: var(--surface-soft, #eef2f8);
   border: 1px solid var(--border2);
   border-radius: 8px;
   padding: 5px 12px;
   white-space: nowrap;
 }
-.list-tools .count b {
-  color: var(--accent);
-  font-size: 15px;
-  font-weight: 800;
-}
+/* 色・サイズ・太さは全て親と同一に統一する */
+.list-tools .count b,
 .list-tools .count-sub {
-  color: var(--ink-2);
-  font-weight: 600;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
 }
 /* 検索バーとプルダウンの高さをそろえる */
 .list-tools .search-box,
