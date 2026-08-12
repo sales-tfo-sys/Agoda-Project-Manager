@@ -670,18 +670,17 @@ export default function KosuPersonsPage() {
                                 title="クリックで改名"
                               >
                                 {p.name}
-                                {!p.active && <span className="retired-tag">退職</span>}
                               </button>
                             ) : (
                               <span className="name-main">
                                 {p.name}
-                                {!p.active && <span className="retired-tag">退職</span>}
                               </span>
                             )}
                             {/* ログイン時に取得した Google アカウント名。
                                 未ログインならメールから作った仮名を出す */}
                             <span className="name-sub">
                               {p.login_name || romaji(p.email)}
+                              {!p.active && <span className="retired-tag">退職</span>}
                             </span>
                           </span>
                         </span>
