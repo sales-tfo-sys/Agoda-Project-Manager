@@ -318,7 +318,9 @@ export default function KosuPersonsPage() {
   const rangeFrom = filtered.length === 0 ? 0 : (curPage - 1) * PAGE_SIZE + 1;
   const rangeTo = Math.min(curPage * PAGE_SIZE, filtered.length);
   // 並べ替えは絞り込みが無いときだけ（表示順と実データの順が一致しているため）
-  const canDrag = !q.trim() && !showRetired && curPage === 1;
+  // 退職者は常時表示だが末尾に固定。現役行だけドラッグ可（現役の表示順＝現役リストの
+  // インデックスなので reorder の前提が保たれる）。
+  const canDrag = !q.trim() && curPage === 1;
 
   useEffect(() => {
     setPage(1);
@@ -535,31 +537,6 @@ export default function KosuPersonsPage() {
             aria-label="担当者を検索"
           />
         </label>
-        <span className="filter-wrap" ref={filterRef}>
-          <button
-            className={"icon-btn filter-btn" + (showRetired ? " on" : "")}
-            onClick={() => setFilterOpen((v) => !v)}
-            aria-expanded={filterOpen}
-            title="絞り込み"
-            aria-label="絞り込み"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polygon points="21 4 3 4 10 12.5 10 19 14 21 14 12.5 21 4" />
-            </svg>
-          </button>
-          {filterOpen && (
-            <div className="filter-pop" role="dialog" aria-label="絞り込み">
-              <label className="chk-row">
-                <input
-                  type="checkbox"
-                  checked={showRetired}
-                  onChange={(e) => setShowRetired(e.target.checked)}
-                />
-                退職者も表示する
-              </label>
-            </div>
-          )}
-        </span>
       </div>
 
       {loading ? (
@@ -572,14 +549,18 @@ export default function KosuPersonsPage() {
             <table className="dtable persons-table">
               <thead>
                 <tr>
-                  <th className="grip-th" aria-label="並べ替え" />
-                  <th className="l">担当者</th>
-                  <th className="l">メール（ログインID）</th>
-                  <th>ログイン</th>
-                  <th>権限</th>
-                  <th>編集権限</th>
-                  <th>最終ログイン</th>
-                  <th>操作</th>
+                  <th className="grip-th" rowSpan={2} aria-label="並べ替え" />
+                  <th className="l" rowSpan={2}>担当者</th>
+                  <th className="l" rowSpan={2}>メール（ログインID）</th>
+                  <th rowSpan={2}>ログイン</th>
+                  <th rowSpan={2}>権限</th>
+                  <th colSpan={2} className="grant-group-th">編集権限</th>
+                  <th rowSpan={2}>最終ログイン</th>
+                  <th rowSpan={2}>操作</th>
+                </tr>
+                <tr>
+                  <th className="grant-sub-th">アカウント関連</th>
+                  <th className="grant-sub-th">タスク関連</th>
                 </tr>
               </thead>
               <tbody>
@@ -595,12 +576,12 @@ export default function KosuPersonsPage() {
                   return (
                     <tr
                       key={p.id}
-                      draggable={canDrag && !busy && i >= 0}
+                      draggable={canDrag && !busy && p.active}
                       onDragStart={() => {
                         dragIndex.current = i;
                       }}
                       onDragOver={(e) => {
-                        if (!canDrag) return;
+                        if (!canDrag || !p.active) return;
                         e.preventDefault();
                         if (dragOver !== i) setDragOver(i);
                       }}
@@ -624,18 +605,26 @@ export default function KosuPersonsPage() {
                     >
                       <td
                         className="grip-td"
-                        title={canDrag ? "ドラッグで並べ替え" : "検索・絞り込み中は並べ替えできません"}
+                        title={
+                          !p.active
+                            ? "退職者は並べ替えできません"
+                            : canDrag
+                            ? "ドラッグで並べ替え"
+                            : "検索中は並べ替えできません"
+                        }
                       >
-                        <span className="grip" aria-hidden="true">
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
-                            <circle cx="9" cy="5" r="1.7" />
-                            <circle cx="15" cy="5" r="1.7" />
-                            <circle cx="9" cy="12" r="1.7" />
-                            <circle cx="15" cy="12" r="1.7" />
-                            <circle cx="9" cy="19" r="1.7" />
-                            <circle cx="15" cy="19" r="1.7" />
-                          </svg>
-                        </span>
+                        {p.active && (
+                          <span className="grip" aria-hidden="true">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+                              <circle cx="9" cy="5" r="1.7" />
+                              <circle cx="15" cy="5" r="1.7" />
+                              <circle cx="9" cy="12" r="1.7" />
+                              <circle cx="15" cy="12" r="1.7" />
+                              <circle cx="9" cy="19" r="1.7" />
+                              <circle cx="15" cy="19" r="1.7" />
+                            </svg>
+                          </span>
+                        )}
                       </td>
                       <td className="l name-cell">
                         {/* td 自体を flex にすると table の列幅計算から外れ、縦線がずれる。
@@ -751,40 +740,38 @@ export default function KosuPersonsPage() {
                           <option value="member">メンバー</option>
                         </select>
                       </td>
-                      {/* 編集権限：管理者への個別付与だけを扱う列。
-                          オーナー・メンバーは対象外なので「—」 */}
+                      {/* 編集権限：管理者への個別付与だけを扱う。オーナー・メンバーは対象外＝「—」。
+                          「アカウント関連」「タスク関連」の2列（列見出しがラベルを兼ねる） */}
                       <td className="grant-cell">
                         {(p.role || "member") === "admin" ? (
-                          <span className="grant-switches">
-                            <span className="switch-chip">
-                              <span className="switch-label">アカウント</span>
-                              <button
-                                className={"switch " + (p.can_edit_accounts ? "on" : "off")}
-                                role="switch"
-                                aria-checked={p.can_edit_accounts}
-                                aria-label="アカウント管理の編集を許可"
-                                onClick={() => patch(p.id, { can_edit_accounts: !p.can_edit_accounts })}
-                                disabled={busy || !canGrant}
-                                title="アカウント管理を編集できる"
-                              >
-                                <span className="switch-knob" aria-hidden="true" />
-                              </button>
-                            </span>
-                            <span className="switch-chip">
-                              <span className="switch-label">タスク</span>
-                              <button
-                                className={"switch " + (p.can_edit_tasks ? "on" : "off")}
-                                role="switch"
-                                aria-checked={p.can_edit_tasks}
-                                aria-label="タスクの編集を許可"
-                                onClick={() => patch(p.id, { can_edit_tasks: !p.can_edit_tasks })}
-                                disabled={busy || !canGrant}
-                                title="ダッシュボードのタスクを編集できる"
-                              >
-                                <span className="switch-knob" aria-hidden="true" />
-                              </button>
-                            </span>
-                          </span>
+                          <button
+                            className={"switch " + (p.can_edit_accounts ? "on" : "off")}
+                            role="switch"
+                            aria-checked={p.can_edit_accounts}
+                            aria-label="アカウント管理の編集を許可"
+                            onClick={() => patch(p.id, { can_edit_accounts: !p.can_edit_accounts })}
+                            disabled={busy || !canGrant}
+                            title="アカウント管理を編集できる"
+                          >
+                            <span className="switch-knob" aria-hidden="true" />
+                          </button>
+                        ) : (
+                          <span className="perm-note">—</span>
+                        )}
+                      </td>
+                      <td className="grant-cell">
+                        {(p.role || "member") === "admin" ? (
+                          <button
+                            className={"switch " + (p.can_edit_tasks ? "on" : "off")}
+                            role="switch"
+                            aria-checked={p.can_edit_tasks}
+                            aria-label="タスクの編集を許可"
+                            onClick={() => patch(p.id, { can_edit_tasks: !p.can_edit_tasks })}
+                            disabled={busy || !canGrant}
+                            title="ダッシュボードのタスクを編集できる"
+                          >
+                            <span className="switch-knob" aria-hidden="true" />
+                          </button>
                         ) : (
                           <span className="perm-note">—</span>
                         )}

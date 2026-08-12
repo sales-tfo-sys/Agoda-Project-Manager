@@ -6813,6 +6813,19 @@ td.v-strong,
 }
 .persons-page .grant-cell {
   white-space: nowrap;
+  text-align: center;
+}
+/* 編集権限：上位ヘッダー「編集権限」＋2サブ列「アカウント関連／タスク関連」 */
+.persons-page .grant-group-th {
+  border-bottom: 1px solid rgba(90, 120, 180, 0.25);
+}
+.persons-page .grant-sub-th {
+  font-size: 11px;
+  font-weight: 700;
+}
+/* 2段ヘッダー：2段目（サブ見出し）は1段目の高さぶん下げて sticky させる */
+.persons-page .persons-table thead tr:nth-child(2) th {
+  top: 28px;
 }
 .persons-page .grant-check-row {
   display: flex;
