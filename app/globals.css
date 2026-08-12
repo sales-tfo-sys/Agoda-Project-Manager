@@ -6823,8 +6823,14 @@ td.v-strong,
 .persons-page .persons-table thead th {
   background: #e6eefb;
 }
+/* 表の罫線は全て同じ線（色）に統一する。既定ではヘッダー下線だけ濃色(--border2)で
+   青っぽく浮くため、persons 表は全セルの枠色を --border に揃える。 */
+.persons-page .persons-table thead th,
+.persons-page .persons-table td {
+  border-color: var(--border);
+}
 .persons-page .grant-group-th {
-  border-bottom: 1px solid var(--border2);
+  border-bottom: 1px solid var(--border);
   font-weight: 700;
 }
 .persons-page .grant-sub-th {
