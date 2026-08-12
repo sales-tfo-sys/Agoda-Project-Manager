@@ -5788,8 +5788,6 @@ th.hid-opcol {
   animation: loader-spin 0.7s linear infinite;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
 }
-.page-info {
-
 /* Pagination Controls */
 .pagination-modern {
   display: flex;
