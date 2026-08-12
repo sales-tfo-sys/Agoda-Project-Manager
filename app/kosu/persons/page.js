@@ -363,12 +363,15 @@ export default function KosuPersonsPage() {
     <div className="wrap page-compact persons-page">
       <div className="head persons-head">
         <div className="head-left">
-          <Link href="/dashboard" className="back-link" title="ダッシュボードへ戻る" aria-label="ダッシュボードへ戻る">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="15 18 9 12 15 6" />
+          <span className="conn ok" title="アカウント管理" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
             </svg>
-          </Link>
-          <span className="page-h">アカウント管理</span>
+          </span>
+          <span className="page-h page-h-gap">アカウント管理</span>
         </div>
         <div className="head-right">
           {canEdit && (
