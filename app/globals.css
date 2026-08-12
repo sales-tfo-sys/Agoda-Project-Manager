@@ -693,9 +693,9 @@ h1 {
 .qtable tbody tr:hover {
   background: var(--accent-soft);
 }
-/* ゼブラ（1行おきに薄い色）で単調さを軽減 */
+/* ダッシュボードの表はゼブラ無し（フラット）にする */
 .qtable tbody tr:nth-child(even) {
-  background: var(--surface-soft);
+  background: transparent;
 }
 .qtable .qtotal td {
   background: var(--head) !important;
@@ -2073,7 +2073,7 @@ tbody tr.clickable {
   box-shadow: 1px 0 0 var(--border2);
 }
 .summary-table tbody tr:nth-child(even) td.l:not(.asg-td) {
-  background: var(--surface-soft);
+  background: var(--surface);
 }
 .summary-table tbody tr:hover td.l:not(.asg-td) {
   background: var(--accent-soft);
@@ -5896,10 +5896,14 @@ td.v-strong,
   color: var(--brand-2);
   border-color: rgba(74, 134, 255, 0.45);
 }
-/* 表の縞をわずかに青く */
-.dtable tbody tr:nth-child(even),
-.adhoc-table tbody tr:nth-child(even) {
+/* 表の縞をわずかに青く（施設一覧・工数など .dtable のみ）。
+   ダッシュボードの Ad Hoc 表はゼブラ無し（下の上書きでフラットにする）。 */
+.dtable tbody tr:nth-child(even) {
   background: var(--zebra);
+}
+/* Ad Hoc 表はゼブラを消してフラットに（完了行のグレーは維持） */
+.adhoc-table tbody tr:nth-child(even) {
+  background: var(--surface);
 }
 /* 行のホバーをブランド色に寄せる */
 .dtable tbody tr:hover,
