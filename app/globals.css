@@ -6815,17 +6815,32 @@ td.v-strong,
   white-space: nowrap;
   text-align: center;
 }
-/* 編集権限：上位ヘッダー「編集権限」＋2サブ列「アカウント関連／タスク関連」 */
+/* 編集権限：上位ヘッダー「編集権限」＋2サブ列「アカウント関連／タスク関連」。
+   2段ヘッダーはグラデを高さ違いで塗ると段差（浮き）が出るので、
+   persons のヘッダーはフラット色で統一して周囲と馴染ませる。 */
+.persons-page .persons-table thead th {
+  background: #e6eefb;
+}
 .persons-page .grant-group-th {
-  border-bottom: 1px solid rgba(90, 120, 180, 0.25);
+  border-bottom: 1px solid var(--border2);
+  font-weight: 700;
 }
 .persons-page .grant-sub-th {
   font-size: 11px;
   font-weight: 700;
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+/* サブ列は中身（トグル）に対して広すぎないよう抑える */
+.persons-page .grant-sub-th,
+.persons-page .grant-cell {
+  width: 96px;
+  padding-left: 6px;
+  padding-right: 6px;
 }
 /* 2段ヘッダー：2段目（サブ見出し）は1段目の高さぶん下げて sticky させる */
 .persons-page .persons-table thead tr:nth-child(2) th {
-  top: 28px;
+  top: 27px;
 }
 .persons-page .grant-check-row {
   display: flex;
