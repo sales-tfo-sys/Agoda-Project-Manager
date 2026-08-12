@@ -5845,14 +5845,15 @@ th.hid-opcol {
   padding: 0 6px;
   font-size: 12.5px;
   font-weight: 700;
-  color: var(--ink-3);
+  color: var(--ink-2);
   font-variant-numeric: tabular-nums;
 }
+/* 色・サイズ・太さは全て他要素と同一に統一する */
 .page-info-modern b {
-  color: var(--accent);
+  color: inherit;
   margin: 0 3px;
-  font-size: 12.5px;
-  font-weight: 700;
+  font-size: inherit;
+  font-weight: inherit;
 }
 .page-info-modern b {
   color: var(--ink);
