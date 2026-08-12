@@ -71,7 +71,7 @@ export default function KosuPersonsPage() {
 
   // 検索・絞り込み・ページ送り
   const [q, setQ] = useState("");
-  const [showRetired, setShowRetired] = useState(false);
+  const [showRetired, setShowRetired] = useState(true); // 退職者も既定で表示する（隠さない）
   const [filterOpen, setFilterOpen] = useState(false);
   const [page, setPage] = useState(1);
   const filterRef = useRef(null);
