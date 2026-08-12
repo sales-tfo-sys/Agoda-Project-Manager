@@ -134,6 +134,18 @@ export async function PATCH(req) {
       body: patch,
       prefer: "return=representation",
     });
+    // 退職（active=false）にしたら、担当割当とログインセッションも外す。
+    // 実績（kosu_entry）は履歴として残す。これをしないと対応者一覧に「?」で残る。
+    if (patch.active === false) {
+      await sb(`task_assign?person_id=eq.${encodeURIComponent(b.id)}`, {
+        method: "DELETE",
+        prefer: "return=minimal",
+      }).catch(() => null);
+      await sb(`app_session?person_id=eq.${encodeURIComponent(b.id)}`, {
+        method: "DELETE",
+        prefer: "return=minimal",
+      }).catch(() => null);
+    }
     return Response.json({ person: Array.isArray(data) ? data[0] : data });
   } catch (e) {
     return Response.json({ error: String(e?.message || e) }, { status: 200 });

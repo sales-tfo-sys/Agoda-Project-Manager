@@ -873,8 +873,17 @@ export default function DashboardPage() {
     (async () => {
       try {
         const j = await fetch("/api/assign", { cache: "no-store" }).then((r) => r.json());
+        // オーナー・管理者は作業者ではないので対応者の選択肢に出さない
+        const workers = (j.persons || []).filter(
+          (p) => !["owner", "admin"].includes(p.role || "member")
+        );
+        // 退職者（active=false で一覧から外れた担当者）は persons に居ないため、
+        // 割当に残っていると名前が「?」になる。解決できる現役だけを採用して表示・
+        // カウントから除外する。
+        const validSet = new Set(workers.map((p) => p.id));
         const m = {};
         for (const it of j.items || []) {
+          if (!validSet.has(it.person_id)) continue;
           const k = `${it.scope}|${it.key}`;
           if (!m[k]) m[k] = [];
           // 主担当を先頭に保つ
@@ -882,12 +891,7 @@ export default function DashboardPage() {
           else m[k].push(it.person_id);
         }
         setAssignMap(m);
-        // オーナー・管理者は作業者ではないので対応者の選択肢に出さない
-        setPersons(
-          (j.persons || []).filter(
-            (p) => !["owner", "admin"].includes(p.role || "member")
-          )
-        );
+        setPersons(workers);
       } catch {}
     })();
   }, []);
