@@ -495,16 +495,17 @@ export default function Page() {
     <div className="wrap">
       <div className="head">
         <div className="head-left">
-          {data && data.source === "kintone" && (
-            <span className="conn ok" title="Kintone 接続済み" aria-label="接続済み">
-              <ConnectedIcon />
-            </span>
-          )}
-          {data && data.source === "mock" && (
-            <span className="conn warn" title="未接続（デモ表示）" aria-label="未接続">
-              <AlertIcon />
-            </span>
-          )}
+          <span className="conn ok" title="施設一覧" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6" />
+              <line x1="8" y1="12" x2="21" y2="12" />
+              <line x1="8" y1="18" x2="21" y2="18" />
+              <line x1="3.5" y1="6" x2="3.51" y2="6" />
+              <line x1="3.5" y1="12" x2="3.51" y2="12" />
+              <line x1="3.5" y1="18" x2="3.51" y2="18" />
+            </svg>
+          </span>
+          <span className="page-h page-h-gap">施設一覧</span>
         </div>
         <div className="head-right">
           {updatedAt && (

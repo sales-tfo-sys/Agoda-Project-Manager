@@ -1158,14 +1158,15 @@ export default function DashboardPage() {
     <div className="wrap">
       <div className="head">
         <div className="head-left">
-          {records && (
-            <span className="conn ok" title="Kintone 接続済み" aria-label="接続済み">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                <polyline points="22 4 12 14.01 9 11.01" />
-              </svg>
-            </span>
-          )}
+          <span className="conn ok" title="ダッシュボード" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1.5" />
+              <rect x="14" y="3" width="7" height="7" rx="1.5" />
+              <rect x="14" y="14" width="7" height="7" rx="1.5" />
+              <rect x="3" y="14" width="7" height="7" rx="1.5" />
+            </svg>
+          </span>
+          <span className="page-h page-h-gap">ダッシュボード</span>
         </div>
         <div className="head-right">
           {updatedAt && (
