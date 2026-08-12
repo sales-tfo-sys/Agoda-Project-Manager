@@ -989,11 +989,13 @@ th.sortable {
   cursor: pointer;
   user-select: none;
 }
+/* ホバー/ソート済みは「少し明るい不透明の濃紺」にする。
+   半透明の白だと下地(白)が透けてヘッダーが白くなり、白文字が読めなくなる。 */
 th.sortable:hover {
-  background: var(--header-bg-hover, rgba(255, 255, 255, 0.08));
+  background: #26386a;
 }
 th.sortable.sorted {
-  background: rgba(255, 255, 255, 0.14);
+  background: #2f427a;
 }
 th {
   max-width: 280px;
