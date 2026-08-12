@@ -1806,32 +1806,6 @@ export default function DashboardPage() {
             <>
             <div className="dash-toolbar">
               <span className="sec-head inline">案件タイプ別　ステータス×四半期</span>
-              <div className="dash-tools">
-                <label className="tool-chk">
-                  <input
-                    type="checkbox"
-                    checked={hideZero}
-                    onChange={(e) => setHideZero(e.target.checked)}
-                  />
-                  0件のステータスを隠す
-                </label>
-                <button
-                  className="mini-btn"
-                  onClick={() => setCollapsed({})}
-                  title="すべてのカードを展開"
-                >
-                  すべて展開
-                </button>
-                <button
-                  className="mini-btn"
-                  onClick={() =>
-                    setCollapsed(Object.fromEntries(displayTypes.map((t) => [t, true])))
-                  }
-                  title="すべてのカードを折りたたむ"
-                >
-                  すべて折りたたむ
-                </button>
-              </div>
             </div>
             <div className="qgrid">
             {displayTypes.map((t, idx) => {

@@ -492,7 +492,7 @@ export default function Page() {
   }, [sortedShown, currentPage, itemsPerPage]);
 
   return (
-    <div className="wrap">
+    <div className="wrap page-fill">
       <div className="head">
         <div className="head-left">
           <span className="conn ok" title="施設一覧" aria-hidden="true">

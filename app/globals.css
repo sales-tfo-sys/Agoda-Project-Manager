@@ -2151,10 +2151,20 @@ tbody tr.clickable {
   display: flex;
   flex-direction: column;
 }
-.wrap.page-fill .dtw {
+.wrap.page-fill .dtw,
+.wrap.page-fill .tw {
   flex: 1 1 auto;
   min-height: 0;
   max-height: none; /* 固定 calc をやめて残り全部を使う */
+}
+/* ヘッダー・絞り込み・ページネーションは縮めず固定。表だけが伸縮＋内部スクロール */
+.wrap.page-fill > .detail-tools,
+.wrap.page-fill > .list-tools {
+  flex: 0 0 auto;
+}
+.wrap.page-fill .pagination-modern {
+  flex: 0 0 auto;
+  padding: 12px 0 6px;
 }
 
 /* 日付＋曜日の2段見出し */
