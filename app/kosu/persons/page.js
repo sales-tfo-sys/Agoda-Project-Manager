@@ -669,9 +669,9 @@ export default function KosuPersonsPage() {
                                 未ログインならメールから作った仮名を出す */}
                             <span className="name-sub">
                               {p.login_name || romaji(p.email)}
-                              {!p.active && <span className="retired-tag">退職</span>}
                             </span>
                           </span>
+                          {!p.active && <span className="retired-tag">退職</span>}
                         </span>
                       </td>
                       <td className="l">
