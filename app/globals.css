@@ -5809,7 +5809,8 @@ th.hid-opcol {
   align-items: center;
   gap: 4px;
   height: 28px;
-  font-size: 12px;
+  line-height: 1;
+  font-size: 12.5px;
   font-weight: 700;
   color: var(--ink-2);
   background: var(--surface);
@@ -5838,6 +5839,7 @@ th.hid-opcol {
   display: inline-flex;
   align-items: center;
   height: 28px;
+  line-height: 1;
   padding: 0 6px;
   font-size: 12.5px;
   font-weight: 700;
@@ -5847,7 +5849,8 @@ th.hid-opcol {
 .page-info-modern b {
   color: var(--accent);
   margin: 0 3px;
-  font-size: 13px;
+  font-size: 12.5px;
+  font-weight: 700;
 }
 .page-info-modern b {
   color: var(--ink);
