@@ -39,43 +39,12 @@ export default function DetailTable({ title, compact = false }) {
   const [tab, setTab] = useState("active"); // active（対応中）/ done（完了）
   const [completedKeys, setCompletedKeys] = useState(null);
   const [extraRows, setExtraRows] = useState([]); // シートに無い作業（Supabase 側）
-  const [dataSrc, setDataSrc] = useState("site"); // "site"（入力データ）/ "sheet"（移行参照）
 
   // ダッシュボードで編集した「作業内容（名称）」と「対応者」を反映するための対応表
   const [link, setLink] = useState({ rename: {}, tanto: {}, tasks: {}, done: new Set(), doneNorm: new Set(), compDateByKey: {}, compDateByLink: {}, compDateByNorm: {} });
 
   const load = useCallback(async () => {
     setError(null);
-
-    // 移行参照モード: スプレッドシートの内容をそのまま表示（overlay なし・読み取り専用）。
-    if (dataSrc === "sheet") {
-      try {
-        const json = await fetch("/api/kosu?src=sheet", { cache: "no-store" }).then((r) => r.json());
-        if (json.error) {
-          setError(json.error);
-          setData(null);
-        } else {
-          setData(json); // rows は byIso 済みなのでそのまま描画できる
-          setExtraRows([]);
-          setCompletedKeys(new Set());
-          setLink({
-            rename: {},
-            tanto: {},
-            tasks: {},
-            done: new Set(),
-            doneNorm: new Set(),
-            compDateByKey: {},
-            compDateByLink: {},
-            compDateByNorm: {},
-          });
-        }
-      } catch (e) {
-        setError(String(e?.message || e));
-        setData(null);
-      }
-      return;
-    }
-
     try {
       const [json, tk, asg, ovr, adh, cus] = await Promise.all([
         fetch("/api/kosu", { cache: "no-store" }).then((r) => r.json()),
@@ -417,16 +386,11 @@ export default function DetailTable({ title, compact = false }) {
     } catch (e) {
       setError(String(e?.message || e));
     }
-  }, [dataSrc]);
+  }, []);
 
   useEffect(() => {
     load();
   }, [load]);
-
-  // データソースを切り替えたら対象月を再既定化する
-  useEffect(() => {
-    setMonthIdx(null);
-  }, [dataSrc]);
 
   const months = data?.months || [];
 
@@ -585,41 +549,18 @@ export default function DetailTable({ title, compact = false }) {
     );
   }, [allRows, link, tab]);
 
-  // データソース切替（サイト入力 / スプレッドシート参照）。どの表示状態でも出す。
-  const srcToggle = (
-    <label className="head-year">
-      表示
-      <select value={dataSrc} onChange={(e) => setDataSrc(e.target.value)}>
-        <option value="site">サイト（入力）</option>
-        <option value="sheet">スプレッドシート（参照）</option>
-      </select>
-    </label>
-  );
-
   if (error) {
     return (
-      <>
-        <div className="sec-row">
-          {title && <div className="sec-head">{title}</div>}
-          <div className="detail-tools">{srcToggle}</div>
-        </div>
-        <div className="card">
-          <div className="err">{"取得エラー\n\n" + error}</div>
-        </div>
-      </>
+      <div className="card">
+        <div className="err">{"取得エラー\n\n" + error}</div>
+      </div>
     );
   }
   if (!data) {
     return (
-      <>
-        <div className="sec-row">
-          {title && <div className="sec-head">{title}</div>}
-          <div className="detail-tools">{srcToggle}</div>
-        </div>
-        <div className="card">
-          <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>
-        </div>
-      </>
+      <div className="card">
+        <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>
+      </div>
     );
   }
 
@@ -628,7 +569,6 @@ export default function DetailTable({ title, compact = false }) {
       <div className="sec-row">
         {title && <div className="sec-head">{title}</div>}
         <div className="detail-tools">
-        {srcToggle}
         {months.length > 0 && (
           <label className="head-year">
             対象月

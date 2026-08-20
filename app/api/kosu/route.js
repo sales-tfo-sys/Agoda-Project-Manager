@@ -1,7 +1,6 @@
 import { supabaseConfigured, sb, sbAll } from "../../../lib/supabase";
 import { holidayName, dowLabel } from "../../../lib/holidays";
 import { cached } from "../../../lib/cache";
-import { googleServiceConfigured, readGridApi } from "../../../lib/googleSheetsApi";
 
 // 工数明細のデータ API。
 // 以前は Google スプレッドシートを CSV で読んでいたが、工数はサイト上で手動入力
@@ -24,184 +23,6 @@ const ymd = (y, m, d) => `${y}-${pad2(m)}-${pad2(d)}`;
 
 // トータル作業時間（自動集計行）かどうか。
 const isTotalContent = (s) => /トータル作業時間/.test(String(s || ""));
-
-// ───────────────────────────────────────────────────────────────
-// スプレッドシート読取（?src=sheet）: 完全移行までの「参照ビュー」。
-//   工数はサイト入力(kosu_entry)へ移行済みだが、旧シートの内容を画面で見て
-//   不足分を手動で埋められるように、シート値をそのまま表示する用途で残す。
-//   非公開でも読めるよう、サービスアカウント(SA)を優先し、無ければ公開CSVで読む。
-// ───────────────────────────────────────────────────────────────
-const SHEET_ID =
-  process.env.KOSU_SHEET_ID || "1mXUySyokFhE0fjjmSIjmpF2VNKGWZCzEkuwccK9UPwY";
-const SHEET_GID = process.env.KOSU_GID || "1039908240";
-
-// 生グリッド（列を詰めない）簡易CSVパーサ。
-function parseCsvGrid(text) {
-  const rows = [];
-  let row = [];
-  let cur = "";
-  let q = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (q) {
-      if (c === '"') {
-        if (text[i + 1] === '"') {
-          cur += '"';
-          i++;
-        } else q = false;
-      } else cur += c;
-    } else if (c === '"') q = true;
-    else if (c === ",") {
-      row.push(cur);
-      cur = "";
-    } else if (c === "\n") {
-      row.push(cur);
-      rows.push(row);
-      row = [];
-      cur = "";
-    } else if (c !== "\r") cur += c;
-  }
-  if (cur !== "" || row.length) {
-    row.push(cur);
-    rows.push(row);
-  }
-  return rows;
-}
-
-// 日付ラベル（"12/8"形式・昇順）に西暦を割り当てる（末尾＝当年、遡って月が増える所で年跨ぎ）。
-function assignYears(dates, refYear) {
-  const parsed = dates.map((d) => {
-    const m = String(d).match(/^(\d{1,2})\s*\/\s*(\d{1,2})/);
-    return m ? { m: Number(m[1]), d: Number(m[2]) } : null;
-  });
-  const years = new Array(parsed.length).fill(null);
-  let y = refYear;
-  for (let i = parsed.length - 1; i >= 0; i--) {
-    if (!parsed[i]) continue;
-    const next = parsed[i + 1];
-    if (next && parsed[i].m > next.m) y -= 1;
-    years[i] = y;
-  }
-  return parsed.map((p, i) => (p ? { y: years[i], m: p.m, d: p.d } : null));
-}
-
-// 生グリッド → { months, dates, dateMonthIdx, rows }（旧 /api/kosu と同じ整形）。
-function buildDataFromGrid(grid) {
-  // 生グリッド（Sheets API / export CSV）は gviz と違い先頭の空行を残すため、
-  // ヘッダー行が先頭に来るよう、先頭の「完全な空行」を落としてから解釈する。
-  let start = 0;
-  while (
-    start < grid.length &&
-    (grid[start] || []).every((c) => String(c ?? "").trim() === "")
-  ) {
-    start += 1;
-  }
-  const g = grid.slice(start);
-  if (!g.length) return { months: [], dates: [], dateMonthIdx: [], rows: [] };
-  const header = g[0];
-  const dateCols = [];
-  for (let c = 6; c < header.length; c++) {
-    const label = (header[c] || "").trim();
-    if (label) dateCols.push({ c, label });
-  }
-  const months = [];
-  const colMonthIdx = [];
-  for (const dc of dateCols) {
-    const m = parseInt(String(dc.label).split("/")[0], 10);
-    const mLabel = Number.isFinite(m) ? `${m}月` : dc.label;
-    let idx = months.length - 1;
-    if (idx < 0 || months[idx] !== mLabel) {
-      months.push(mLabel);
-      idx = months.length - 1;
-    }
-    colMonthIdx.push(idx);
-  }
-  let curType = "";
-  let curDetail = "";
-  const rows = [];
-  for (let r = 1; r < g.length; r++) {
-    const row = g[r];
-    if (!row) continue;
-    const type = (row[1] || "").trim();
-    const detail = (row[2] || "").trim();
-    const tanto = (row[5] || "").trim();
-    if (type) curType = type;
-    if (detail) curDetail = detail;
-    if (!tanto && !detail && !type) continue;
-    const daily = new Array(dateCols.length).fill(0);
-    dateCols.forEach((dc, di) => {
-      const v = row[dc.c];
-      if (v === "" || v == null) return;
-      const n = Number(v);
-      if (!Number.isFinite(n)) return;
-      daily[di] = Math.round(n * 10) / 10;
-    });
-    const isTime = /作業時間/.test(curDetail);
-    rows.push({ type: curType, detail: curDetail, tanto, daily, unit: isTime ? "time" : "count" });
-  }
-  return { months, dates: dateCols.map((d) => d.label), dateMonthIdx: colMonthIdx, rows };
-}
-
-// 工数シートの生グリッドを取得（SA優先・公開CSVフォールバック）。取得不能は { error }。
-async function readKosuGrid() {
-  if (googleServiceConfigured()) {
-    const r = await readGridApi(SHEET_ID, SHEET_GID);
-    if (r.error) return { error: r.error };
-    return { grid: r.grid || [] };
-  }
-  const u =
-    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${encodeURIComponent(SHEET_GID)}`;
-  const res = await fetch(u, { cache: "no-store", redirect: "follow" });
-  if (res.status === 401 || res.status === 403) {
-    return {
-      error:
-        "スプレッドシートが非公開です。サービスアカウントに閲覧共有するか、リンク共有（閲覧者）にしてください。",
-    };
-  }
-  if (!res.ok) return { error: `シート取得エラー(HTTP ${res.status})` };
-  const text = await res.text();
-  if (text.trimStart().startsWith("<")) {
-    return {
-      error:
-        "スプレッドシートが非公開です。サービスアカウントに閲覧共有するか、リンク共有（閲覧者）にしてください。",
-    };
-  }
-  return { grid: parseCsvGrid(text) };
-}
-
-// ?src=sheet の返却ペイロード（画面はこの形をそのまま描画。値は byIso で持つ）。
-async function buildSheetPayload() {
-  const { grid, error } = await readKosuGrid();
-  if (error) return emptyPayload({ source: "sheet", error });
-  const data = buildDataFromGrid(grid || []);
-  const now = jstNow();
-  const ymd2 = assignYears(data.dates, now.getUTCFullYear());
-  const isoDates = ymd2.map((p) =>
-    p ? ymd(p.y, p.m, p.d) : null
-  );
-  const holidayOf = ymd2.map((p) => (p ? holidayName(p.y, p.m, p.d) : null));
-  const dowOf = ymd2.map((p) => (p ? dowLabel(p.y, p.m, p.d) : null));
-  // 各行に byIso（日付→値）を持たせ、overlay なしでもセルを描画できるようにする。
-  const rows = data.rows.map((r) => {
-    const byIso = {};
-    r.daily.forEach((v, di) => {
-      const iso = isoDates[di];
-      if (iso) byIso[iso] = v;
-    });
-    return { ...r, byIso };
-  });
-  return {
-    configured: true,
-    source: "sheet",
-    months: data.months,
-    dates: data.dates,
-    isoDates,
-    dateMonthIdx: data.dateMonthIdx,
-    holidayOf,
-    dowOf,
-    rows,
-  };
-}
 
 // 空データ時の返却形。
 const emptyPayload = (extra = {}) => ({
@@ -425,19 +246,7 @@ async function buildDetail() {
 }
 
 export async function GET(req) {
-  const params = new URL(req.url).searchParams;
-  const listOnly = params.get("list") === "1";
-  const src = params.get("src"); // "sheet" で移行参照用のスプレッドシート表示
-
-  // スプレッドシート参照は Supabase 未接続でも動く（移行元を見る用途）
-  if (src === "sheet" && !listOnly) {
-    try {
-      const payload = await cached("kosu:sheet", TTL, buildSheetPayload);
-      return Response.json(payload);
-    } catch (e) {
-      return Response.json(emptyPayload({ source: "sheet", error: String(e?.message || e) }));
-    }
-  }
+  const listOnly = new URL(req.url).searchParams.get("list") === "1";
 
   if (!supabaseConfigured()) {
     return Response.json(listOnly ? { contents: [] } : emptyPayload());
