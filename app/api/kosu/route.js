@@ -86,7 +86,17 @@ function assignYears(dates, refYear) {
 }
 
 // 生グリッド → { months, dates, dateMonthIdx, rows }（旧 /api/kosu と同じ整形）。
-function buildDataFromGrid(g) {
+function buildDataFromGrid(grid) {
+  // 生グリッド（Sheets API / export CSV）は gviz と違い先頭の空行を残すため、
+  // ヘッダー行が先頭に来るよう、先頭の「完全な空行」を落としてから解釈する。
+  let start = 0;
+  while (
+    start < grid.length &&
+    (grid[start] || []).every((c) => String(c ?? "").trim() === "")
+  ) {
+    start += 1;
+  }
+  const g = grid.slice(start);
   if (!g.length) return { months: [], dates: [], dateMonthIdx: [], rows: [] };
   const header = g[0];
   const dateCols = [];
@@ -421,16 +431,6 @@ export async function GET(req) {
 
   // スプレッドシート参照は Supabase 未接続でも動く（移行元を見る用途）
   if (src === "sheet" && !listOnly) {
-    if (params.get("debug") === "1") {
-      const { grid, error } = await readKosuGrid();
-      if (error) return Response.json({ error });
-      const g = grid || [];
-      return Response.json({
-        totalRows: g.length,
-        cols: (g[0] || []).length,
-        head: g.slice(0, 5).map((r) => (r || []).map((c) => String(c ?? "").slice(0, 12))),
-      });
-    }
     try {
       const payload = await cached("kosu:sheet", TTL, buildSheetPayload);
       return Response.json(payload);
