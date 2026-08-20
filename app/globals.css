@@ -6713,6 +6713,12 @@ td.v-strong,
 .wrap.persons-page .persons-table td:last-child {
   border-right: 0;
 }
+/* 「タスク関連」はサブ見出し行では last-child だが実際の最終列ではないため、
+   編集権限の2サブ列（見出し・セル）は常に右罫線を引いて縦線を通す。 */
+.wrap.persons-page .persons-table thead th.grant-sub-th,
+.wrap.persons-page .persons-table td.grant-cell {
+  border-right: 1px solid var(--border);
+}
 /* 見出しの下線・行区切りも縦線と同じ濃さに揃える */
 .wrap.persons-page .persons-table td {
   border-bottom-color: var(--border);
