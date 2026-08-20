@@ -421,6 +421,16 @@ export async function GET(req) {
 
   // スプレッドシート参照は Supabase 未接続でも動く（移行元を見る用途）
   if (src === "sheet" && !listOnly) {
+    if (params.get("debug") === "1") {
+      const { grid, error } = await readKosuGrid();
+      if (error) return Response.json({ error });
+      const g = grid || [];
+      return Response.json({
+        totalRows: g.length,
+        cols: (g[0] || []).length,
+        head: g.slice(0, 5).map((r) => (r || []).map((c) => String(c ?? "").slice(0, 12))),
+      });
+    }
     try {
       const payload = await cached("kosu:sheet", TTL, buildSheetPayload);
       return Response.json(payload);
