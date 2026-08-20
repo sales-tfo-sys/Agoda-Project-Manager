@@ -178,8 +178,8 @@ export default function LoginPage() {
             <svg className="mock-chart" viewBox="0 0 260 84" fill="none" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="mkline" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0" stopColor="#4a86ff" />
-                  <stop offset="1" stopColor="#9ecbff" />
+                  <stop offset="0" stopColor="#c7cbd2" />
+                  <stop offset="1" stopColor="#f0f1f3" />
                 </linearGradient>
               </defs>
               <polyline
@@ -189,7 +189,7 @@ export default function LoginPage() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
-              <circle cx="250" cy="8" r="3.6" fill="#9ecbff" />
+              <circle cx="250" cy="8" r="3.6" fill="#f0f1f3" />
             </svg>
           </div>
 
@@ -212,7 +212,7 @@ export default function LoginPage() {
           <defs>
             <radialGradient id="wvdot" cx="50%" cy="50%" r="50%">
               <stop offset="0" stopColor="#ffffff" />
-              <stop offset="1" stopColor="#7db0ff" />
+              <stop offset="1" stopColor="#8b9099" />
             </radialGradient>
           </defs>
           {WAVE.map((d, i) => (
