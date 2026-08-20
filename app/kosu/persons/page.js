@@ -744,34 +744,44 @@ export default function KosuPersonsPage() {
                           「アカウント関連」「タスク関連」の2列（列見出しがラベルを兼ねる） */}
                       <td className="grant-cell">
                         {(p.role || "member") === "admin" ? (
-                          <button
-                            className={"switch " + (p.can_edit_accounts ? "on" : "off")}
-                            role="switch"
-                            aria-checked={p.can_edit_accounts}
-                            aria-label="アカウント管理の編集を許可"
-                            onClick={() => patch(p.id, { can_edit_accounts: !p.can_edit_accounts })}
-                            disabled={busy || !canGrant}
-                            title="アカウント管理を編集できる"
-                          >
-                            <span className="switch-knob" aria-hidden="true" />
-                          </button>
+                          <span className="login-cell-inner">
+                            <button
+                              className={"switch " + (p.can_edit_accounts ? "on" : "off")}
+                              role="switch"
+                              aria-checked={p.can_edit_accounts}
+                              aria-label="アカウント管理の編集を許可"
+                              onClick={() => patch(p.id, { can_edit_accounts: !p.can_edit_accounts })}
+                              disabled={busy || !canGrant}
+                              title="アカウント管理を編集できる"
+                            >
+                              <span className="switch-knob" aria-hidden="true" />
+                            </button>
+                            <span className={"login-state " + (p.can_edit_accounts ? "on" : "off")}>
+                              {p.can_edit_accounts ? "許可" : "拒否"}
+                            </span>
+                          </span>
                         ) : (
                           <span className="perm-note">—</span>
                         )}
                       </td>
                       <td className="grant-cell">
                         {(p.role || "member") === "admin" ? (
-                          <button
-                            className={"switch " + (p.can_edit_tasks ? "on" : "off")}
-                            role="switch"
-                            aria-checked={p.can_edit_tasks}
-                            aria-label="タスクの編集を許可"
-                            onClick={() => patch(p.id, { can_edit_tasks: !p.can_edit_tasks })}
-                            disabled={busy || !canGrant}
-                            title="ダッシュボードのタスクを編集できる"
-                          >
-                            <span className="switch-knob" aria-hidden="true" />
-                          </button>
+                          <span className="login-cell-inner">
+                            <button
+                              className={"switch " + (p.can_edit_tasks ? "on" : "off")}
+                              role="switch"
+                              aria-checked={p.can_edit_tasks}
+                              aria-label="タスクの編集を許可"
+                              onClick={() => patch(p.id, { can_edit_tasks: !p.can_edit_tasks })}
+                              disabled={busy || !canGrant}
+                              title="ダッシュボードのタスクを編集できる"
+                            >
+                              <span className="switch-knob" aria-hidden="true" />
+                            </button>
+                            <span className={"login-state " + (p.can_edit_tasks ? "on" : "off")}>
+                              {p.can_edit_tasks ? "許可" : "拒否"}
+                            </span>
+                          </span>
                         ) : (
                           <span className="perm-note">—</span>
                         )}
