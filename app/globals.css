@@ -2105,29 +2105,29 @@ tbody tr.clickable {
 
 /* ── 祝日の列を色分け（工数明細） ── */
 .dtable th.is-holiday {
-  background: #202020;
-  color: #d6d6d6;
+  background: #3a1e22;
+  color: #ff9aa5;
   position: relative;
 }
 .dtable td.is-holiday {
-  background: #1c1c1c;
+  background: #241416;
 }
 .dtable tbody tr:hover td.is-holiday {
-  background: #1e1e1e;
+  background: #2d181b;
 }
 .dtable td.is-holiday.z {
-  color: #e6e6e6;
+  color: #b57a80;
 }
 /* 土曜（青系） */
 .dtable th.is-sat {
-  background: #202020;
-  color: #d6d6d6;
+  background: #1b2742;
+  color: #8fb6ff;
 }
 .dtable td.is-sat {
-  background: #1c1c1c;
+  background: #141d30;
 }
 .dtable tbody tr:hover td.is-sat {
-  background: #1e1e1e;
+  background: #18233b;
 }
 .hol-dot {
   display: block;
@@ -2205,7 +2205,10 @@ tbody tr.clickable {
   margin-top: 1px;
 }
 .dtable th.day-th.is-holiday .d-dow {
-  color: #d6d6d6;
+  color: #ff9aa5;
+}
+.dtable th.day-th.is-sat .d-dow {
+  color: #8fb6ff;
 }
 
 /* ── 工数明細：列幅を統一（固定レイアウト）＋左3列を固定表示 ── */
