@@ -565,10 +565,10 @@ h1 {
 
 /* 四半期テーブル */
 .qcard {
-  background: linear-gradient(180deg, #1a1a1a, #17181a 42%);
-  border: 1px solid var(--border);
+  background: linear-gradient(180deg, #1e2024, #1a1b1f 42%);
+  border: 1px solid var(--border2);
   border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(66, 66, 66, 0.05), 0 6px 18px rgba(66, 66, 66, 0.05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.3);
   overflow: hidden;
   break-inside: avoid;
   margin-bottom: 12px;
@@ -623,8 +623,8 @@ h1 {
 .qtable th {
   position: static;
   z-index: auto;
-  background: linear-gradient(180deg, #1d1d1d, #1f1f1f);
-  color: var(--ink-3);
+  background: linear-gradient(180deg, #2b2d32, #242629);
+  color: #c7cad1;
   text-align: center;
   font-size: 10.5px;
   font-weight: 700;
@@ -915,10 +915,10 @@ h1 {
 }
 
 .card {
-  background: linear-gradient(180deg, #1a1a1a, #17181a 42%);
-  border: 1px solid var(--border);
+  background: linear-gradient(180deg, #1e2024, #1a1b1f 42%);
+  border: 1px solid var(--border2);
   border-radius: 14px;
-  box-shadow: 0 1px 2px rgba(66, 66, 66, 0.05), 0 8px 24px rgba(66, 66, 66, 0.07);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 26px rgba(0, 0, 0, 0.35);
   overflow: hidden;
 }
 .notice {
@@ -1389,8 +1389,8 @@ tbody tr.clickable {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: linear-gradient(180deg, #1d1d1d, #1f1f1f);
-  color: var(--ink-2);
+  background: linear-gradient(180deg, #2b2d32, #242629);
+  color: #c7cad1;
   font-weight: 700;
   text-align: center;
   padding: 5px 9px;
@@ -1875,8 +1875,11 @@ tbody tr.clickable {
   text-align: left;
 }
 .side-tab.logout-tab:hover {
-  background: rgba(127, 127, 127, 0.16);
-  color: #e6e6e6;
+  background: rgba(255, 90, 90, 0.16);
+  color: #ff9a9a;
+}
+.side-tab.logout-tab:hover svg {
+  color: #ff9a9a;
 }
 .side-tab.logout-tab:disabled {
   opacity: 0.5;
