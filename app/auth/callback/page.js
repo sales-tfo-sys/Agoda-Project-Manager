@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 // ログイン後の戻り先。URLフラグメントのトークンを受け取り、
 // サーバーで検証してセッションCookieを発行してもらう。
 export default function AuthCallbackPage() {
   const [error, setError] = useState(null);
   const [denied, setDenied] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     // トークンはURLに残さない。読み取ったら真っ先にアドレスバーから消す
@@ -60,7 +62,15 @@ export default function AuthCallbackPage() {
           setError(res.error);
           return;
         }
-        window.location.replace("/dashboard");
+        // フルリロードだとログイン直後にヘッダー/メニューが一瞬消える。
+        // クライアント遷移にしてシェル（サイドバー）を即表示する。
+        router.replace("/dashboard");
+        // 保険：クライアント遷移が効かない環境ではフルリロードで確実に移動する。
+        setTimeout(() => {
+          if (window.location.pathname.startsWith("/auth/callback")) {
+            window.location.replace("/dashboard");
+          }
+        }, 1500);
       } catch (e) {
         setError(String(e?.message || e));
       }
