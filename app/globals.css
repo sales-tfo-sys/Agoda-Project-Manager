@@ -3992,8 +3992,8 @@ tbody tr.clickable {
   width: 44px;
   height: 44px;
   border-radius: 13px;
-  background: linear-gradient(150deg, #878787, #5a5a5a);
-  box-shadow: 0 8px 22px rgba(96, 96, 96, 0.45);
+  background: linear-gradient(150deg, #4a86ff, #2456b8);
+  box-shadow: 0 8px 22px rgba(37, 99, 196, 0.45);
 }
 .auth-logo-text {
   font-size: 15px;
