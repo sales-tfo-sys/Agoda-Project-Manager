@@ -164,7 +164,26 @@ export default function LoginPage() {
           <h2 className="lg-welcome">Agoda Project Management</h2>
 
           <div className="lg-lock" aria-hidden="true">
-            <img className="lg-lock-img" src="/login-lock.png" alt="" />
+            <span className="lg-ring r1" />
+            <span className="lg-ring r2" />
+            <span className="lg-dot d1" />
+            <span className="lg-dot d2" />
+            <span className="lg-dot d3" />
+            <span className="lg-dot d4" />
+            <span className="lg-dot d5" />
+            <span className="lg-dot d6" />
+            <svg className="lg-lock-svg" width="82" height="82" viewBox="0 0 24 24" fill="none" stroke="url(#lockG)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <defs>
+                <linearGradient id="lockG" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stopColor="#cfe8ff" />
+                  <stop offset="1" stopColor="#4a9bff" />
+                </linearGradient>
+              </defs>
+              <rect x="4.2" y="10.3" width="15.6" height="11.4" rx="3.2" />
+              <path d="M7.1 10.3V7.4a4.9 4.9 0 0 1 9.8 0v2.9" />
+              <circle cx="12" cy="15.1" r="3.15" />
+              <path d="M10.35 15.1 L11.6 16.4 L13.75 13.7" />
+            </svg>
           </div>
 
           <a className="lg-google" href="/api/auth/google">

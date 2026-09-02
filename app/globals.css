@@ -7355,39 +7355,25 @@ td.v-strong,
 }
 .lg-lock {
   position: relative;
-  width: 236px;
-  height: 178px;
-  margin: 2px auto 16px;
+  width: 176px;
+  height: 176px;
+  margin: 8px auto 22px;
   display: grid;
   place-items: center;
-}
-/* 添付画像をそのまま埋め込み。暗い背景は screen ブレンドで消し、
-   ネオンのカギ＋リング＋ドットだけをカードに乗せる。 */
-.lg-lock-img {
-  display: block;
-  width: 236px;
-  height: auto;
-  /* 暗い背景を screen で飛ばし、ごく外周だけ放射マスクでフェードして「貼った感」を消す
-     （中央〜リング/ドットは鮮明なまま残す） */
-  mix-blend-mode: screen;
-  -webkit-mask-image: radial-gradient(farthest-side, #000 82%, transparent 100%);
-  mask-image: radial-gradient(farthest-side, #000 82%, transparent 100%);
 }
 .lg-lock-svg {
   width: 86px;
   height: 86px;
 }
-/* 中央の淡いグロー */
+/* 中央の淡いグロー（静止） */
 .lg-lock::before {
   content: "";
   position: absolute;
   width: 124px;
   height: 124px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(55, 135, 255, 0.42) 0%, transparent 68%);
+  background: radial-gradient(circle, rgba(55, 135, 255, 0.4) 0%, transparent 68%);
   filter: blur(5px);
-  animation: lg-glow 3.4s ease-in-out infinite;
-  display: none;
 }
 .lg-lock > svg {
   position: relative;
@@ -7395,7 +7381,6 @@ td.v-strong,
   filter: drop-shadow(0 0 4px rgba(150, 200, 255, 0.95))
     drop-shadow(0 0 14px rgba(70, 150, 255, 0.7))
     drop-shadow(0 0 26px rgba(50, 130, 255, 0.4));
-  animation: lg-float 3.4s ease-in-out infinite;
 }
 /* 同心円リング */
 .lg-ring {
