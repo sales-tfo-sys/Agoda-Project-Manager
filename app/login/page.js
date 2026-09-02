@@ -130,10 +130,6 @@ export default function LoginPage() {
       <div className="lg-panels">
         {/* ── 左：ブランド ── */}
         <aside className="lg-left">
-          <span className="lg-logo" aria-hidden="true">
-            <BrandGlyph />
-          </span>
-
           <h1 className="lg-lede">
             案件の進捗を、
             <br />
@@ -171,17 +167,17 @@ export default function LoginPage() {
             <span className="lg-pulse" />
             <span className="lg-pulse p2" />
             <span className="lg-pulse p3" />
-            <svg className="lg-lock-svg" width="82" height="82" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <svg className="lg-lock-svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="url(#lockG)" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
               <defs>
                 <linearGradient id="lockG" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stopColor="#bfe0ff" />
-                  <stop offset="1" stopColor="#3f7dff" />
+                  <stop offset="0" stopColor="#d6ecff" />
+                  <stop offset="1" stopColor="#5aa0ff" />
                 </linearGradient>
               </defs>
-              <path d="M7.3 10.2V7.5a4.7 4.7 0 0 1 9.4 0v2.7" stroke="url(#lockG)" strokeWidth="1.9" />
-              <rect x="4" y="10" width="16" height="11.4" rx="3.4" fill="rgba(70,140,255,0.12)" stroke="url(#lockG)" strokeWidth="1.9" />
-              <circle cx="12" cy="14.8" r="1.7" stroke="url(#lockG)" strokeWidth="1.7" />
-              <path d="M12 16.1 V18.3" stroke="url(#lockG)" strokeWidth="1.9" />
+              <rect x="4.5" y="10.4" width="15" height="10.8" rx="3" />
+              <path d="M7.6 10.4V7.7a4.4 4.4 0 0 1 8.8 0v2.7" />
+              <circle cx="12" cy="14.9" r="1.55" />
+              <path d="M12 16.2 V18.3" />
             </svg>
           </div>
 
