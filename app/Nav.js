@@ -247,9 +247,9 @@ export default function Sidebar() {
         <span className="brand-mark" aria-hidden="true">
           <svg
             className="brand-glyph"
-            width="26"
+            width="27"
             height="29"
-            viewBox="0 0 62 70"
+            viewBox="0 0 62 68"
             fill="none"
           >
             <defs>
@@ -258,7 +258,7 @@ export default function Sidebar() {
                 <stop offset="1" stopColor="#2f6be0" />
               </linearGradient>
             </defs>
-            <path d="M31 5 54 20 54 50 31 65 8 50 8 20Z" fill="url(#navHex)" stroke="url(#navHex)" strokeWidth="12" strokeLinejoin="round" />
+            <path d="M31 7 55 20 55 48 31 61 7 48 7 20Z" fill="url(#navHex)" stroke="url(#navHex)" strokeWidth="13" strokeLinejoin="round" />
             <g fill="#ffffff">
               <rect x="21" y="37" width="4.8" height="9.5" rx="2.4" />
               <rect x="28.6" y="30" width="4.8" height="16.5" rx="2.4" />
