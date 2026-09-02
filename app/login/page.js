@@ -175,17 +175,30 @@ export default function LoginPage() {
             <span className="lg-dot d2" />
             <span className="lg-dot d3" />
             <span className="lg-dot d4" />
-            <svg className="lg-lock-svg" width="94" height="94" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <svg className="lg-lock-svg" width="88" height="88" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
               <defs>
-                <linearGradient id="lockGrad" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stopColor="#a9d8ff" />
-                  <stop offset="1" stopColor="#2f6be0" />
+                <linearGradient id="lockBody" x1="0" y1="0" x2="0.9" y2="1">
+                  <stop offset="0" stopColor="#a9dbff" />
+                  <stop offset="0.55" stopColor="#4a90ff" />
+                  <stop offset="1" stopColor="#1f4fc4" />
+                </linearGradient>
+                <linearGradient id="lockShk" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stopColor="#eaf4ff" />
+                  <stop offset="1" stopColor="#7fb4ff" />
+                </linearGradient>
+                <linearGradient id="lockGloss" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stopColor="#ffffff" stopOpacity="0.5" />
+                  <stop offset="0.5" stopColor="#ffffff" stopOpacity="0" />
                 </linearGradient>
               </defs>
-              <path d="M7 10.2V7.4a5 5 0 0 1 10 0v2.8" stroke="url(#lockGrad)" strokeWidth="1.9" />
-              <rect x="3.4" y="10" width="17.2" height="11.8" rx="3.6" fill="rgba(70,140,255,0.16)" stroke="url(#lockGrad)" strokeWidth="1.7" />
-              <circle cx="12" cy="15.7" r="3.3" stroke="#cfe6ff" strokeWidth="1.5" />
-              <path d="M10.4 15.7 L11.6 17 L13.7 14.3" stroke="#eaf5ff" strokeWidth="1.8" />
+              {/* シャックル（掛け金） */}
+              <path d="M7 10.4V7.3a5 5 0 0 1 10 0v3.1" fill="none" stroke="url(#lockShk)" strokeWidth="2.4" />
+              {/* 本体（グラデ塗り＋上部グロス） */}
+              <rect x="3.5" y="9.7" width="17" height="12.2" rx="3.9" fill="url(#lockBody)" />
+              <rect x="3.5" y="9.7" width="17" height="6.4" rx="3.9" fill="url(#lockGloss)" />
+              {/* 鍵穴 */}
+              <circle cx="12" cy="14.5" r="1.95" fill="#0b1c42" />
+              <path d="M12 14.9 L10.9 18.6 H13.1 Z" fill="#0b1c42" />
             </svg>
           </div>
 
