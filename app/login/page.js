@@ -148,7 +148,6 @@ export default function LoginPage() {
           <ul className="lg-feats">
             {FEATURES.map((f) => (
               <li key={f.title}>
-                <span className="lg-fic">{f.icon}</span>
                 <span className="lg-ftx">
                   <b>{f.title}</b>
                   <span>{f.desc}</span>
