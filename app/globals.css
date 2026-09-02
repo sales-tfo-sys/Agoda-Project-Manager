@@ -7502,3 +7502,105 @@ td.v-strong,
     flex: none;
   }
 }
+
+/* ══ ログイン（中央1カード・ダークブルー） ══ */
+.lg2 {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  overflow-y: auto;
+  background: radial-gradient(58% 44% at 50% 22%, rgba(40, 92, 205, 0.16) 0%, transparent 60%),
+    radial-gradient(70% 55% at 86% 110%, rgba(20, 60, 150, 0.12) 0%, transparent 60%),
+    radial-gradient(60% 50% at 6% 0%, rgba(30, 80, 200, 0.08) 0%, transparent 55%),
+    #0a0e18;
+}
+.lg2-card {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  padding: 46px 36px 30px;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(28, 40, 70, 0.62), rgba(14, 20, 38, 0.62));
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  backdrop-filter: blur(18px) saturate(1.2);
+  border: 1px solid rgba(110, 165, 255, 0.2);
+  border-radius: 24px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 26px 60px rgba(0, 0, 0, 0.5);
+}
+.lg2-logo {
+  display: inline-grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 17px;
+  background: linear-gradient(140deg, #5b9dff, #2f6be0 55%, #1e3fae);
+  box-shadow: 0 8px 26px rgba(40, 110, 255, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  margin-bottom: 18px;
+}
+.lg2-title {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #eaf1ff;
+}
+.lg2-sub {
+  margin: 0 0 22px;
+  font-size: 12px;
+  line-height: 1.65;
+  color: #9fb2d8;
+}
+.lg2-divider {
+  height: 1px;
+  margin: 0 0 22px;
+  background: linear-gradient(90deg, transparent, rgba(120, 170, 255, 0.24), transparent);
+}
+.lg2-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  height: 48px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a2540;
+  text-decoration: none;
+  background: #ffffff;
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  transition: transform 0.14s ease, box-shadow 0.14s ease, filter 0.14s ease;
+}
+.lg2-google:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
+  filter: brightness(0.98);
+}
+.lg2-pwform {
+  margin-top: 16px;
+  text-align: left;
+}
+.lg2 .auth-error {
+  margin-top: 14px;
+}
+.lg2-foot {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: #6c7ea6;
+}
+.lg2-foot-mark {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: linear-gradient(140deg, #5b9dff, #2f6be0);
+  box-shadow: 0 0 8px rgba(60, 120, 255, 0.5);
+}
