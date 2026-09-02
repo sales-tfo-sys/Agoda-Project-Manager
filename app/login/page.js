@@ -167,17 +167,20 @@ export default function LoginPage() {
             <span className="lg-pulse" />
             <span className="lg-pulse p2" />
             <span className="lg-pulse p3" />
-            <svg className="lg-lock-svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="url(#lockG)" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
+            <svg className="lg-lock-svg" width="80" height="80" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
               <defs>
                 <linearGradient id="lockG" x1="0" y1="0" x2="1" y2="1">
                   <stop offset="0" stopColor="#d6ecff" />
                   <stop offset="1" stopColor="#5aa0ff" />
                 </linearGradient>
               </defs>
-              <rect x="4.5" y="10.4" width="15" height="10.8" rx="3" />
-              <path d="M7.6 10.4V7.7a4.4 4.4 0 0 1 8.8 0v2.7" />
-              <circle cx="12" cy="14.9" r="1.55" />
-              <path d="M12 16.2 V18.3" />
+              {/* 本体（細枠） */}
+              <rect x="4.3" y="10.4" width="15.4" height="11" rx="3" stroke="url(#lockG)" strokeWidth="1.4" />
+              {/* シャックル（掛け金） */}
+              <path d="M7.4 10.4V7.6a4.6 4.6 0 0 1 9.2 0v2.8" stroke="url(#lockG)" strokeWidth="1.4" />
+              {/* 鍵穴（塗り：丸＋テーパー） */}
+              <circle cx="12" cy="14.7" r="1.85" fill="url(#lockG)" />
+              <path d="M12 14.7 L10.75 19 H13.25 Z" fill="url(#lockG)" />
             </svg>
           </div>
 
