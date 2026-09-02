@@ -7252,7 +7252,7 @@ td.v-strong,
 /* 左パネル */
 .lg-lede {
   margin: 2px 0 12px;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
   line-height: 1.28;
   letter-spacing: -0.01em;
@@ -7263,7 +7263,7 @@ td.v-strong,
 }
 .lg-sub {
   margin: 0 0 22px;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.65;
   color: #9fb2d8;
 }
@@ -7296,25 +7296,25 @@ td.v-strong,
   flex-direction: column;
 }
 .lg-ftx b {
-  font-size: 14px;
+  font-size: 12.5px;
   font-weight: 700;
   color: #e6eeff;
 }
 .lg-ftx span {
-  font-size: 11.5px;
+  font-size: 10.5px;
   color: #8296ba;
   margin-top: 2px;
 }
 .lg-copy {
   margin: auto 0 0;
   padding-top: 18px;
-  font-size: 11px;
+  font-size: 10px;
   color: #5f7098;
 }
 /* 右パネル */
 .lg-welcome {
   margin: 2px 0 14px;
-  font-size: 18.5px;
+  font-size: 16.5px;
   font-weight: 800;
   letter-spacing: -0.01em;
   color: #eaf1ff;
@@ -7343,45 +7343,76 @@ td.v-strong,
   width: 110px;
   height: 110px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(50, 130, 255, 0.35) 0%, transparent 68%);
+  background: radial-gradient(circle, rgba(50, 130, 255, 0.38) 0%, transparent 68%);
   filter: blur(4px);
+  animation: lg-glow 3.4s ease-in-out infinite;
 }
 .lg-lock > svg {
   position: relative;
   z-index: 2;
   filter: drop-shadow(0 0 6px rgba(120, 190, 255, 0.9))
     drop-shadow(0 0 18px rgba(60, 140, 255, 0.7));
+  animation: lg-float 3.4s ease-in-out infinite;
 }
-.lg-ring {
+/* 外側へ広がって消えるパルス波（アニメーション） */
+.lg-pulse {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  width: 92px;
+  height: 92px;
+  transform: translate(-50%, -50%) scale(0.5);
   border-radius: 50%;
+  border: 1.5px solid rgba(95, 165, 255, 0.5);
+  opacity: 0;
+  animation: lg-pulse 3s ease-out infinite;
 }
-.lg-ring.r1 {
-  width: 108px;
-  height: 108px;
-  border: 1.5px solid rgba(90, 160, 255, 0.45);
-  box-shadow: 0 0 18px rgba(60, 140, 255, 0.25), inset 0 0 18px rgba(60, 140, 255, 0.12);
+.lg-pulse.p2 {
+  animation-delay: 1s;
 }
-.lg-ring.r2 {
-  width: 154px;
-  height: 154px;
-  border: 1px solid rgba(90, 160, 255, 0.2);
+.lg-pulse.p3 {
+  animation-delay: 2s;
 }
-.lg-dot {
-  position: absolute;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #7fc0ff;
-  box-shadow: 0 0 10px rgba(120, 180, 255, 1);
+@keyframes lg-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 0;
+  }
+  16% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.75);
+    opacity: 0;
+  }
 }
-.lg-dot.d1 { top: 12px; left: calc(50% - 3px); }
-.lg-dot.d2 { bottom: 14px; left: 38%; }
-.lg-dot.d3 { top: 50%; left: 8px; }
-.lg-dot.d4 { top: 38%; right: 10px; }
+@keyframes lg-float {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-2px) scale(1.04);
+  }
+}
+@keyframes lg-glow {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lg-pulse {
+    display: none;
+  }
+  .lg-lock > svg,
+  .lg-lock::before {
+    animation: none;
+  }
+}
 .lg-safe {
   margin: 0 0 8px;
   font-size: 17px;
@@ -7390,7 +7421,7 @@ td.v-strong,
 }
 .lg-safe-desc {
   margin: 12px 0 0;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.7;
   color: #8fa4c9;
 }
@@ -7403,7 +7434,7 @@ td.v-strong,
   max-width: 300px;
   height: 48px;
   margin: 0 auto;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   color: #eaf1ff;
   text-decoration: none;
