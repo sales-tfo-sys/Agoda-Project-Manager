@@ -165,10 +165,11 @@ export default function LoginPage() {
             <span className="lg-dot d2" />
             <span className="lg-dot d3" />
             <span className="lg-dot d4" />
-            <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#5aa0ff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="4.5" y="10.5" width="15" height="10" rx="2.6" />
-              <path d="M8 10.5V7.8a4 4 0 0 1 8 0v2.7" />
-              <path d="M9.4 15.4 L11.2 17.2 L14.8 13.6" />
+            <svg className="lg-lock-svg" width="88" height="88" viewBox="0 0 24 24" fill="none" stroke="#6ab0ff" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="4" y="10.3" width="16" height="11.2" rx="3.2" />
+              <path d="M7.4 10.3V7.5a4.6 4.6 0 0 1 9.2 0v2.8" />
+              <circle cx="12" cy="15.9" r="3.1" />
+              <path d="M10.6 15.9 L11.6 17 L13.5 14.7" />
             </svg>
           </div>
 

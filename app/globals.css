@@ -7158,9 +7158,9 @@ td.v-strong,
   position: relative;
   z-index: 1;
   display: flex;
-  gap: 18px;
+  align-items: stretch;
   width: 100%;
-  max-width: 940px;
+  max-width: 960px;
 }
 .lg-left,
 .lg-right {
@@ -7169,21 +7169,30 @@ td.v-strong,
   backdrop-filter: blur(22px) saturate(1.2);
   border: 1px solid rgba(120, 170, 255, 0.16);
   border-radius: 26px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 30px 70px rgba(0, 0, 0, 0.5);
 }
+/* 参照イメージのように右パネルを手前にし、左パネルはその下へ潜り込ませる */
 .lg-left {
   flex: 0 0 40%;
-  padding: 40px 34px;
+  margin: 22px 0;
+  padding: 40px 46px 40px 34px;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 26px 60px rgba(0, 0, 0, 0.45);
 }
 .lg-right {
   flex: 1;
-  padding: 44px 46px;
+  margin-left: -34px;
+  padding: 46px 46px;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative;
+  z-index: 2;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    -18px 0 44px rgba(0, 0, 0, 0.4), 0 34px 74px rgba(0, 0, 0, 0.5);
 }
 .lg-logo {
   width: 64px;
