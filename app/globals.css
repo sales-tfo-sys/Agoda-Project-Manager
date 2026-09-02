@@ -1,30 +1,30 @@
-/* モノクロ（白黒）：黒の下地×白系文字、濃淡グレーで階層を表現 */
+/* Spotify風ダーク×グリーン：緑がかった黒地×白系文字、緑のアクセント＋アンビエント光 */
 :root {
-  --bg: #0c0c0d; /* 下地。ほぼ黒 */
-  --surface: #17181a; /* カード */
-  --surface-soft: #202225;
-  --head: #202225; /* 表ヘッダー行 */
-  --zebra: #151517;
-  --border: #33353a; /* 表の罫線 */
-  --border2: #474a51;
-  --ink: #f0f1f3; /* 文字（ほぼ白） */
-  --ink-2: #b3b6bd;
-  --ink-3: #83868e;
-  --accent: #d8dade; /* 差し色は白系グレー（操作要素の強調） */
-  --accent-soft: #24262a;
-  --ok: #d8dade;
-  --ok-bg: #202225;
-  --warn: #d8dade;
-  --warn-bg: #202225;
-  --gold: #d8dade;
-  --gold-soft: #7e8188;
-  --header-bg: #0f1011;
-  --header-ink: #f0f1f3;
-  --scroll-thumb: #3a3d43;
-  --scroll-thumb-hover: #6c7078;
-  /* ログイン画面のブランド色 */
-  --brand-1: #e6e7ea;
-  --brand-2: #474a51;
+  --bg: #0a0f0c; /* 下地。緑がかったほぼ黒 */
+  --surface: #121815; /* カード */
+  --surface-soft: #18201b;
+  --head: #17201a; /* 表ヘッダー行 */
+  --zebra: #0f1512;
+  --border: #233029; /* 罫線（緑みの暗色） */
+  --border2: #33443a;
+  --ink: #eef3f0; /* 文字（ほぼ白） */
+  --ink-2: #a6b3ac;
+  --ink-3: #74827b;
+  --accent: #1ed760; /* Spotifyグリーン（操作要素の強調） */
+  --accent-soft: #10251a;
+  --ok: #1ed760;
+  --ok-bg: #10251a;
+  --warn: #e2b45c; /* 警告は視認性のため暖色を維持 */
+  --warn-bg: #2a2412;
+  --gold: #1ed760;
+  --gold-soft: #1a7d43;
+  --header-bg: #0b120e;
+  --header-ink: #eef3f0;
+  --scroll-thumb: #2a3a30;
+  --scroll-thumb-hover: #1ed760;
+  /* ブランド色（グリーン） */
+  --brand-1: #1ed760;
+  --brand-2: #0e9d48;
 }
 
 * {
@@ -65,9 +65,9 @@ body {
 body {
   /* ヘッダー／メニューバーの濃紺と同系のにじみ。彩度と濃さを抑えて
      淡い青グレーの下地となじませる（3層で違和感が出ないように） */
-  background: radial-gradient(85% 58% at 90% -10%, rgba(78, 78, 78, 0.16) 0%, transparent 60%),
-    radial-gradient(68% 50% at -8% 106%, rgba(71, 71, 71, 0.13) 0%, transparent 60%),
-    radial-gradient(60% 40% at 50% 50%, rgba(121, 121, 121, 0.06) 0%, transparent 70%),
+  background: radial-gradient(80% 55% at 88% -10%, rgba(30, 215, 96, 0.12) 0%, transparent 60%),
+    radial-gradient(70% 50% at -8% 104%, rgba(20, 160, 82, 0.1) 0%, transparent 60%),
+    radial-gradient(60% 42% at 50% 45%, rgba(30, 215, 96, 0.045) 0%, transparent 70%),
     var(--bg);
   background-attachment: fixed;
   color: var(--ink);
@@ -131,10 +131,10 @@ body {
   width: 26px;
   height: 26px;
   border-radius: 9px;
-  background: linear-gradient(140deg, #5b8dff 0%, #2f6bff 46%, #6a5cff 100%);
+  background: linear-gradient(140deg, #1ed760 0%, #12b455 50%, #0e9d48 100%);
   display: grid;
   place-items: center;
-  box-shadow: 0 3px 10px rgba(59, 92, 246, 0.5),
+  box-shadow: 0 3px 12px rgba(30, 215, 96, 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 .brand-mark .brand-glyph {
@@ -185,8 +185,8 @@ body {
   color: #ffffff;
 }
 .side-tab.active {
-  background: rgba(136, 136, 136, 0.22);
-  color: #e6e6e6;
+  background: rgba(30, 215, 96, 0.15);
+  color: #1ed760;
 }
 .main {
   flex: 1;
@@ -565,10 +565,10 @@ h1 {
 
 /* 四半期テーブル */
 .qcard {
-  background: linear-gradient(180deg, #1e2024, #1a1b1f 42%);
-  border: 1px solid var(--border2);
-  border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(180deg, rgba(26, 34, 29, 0.8), rgba(18, 24, 21, 0.8));
+  border: 1px solid rgba(120, 210, 150, 0.13);
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 8px 22px rgba(0, 0, 0, 0.38);
   overflow: hidden;
   break-inside: avoid;
   margin-bottom: 12px;
@@ -915,10 +915,10 @@ h1 {
 }
 
 .card {
-  background: linear-gradient(180deg, #1e2024, #1a1b1f 42%);
-  border: 1px solid var(--border2);
-  border-radius: 14px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 26px rgba(0, 0, 0, 0.35);
+  background: linear-gradient(180deg, rgba(26, 34, 29, 0.82), rgba(18, 24, 21, 0.82));
+  border: 1px solid rgba(120, 210, 150, 0.14);
+  border-radius: 16px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 12px 30px rgba(0, 0, 0, 0.4);
   overflow: hidden;
 }
 .notice {
@@ -1490,8 +1490,8 @@ tbody tr.clickable {
   font: inherit;
   font-size: 13px;
   font-weight: 700;
-  color: #141414;
-  background: #e6e7ea;
+  color: #08130c;
+  background: #1ed760;
   border: 0;
   border-radius: 8px;
   padding: 8px 18px;
@@ -1505,7 +1505,7 @@ tbody tr.clickable {
   font-size: 12.5px;
 }
 .save-btn:hover {
-  background: #ffffff;
+  background: #34e07d;
 }
 .save-btn:disabled {
   opacity: 0.5;
@@ -3995,8 +3995,8 @@ tbody tr.clickable {
   width: 44px;
   height: 44px;
   border-radius: 13px;
-  background: linear-gradient(150deg, #4a86ff, #2456b8);
-  box-shadow: 0 8px 22px rgba(37, 99, 196, 0.45);
+  background: linear-gradient(150deg, #1ed760, #0e9d48);
+  box-shadow: 0 8px 22px rgba(30, 215, 96, 0.4);
 }
 .auth-logo-text {
   font-size: 15px;
@@ -5957,8 +5957,11 @@ td.v-strong,
 }
 /* サイドバーの選択中タブをブランドのグラデーションに */
 .side-tab.active {
-  background: linear-gradient(140deg, rgba(135, 135, 135, 0.9), rgba(90, 90, 90, 0.9));
-  color: #fff;
+  background: rgba(30, 215, 96, 0.15);
+  color: #1ed760;
+}
+.side-tab.active svg {
+  color: #1ed760;
 }
 /* 補助ボタンの枠を青みに */
 .ghost-btn,
@@ -6783,7 +6786,7 @@ td.v-strong,
 }
 /* モノクロ：オン＝明るいグレー地、オフ＝暗いグレー地。ノブ位置＋濃淡で区別 */
 .persons-page .switch.on {
-  background: #6c7076;
+  background: #1db954;
 }
 .persons-page .login-switch.off {
   background: #33353a;
