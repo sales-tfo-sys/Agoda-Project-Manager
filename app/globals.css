@@ -7355,11 +7355,22 @@ td.v-strong,
 }
 .lg-lock {
   position: relative;
-  width: 176px;
-  height: 176px;
-  margin: 12px auto 26px;
+  width: 236px;
+  height: 178px;
+  margin: 2px auto 16px;
   display: grid;
   place-items: center;
+}
+/* 添付画像をそのまま埋め込み。暗い背景は screen ブレンドで消し、
+   ネオンのカギ＋リング＋ドットだけをカードに乗せる。 */
+.lg-lock-img {
+  display: block;
+  width: 236px;
+  height: auto;
+  mix-blend-mode: screen;
+  -webkit-mask-image: radial-gradient(farthest-side, #000 68%, transparent 100%);
+  mask-image: radial-gradient(farthest-side, #000 68%, transparent 100%);
+  animation: lg-float 3.6s ease-in-out infinite;
 }
 .lg-lock-svg {
   width: 86px;
@@ -7375,6 +7386,7 @@ td.v-strong,
   background: radial-gradient(circle, rgba(55, 135, 255, 0.42) 0%, transparent 68%);
   filter: blur(5px);
   animation: lg-glow 3.4s ease-in-out infinite;
+  display: none;
 }
 .lg-lock > svg {
   position: relative;
