@@ -7241,7 +7241,7 @@ td.v-strong,
 .lg-left {
   flex: 0 0 44%;
   margin: 16px 0;
-  padding: 30px 38px 30px 32px;
+  padding: 46px 38px 46px 32px;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -7251,7 +7251,7 @@ td.v-strong,
 .lg-right {
   flex: 1;
   margin-left: -28px;
-  padding: 34px 38px;
+  padding: 46px 38px;
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -7291,7 +7291,7 @@ td.v-strong,
   color: #5aa0ff;
 }
 .lg-sub {
-  margin: 0 0 22px;
+  margin: 0 0 28px;
   font-size: 12px;
   line-height: 1.65;
   color: #9fb2d8;
@@ -7302,7 +7302,7 @@ td.v-strong,
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 22px;
 }
 .lg-feats li {
   position: relative;
@@ -7342,7 +7342,7 @@ td.v-strong,
 }
 /* 右パネル */
 .lg-welcome {
-  margin: 2px 0 14px;
+  margin: 4px 0 22px;
   font-size: 16.5px;
   font-weight: 800;
   letter-spacing: -0.01em;
@@ -7357,7 +7357,7 @@ td.v-strong,
   position: relative;
   width: 158px;
   height: 158px;
-  margin: 2px auto 16px;
+  margin: 14px auto 26px;
   display: grid;
   place-items: center;
 }
@@ -7372,14 +7372,15 @@ td.v-strong,
   width: 110px;
   height: 110px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(50, 130, 255, 0.16) 0%, transparent 70%);
-  filter: blur(6px);
+  background: radial-gradient(circle, rgba(52, 132, 255, 0.32) 0%, transparent 70%);
+  filter: blur(5px);
   animation: lg-glow 3.4s ease-in-out infinite;
 }
 .lg-lock > svg {
   position: relative;
   z-index: 2;
-  filter: drop-shadow(0 0 3px rgba(120, 180, 255, 0.55));
+  filter: drop-shadow(0 0 4px rgba(130, 185, 255, 0.85))
+    drop-shadow(0 0 13px rgba(70, 150, 255, 0.55));
   animation: lg-float 3.4s ease-in-out infinite;
 }
 /* 外側へ広がって消えるパルス波（アニメーション） */
