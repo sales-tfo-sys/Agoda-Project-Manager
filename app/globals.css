@@ -7556,16 +7556,11 @@ td.v-strong,
   white-space: nowrap;
   color: #6b7a9c;
 }
-.lg2-lock {
-  display: inline-grid;
-  place-items: center;
-  width: 62px;
-  height: 62px;
-  border-radius: 50%;
-  margin-bottom: 22px;
-  background: #eaf1fe;
-  border: 1px solid rgba(120, 160, 240, 0.3);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 4px 12px rgba(47, 107, 224, 0.14);
+.lg2-divider {
+  width: 100%;
+  height: 1px;
+  margin: 4px 0 24px;
+  background: linear-gradient(90deg, transparent 0%, rgba(47, 107, 224, 0.55) 50%, transparent 100%);
 }
 .lg2-google {
   display: flex;
