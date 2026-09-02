@@ -7606,3 +7606,67 @@ td.v-strong,
   background: linear-gradient(140deg, #5b9dff, #2f6be0);
   box-shadow: 0 0 8px rgba(60, 120, 255, 0.5);
 }
+
+/* ログイン中央カード：サブ下の小さなカギ（アニメーション） */
+.lg2-lock {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  margin: 2px auto 20px;
+  display: grid;
+  place-items: center;
+}
+.lg2-lock-svg {
+  position: relative;
+  z-index: 2;
+  width: 46px;
+  height: 46px;
+  filter: drop-shadow(0 0 4px rgba(120, 180, 255, 0.85))
+    drop-shadow(0 0 12px rgba(60, 140, 255, 0.55));
+  animation: lg2-float 3.4s ease-in-out infinite;
+}
+.lg2-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 56px;
+  height: 56px;
+  transform: translate(-50%, -50%) scale(0.55);
+  border-radius: 50%;
+  border: 1.4px solid rgba(95, 165, 255, 0.5);
+  opacity: 0;
+  animation: lg2-pulse 2.8s ease-out infinite;
+}
+.lg2-pulse.p2 {
+  animation-delay: 1.4s;
+}
+@keyframes lg2-float {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-2px) scale(1.05);
+  }
+}
+@keyframes lg2-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.55);
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.7);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lg2-pulse {
+    display: none;
+  }
+  .lg2-lock-svg {
+    animation: none;
+  }
+}

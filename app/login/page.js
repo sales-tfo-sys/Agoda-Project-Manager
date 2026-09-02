@@ -60,6 +60,23 @@ export default function LoginPage() {
         <h1 className="lg2-title">Agoda Project Management</h1>
         <p className="lg2-sub">案件の進捗を可視化し、成果につなげる管理プラットフォーム</p>
 
+        <div className="lg2-lock" aria-hidden="true">
+          <span className="lg2-pulse" />
+          <span className="lg2-pulse p2" />
+          <svg className="lg2-lock-svg" width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="url(#lg2lockG)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <defs>
+              <linearGradient id="lg2lockG" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stopColor="#cfe8ff" />
+                <stop offset="1" stopColor="#4a9bff" />
+              </linearGradient>
+            </defs>
+            <rect x="4.2" y="10.3" width="15.6" height="11.4" rx="3.2" />
+            <path d="M7.1 10.3V7.4a4.9 4.9 0 0 1 9.8 0v2.9" />
+            <circle cx="12" cy="15.1" r="3.15" />
+            <path d="M10.35 15.1 L11.6 16.4 L13.75 13.7" />
+          </svg>
+        </div>
+
         <div className="lg2-divider" aria-hidden="true" />
 
         <a className="lg2-google" href="/api/auth/google">
