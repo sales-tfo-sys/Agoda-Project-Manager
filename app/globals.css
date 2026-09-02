@@ -1493,19 +1493,23 @@ tbody tr.clickable {
   color: #08130c;
   background: #1ed760;
   border: 0;
-  border-radius: 8px;
-  padding: 8px 18px;
+  border-radius: 999px;
+  padding: 8px 20px;
   cursor: pointer;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
+  box-shadow: 0 4px 16px rgba(30, 215, 96, 0.26);
+  transition: transform 0.14s ease, box-shadow 0.14s ease, background 0.14s ease;
 }
 .save-btn.sm {
-  padding: 6px 12px;
+  padding: 6px 14px;
   font-size: 12.5px;
 }
 .save-btn:hover {
   background: #34e07d;
+  transform: translateY(-1px);
+  box-shadow: 0 7px 22px rgba(30, 215, 96, 0.42);
 }
 .save-btn:disabled {
   opacity: 0.5;
@@ -4217,7 +4221,7 @@ tbody tr.clickable {
   margin: 0 auto 22px;
   color: #ffffff;
   /* 影は六角形の形に沿わせる（矩形の box-shadow をやめて drop-shadow に） */
-  filter: drop-shadow(0 12px 24px rgba(96, 96, 96, 0.34));
+  filter: drop-shadow(0 10px 26px rgba(30, 215, 96, 0.4));
 }
 /* 角丸六角形の本体 */
 .auth-badge .auth-hex {
@@ -4591,9 +4595,10 @@ tbody tr.clickable {
 }
 .auth-google:hover {
   transform: translateY(-1px);
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: rgba(30, 215, 96, 0.42);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    0 0 0 1px rgba(255, 255, 255, 0.06), 0 16px 36px rgba(0, 0, 0, 0.55);
+    0 0 0 1px rgba(30, 215, 96, 0.2), 0 14px 34px rgba(0, 0, 0, 0.5),
+    0 6px 26px rgba(30, 215, 96, 0.18);
 }
 .auth-google:hover .g-arrow {
   transform: translateX(3px);
@@ -5592,10 +5597,10 @@ th.hid-opcol {
   padding: 2px 0;
 }
 .cal-dowc.sun {
-  color: #d6d6d6;
+  color: #ff9aa5;
 }
 .cal-dowc.sat {
-  color: #d6d6d6;
+  color: #8fb6ff;
 }
 .cal-cell {
   position: relative;
@@ -5618,16 +5623,16 @@ th.hid-opcol {
   line-height: 1.1;
 }
 .cal-cell.sun .cal-d {
-  color: #d6d6d6;
+  color: #ff9aa5;
 }
 .cal-cell.sat .cal-d {
-  color: #d6d6d6;
+  color: #8fb6ff;
 }
 .cal-hol {
   margin-top: 1px;
   font-size: 9px;
   font-weight: 700;
-  color: #d6d6d6;
+  color: #ff9aa5;
   line-height: 1.15;
   white-space: normal;
   word-break: break-all;
@@ -5959,6 +5964,8 @@ td.v-strong,
 .side-tab.active {
   background: rgba(30, 215, 96, 0.15);
   color: #1ed760;
+  box-shadow: inset 0 0 0 1px rgba(30, 215, 96, 0.24),
+    0 0 14px rgba(30, 215, 96, 0.13);
 }
 .side-tab.active svg {
   color: #1ed760;

@@ -234,8 +234,8 @@ export default function LoginPage() {
             <svg className="auth-hex" width="62" height="62" viewBox="0 0 44 48">
               <defs>
                 <linearGradient id="authHexGrad" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stopColor="#4a86ff" />
-                  <stop offset="1" stopColor="#2456b8" />
+                  <stop offset="0" stopColor="#1ed760" />
+                  <stop offset="1" stopColor="#0e9d48" />
                 </linearGradient>
               </defs>
               <polygon
