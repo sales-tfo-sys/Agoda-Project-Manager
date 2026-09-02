@@ -54,7 +54,26 @@ export default function LoginPage() {
     <div className="lg2">
       <div className="lg2-card">
         <span className="lg2-logo" aria-hidden="true">
-          <BrandGlyph />
+          <svg width="60" height="66" viewBox="0 0 60 66" fill="none">
+            <defs>
+              <linearGradient id="lgHex" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stopColor="#5b9dff" />
+                <stop offset="0.55" stopColor="#2f6be0" />
+                <stop offset="1" stopColor="#1e40af" />
+              </linearGradient>
+              <linearGradient id="lgGloss" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor="#ffffff" stopOpacity="0.55" />
+                <stop offset="0.5" stopColor="#ffffff" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <path d="M30 6 54 19 54 47 30 60 6 47 6 19Z" fill="url(#lgHex)" stroke="url(#lgHex)" strokeWidth="8" strokeLinejoin="round" />
+            <path d="M30 6 54 19 54 47 30 60 6 47 6 19Z" fill="url(#lgGloss)" stroke="url(#lgGloss)" strokeWidth="8" strokeLinejoin="round" />
+            <g fill="#ffffff">
+              <rect x="20" y="36" width="4.6" height="9" rx="2.3" />
+              <rect x="27.7" y="29" width="4.6" height="16" rx="2.3" />
+              <rect x="35.4" y="22" width="4.6" height="23" rx="2.3" />
+            </g>
+          </svg>
         </span>
 
         <h1 className="lg2-title">Agoda Project Management</h1>
@@ -106,7 +125,16 @@ export default function LoginPage() {
         )}
 
         <p className="lg2-foot">
-          <span className="lg2-foot-mark" aria-hidden="true" />
+          <svg className="lg2-foot-mark" width="14" height="15" viewBox="0 0 24 26" fill="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="lgShield" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor="#34d17f" />
+                <stop offset="1" stopColor="#16a34a" />
+              </linearGradient>
+            </defs>
+            <path d="M12 1 21 4.2v7.2c0 5.7-3.8 10.6-9 12.6-5.2-2-9-6.9-9-12.6V4.2L12 1Z" fill="url(#lgShield)" />
+            <path d="M7.7 12.6l2.9 2.9 5.7-5.9" stroke="#ffffff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
           © 2026 Agoda Project Management. All rights reserved.
         </p>
       </div>

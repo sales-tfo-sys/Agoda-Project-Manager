@@ -1,30 +1,30 @@
-/* Spotify風ダーク×グリーン：緑がかった黒地×白系文字、緑のアクセント＋アンビエント光 */
+/* ライトテーマ：淡い青グレー地×濃紺文字、ブルーのアクセント */
 :root {
-  --bg: #0a0e18; /* 下地。緑がかったほぼ黒 */
-  --surface: #121826; /* カード */
-  --surface-soft: #182234;
-  --head: #172233; /* 表ヘッダー行 */
-  --zebra: #0f1422;
-  --border: #23324e; /* 罫線（緑みの暗色） */
-  --border2: #334560;
-  --ink: #eef1f8; /* 文字（ほぼ白） */
-  --ink-2: #a4b0c6;
-  --ink-3: #737f96;
-  --accent: #4a90ff; /* Spotifyグリーン（操作要素の強調） */
-  --accent-soft: #10203f;
-  --ok: #4a90ff;
-  --ok-bg: #10203f;
-  --warn: #e2b45c; /* 警告は視認性のため暖色を維持 */
-  --warn-bg: #2a2412;
-  --gold: #4a90ff;
-  --gold-soft: #2a4a86;
-  --header-bg: #0b1222;
-  --header-ink: #eef1f8;
-  --scroll-thumb: #2a3a58;
-  --scroll-thumb-hover: #4a90ff;
-  /* ブランド色（グリーン） */
-  --brand-1: #4a90ff;
-  --brand-2: #1e40af;
+  --bg: #eef2fb; /* 下地。淡い青グレー */
+  --surface: #ffffff; /* カード */
+  --surface-soft: #f4f7fe;
+  --head: #eaf0fb; /* 表ヘッダー行 */
+  --zebra: #f6f9fe;
+  --border: #e3e9f4; /* 罫線（淡いグレー） */
+  --border2: #d3dcec;
+  --ink: #1a2540; /* 文字（濃紺） */
+  --ink-2: #5a6a8c;
+  --ink-3: #8a97b6;
+  --accent: #2f6be0; /* ブルー（操作要素の強調） */
+  --accent-soft: #e8f0fe;
+  --ok: #2f6be0;
+  --ok-bg: #e8f0fe;
+  --warn: #b7791a; /* 警告は暖色 */
+  --warn-bg: #fdf3dd;
+  --gold: #2f6be0;
+  --gold-soft: #cfe0f8;
+  --header-bg: #ffffff;
+  --header-ink: #1a2540;
+  --scroll-thumb: #c6d2e8;
+  --scroll-thumb-hover: #2f6be0;
+  /* ブランド色（ブルー） */
+  --brand-1: #5b9dff;
+  --brand-2: #2f6be0;
 }
 
 * {
@@ -65,9 +65,9 @@ body {
 body {
   /* ヘッダー／メニューバーの濃紺と同系のにじみ。彩度と濃さを抑えて
      淡い青グレーの下地となじませる（3層で違和感が出ないように） */
-  background: radial-gradient(80% 55% at 88% -10%, rgba(74, 144, 255, 0.12) 0%, transparent 60%),
-    radial-gradient(70% 50% at -8% 104%, rgba(40, 100, 210, 0.1) 0%, transparent 60%),
-    radial-gradient(60% 42% at 50% 45%, rgba(74, 144, 255, 0.045) 0%, transparent 70%),
+  background: radial-gradient(80% 55% at 88% -10%, rgba(120, 170, 255, 0.16) 0%, transparent 60%),
+    radial-gradient(70% 50% at -8% 104%, rgba(120, 170, 255, 0.12) 0%, transparent 60%),
+    radial-gradient(60% 42% at 50% 45%, rgba(255, 255, 255, 0.5) 0%, transparent 70%),
     var(--bg);
   background-attachment: fixed;
   color: var(--ink);
@@ -7555,12 +7555,8 @@ td.v-strong,
 .lg2-logo {
   display: inline-grid;
   place-items: center;
-  width: 60px;
-  height: 66px;
-  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-  background: linear-gradient(140deg, #5b9dff, #2f6be0 55%, #1e40af);
-  box-shadow: 0 10px 24px rgba(47, 107, 224, 0.4);
   margin-bottom: 18px;
+  filter: drop-shadow(0 10px 20px rgba(47, 107, 224, 0.42));
 }
 .lg2-title {
   margin: 0 0 8px;
@@ -7627,9 +7623,6 @@ td.v-strong,
   color: #8a97b6;
 }
 .lg2-foot-mark {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: linear-gradient(140deg, #5b9dff, #2f6be0);
-  box-shadow: 0 0 6px rgba(47, 107, 224, 0.4);
+  flex: none;
+  filter: drop-shadow(0 1px 2px rgba(22, 163, 74, 0.35));
 }
