@@ -3337,33 +3337,66 @@ tbody tr.clickable {
 .st-pill {
   display: inline-block;
   min-width: 62px;
-  padding: 1px 8px;
+  padding: 2px 10px;
   border-radius: 999px;
   font-size: 10.5px;
   font-weight: 800;
   text-align: center;
+  border: 1px solid transparent;
 }
 .st-pill.st-ontrack {
-  color: var(--ok);
-  background: var(--ok-bg);
+  color: #45e08e;
+  background: rgba(34, 197, 94, 0.14);
+  border-color: rgba(52, 211, 133, 0.35);
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.14);
 }
 .st-pill.st-hold {
-  color: var(--warn);
-  background: var(--warn-bg);
+  color: #f5c451;
+  background: rgba(234, 179, 8, 0.14);
+  border-color: rgba(234, 179, 8, 0.34);
+  box-shadow: 0 0 12px rgba(234, 179, 8, 0.12);
 }
 .st-pill.st-behind {
-  color: #d6d6d6;
-  background: #1e1e1e;
+  color: #ff8f8f;
+  background: rgba(239, 68, 68, 0.16);
+  border-color: rgba(239, 68, 68, 0.36);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.14);
 }
 .st-pill.st-done {
-  color: var(--ink-3);
-  background: var(--surface-soft);
-  border: 1px solid var(--border);
+  color: #8fb6ff;
+  background: rgba(74, 144, 255, 0.14);
+  border-color: rgba(74, 144, 255, 0.32);
 }
 .st-pill.st-none {
   color: var(--ink-3);
   background: transparent;
   min-width: 0;
+}
+/* 進捗バー（テーブル内） */
+.c-rate {
+  white-space: nowrap;
+}
+.prog {
+  display: inline-block;
+  width: 54px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  vertical-align: middle;
+  overflow: hidden;
+  margin-right: 8px;
+}
+.prog-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2f6be0, #6ab0ff);
+  box-shadow: 0 0 8px rgba(74, 144, 255, 0.7);
+}
+.prog-val {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
 }
 
 /* ── タブ行（タブ＋対象年） ── */

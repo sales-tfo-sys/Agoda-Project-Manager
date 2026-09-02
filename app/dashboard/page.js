@@ -616,7 +616,12 @@ function SummaryTable({
                       <span className={"st-pill " + statusClass(o.status)}>{o.status || "—"}</span>
                     )}
                   </td>
-                  <td>{rate}%</td>
+                  <td className="c-rate">
+                    <span className="prog">
+                      <i className="prog-fill" style={{ width: Math.min(100, rate) + "%" }} />
+                    </span>
+                    <span className="prog-val">{rate}%</span>
+                  </td>
                   {/* 対応人数：対応者の選択人数を自動反映 */}
                   <td className={ids.length ? "v-auto" : ""} title={ids.length ? "対応者の選択人数" : undefined}>
                     {handlers.length}
@@ -1738,7 +1743,22 @@ export default function DashboardPage() {
                                 : num(val("done", t.done))}
                             </td>
                             <td>{dispRest != null ? num(dispRest) : num(t.customId ? calcRest : t.rest)}</td>
-                            <td>{dispPct != null ? dispPct : t.customId ? calcPct : cell(t.pct)}</td>
+                            <td className="c-rate">
+                              {(() => {
+                                const raw = dispPct != null ? dispPct : t.customId ? calcPct : cell(t.pct);
+                                const n = parseInt(String(raw).replace(/[^0-9.]/g, ""), 10);
+                                return (
+                                  <>
+                                    {Number.isFinite(n) && (
+                                      <span className="prog">
+                                        <i className="prog-fill" style={{ width: Math.min(100, n) + "%" }} />
+                                      </span>
+                                    )}
+                                    <span className="prog-val">{raw}</span>
+                                  </>
+                                );
+                              })()}
+                            </td>
                             <td>
                               {ed ? (
                                 <select
