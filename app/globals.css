@@ -7623,7 +7623,6 @@ td.v-strong,
   height: 46px;
   filter: drop-shadow(0 0 4px rgba(120, 180, 255, 0.85))
     drop-shadow(0 0 12px rgba(60, 140, 255, 0.55));
-  animation: lg2-float 3.4s ease-in-out infinite;
 }
 .lg2-pulse {
   position: absolute;

@@ -61,8 +61,6 @@ export default function LoginPage() {
         <p className="lg2-sub">案件の進捗を可視化し、成果につなげる管理プラットフォーム</p>
 
         <div className="lg2-lock" aria-hidden="true">
-          <span className="lg2-pulse" />
-          <span className="lg2-pulse p2" />
           <svg className="lg2-lock-svg" width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="url(#lg2lockG)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <defs>
               <linearGradient id="lg2lockG" x1="0" y1="0" x2="1" y2="1">
