@@ -59,9 +59,10 @@ export default function LoginPage() {
             </defs>
             <rect width="48" height="48" rx="14" fill="url(#brandBg)" />
             <rect width="48" height="48" rx="14" fill="url(#brandGloss)" />
-            <g transform="translate(12 12)" fill="none" stroke="#ffffff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M6.5 18 L12 5 L17.5 18" />
-              <path d="M8.6 12.6 H15.4" />
+            <g transform="translate(12 12)" fill="#ffffff">
+              <rect x="5.3" y="14" width="3.4" height="6" rx="1.7" />
+              <rect x="10.3" y="9" width="3.4" height="11" rx="1.7" />
+              <rect x="15.3" y="4.5" width="3.4" height="15.5" rx="1.7" />
             </g>
           </svg>
         </span>
@@ -77,10 +78,6 @@ export default function LoginPage() {
           </svg>
           <span className="g-div" aria-hidden="true" />
           <span className="g-text">Google でログイン</span>
-          <svg className="g-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <line x1="4" y1="12" x2="19" y2="12" />
-            <polyline points="13.5 6.5 20 12 13.5 17.5" />
-          </svg>
         </a>
 
         {showPwForm && (

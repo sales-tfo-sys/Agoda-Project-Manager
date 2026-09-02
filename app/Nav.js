@@ -252,9 +252,10 @@ export default function Sidebar() {
             viewBox="0 0 24 24"
             fill="none"
           >
-            <g fill="none" stroke="#ffffff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M6.5 18 L12 5 L17.5 18" />
-              <path d="M8.6 12.6 H15.4" />
+            <g fill="#ffffff">
+              <rect x="5.3" y="14" width="3.4" height="6" rx="1.7" />
+              <rect x="10.3" y="9" width="3.4" height="11" rx="1.7" />
+              <rect x="15.3" y="4.5" width="3.4" height="15.5" rx="1.7" />
             </g>
           </svg>
         </span>

@@ -12,8 +12,9 @@
   </defs>
   <rect width="32" height="32" rx="9" fill="url(#bg)"/>
   <rect width="32" height="32" rx="9" fill="url(#gloss)"/>
-  <g fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M9 23 L16 8 L23 23"/>
-    <path d="M11.7 17.2 H20.3"/>
+  <g fill="#ffffff">
+    <rect x="9" y="19" width="4" height="6.5" rx="2"/>
+    <rect x="14" y="13.5" width="4" height="12" rx="2"/>
+    <rect x="19" y="8" width="4" height="17.5" rx="2"/>
   </g>
 </svg>
