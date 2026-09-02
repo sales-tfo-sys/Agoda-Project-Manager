@@ -54,24 +54,23 @@ export default function LoginPage() {
     <div className="lg2">
       <div className="lg2-card">
         <span className="lg2-logo" aria-hidden="true">
-          <svg width="60" height="66" viewBox="0 0 60 66" fill="none">
+          <svg width="62" height="68" viewBox="0 0 62 68" fill="none">
             <defs>
-              <linearGradient id="lgHex" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stopColor="#5b9dff" />
-                <stop offset="0.55" stopColor="#2f6be0" />
-                <stop offset="1" stopColor="#1e40af" />
+              <linearGradient id="lgHex" x1="0.15" y1="0" x2="0.85" y2="1">
+                <stop offset="0" stopColor="#6aa4ff" />
+                <stop offset="1" stopColor="#2f6be0" />
               </linearGradient>
               <linearGradient id="lgGloss" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stopColor="#ffffff" stopOpacity="0.55" />
-                <stop offset="0.5" stopColor="#ffffff" stopOpacity="0" />
+                <stop offset="0" stopColor="#ffffff" stopOpacity="0.45" />
+                <stop offset="0.45" stopColor="#ffffff" stopOpacity="0" />
               </linearGradient>
             </defs>
-            <path d="M30 6 54 19 54 47 30 60 6 47 6 19Z" fill="url(#lgHex)" stroke="url(#lgHex)" strokeWidth="8" strokeLinejoin="round" />
-            <path d="M30 6 54 19 54 47 30 60 6 47 6 19Z" fill="url(#lgGloss)" stroke="url(#lgGloss)" strokeWidth="8" strokeLinejoin="round" />
+            <path d="M31 7 55 20 55 48 31 61 7 48 7 20Z" fill="url(#lgHex)" stroke="url(#lgHex)" strokeWidth="13" strokeLinejoin="round" />
+            <path d="M31 7 55 20 55 48 31 61 7 48 7 20Z" fill="url(#lgGloss)" stroke="url(#lgGloss)" strokeWidth="13" strokeLinejoin="round" />
             <g fill="#ffffff">
-              <rect x="20" y="36" width="4.6" height="9" rx="2.3" />
-              <rect x="27.7" y="29" width="4.6" height="16" rx="2.3" />
-              <rect x="35.4" y="22" width="4.6" height="23" rx="2.3" />
+              <rect x="21" y="37" width="4.8" height="9.5" rx="2.4" />
+              <rect x="28.6" y="30" width="4.8" height="16.5" rx="2.4" />
+              <rect x="36.2" y="23" width="4.8" height="23.5" rx="2.4" />
             </g>
           </svg>
         </span>
