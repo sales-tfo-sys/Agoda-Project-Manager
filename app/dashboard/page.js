@@ -1213,6 +1213,14 @@ export default function DashboardPage() {
               <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
             </svg>
           </button>
+          {canViewAccounts && (
+            <a className="head-user-btn" href="/kosu/persons" title="アカウント管理" aria-label="アカウント管理">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="8" r="3.5" />
+                <path d="M5 20a7 7 0 0 1 14 0" />
+              </svg>
+            </a>
+          )}
         </div>
       </div>
 
