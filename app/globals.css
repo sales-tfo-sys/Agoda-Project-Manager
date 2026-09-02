@@ -132,13 +132,13 @@ body {
 .brand-mark {
   flex: 0 0 auto;
   width: 27px;
-  height: 27px;
+  height: 29px;
   display: grid;
   place-items: center;
 }
 .brand-mark .brand-glyph {
   transform-origin: center;
-  filter: drop-shadow(0 4px 10px rgba(47, 107, 224, 0.4));
+  filter: drop-shadow(0 3px 7px rgba(30, 50, 100, 0.2));
 }
 @keyframes brandfloat {
   0%,
@@ -7539,7 +7539,7 @@ td.v-strong,
   display: inline-grid;
   place-items: center;
   margin-bottom: 18px;
-  filter: drop-shadow(0 10px 20px rgba(47, 107, 224, 0.42));
+  filter: drop-shadow(0 8px 16px rgba(30, 50, 100, 0.2));
 }
 .lg2-title {
   margin: 0 0 8px;

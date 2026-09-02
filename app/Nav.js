@@ -247,22 +247,22 @@ export default function Sidebar() {
         <span className="brand-mark" aria-hidden="true">
           <svg
             className="brand-glyph"
-            width="27"
-            height="27"
-            viewBox="0 0 60 60"
+            width="26"
+            height="29"
+            viewBox="0 0 62 70"
             fill="none"
           >
             <defs>
-              <linearGradient id="navHex" x1="0.12" y1="0" x2="0.88" y2="1">
+              <linearGradient id="navHex" x1="0.15" y1="0" x2="0.85" y2="1">
                 <stop offset="0" stopColor="#6aa4ff" />
                 <stop offset="1" stopColor="#2f6be0" />
               </linearGradient>
             </defs>
-            <rect x="2" y="2" width="56" height="56" rx="16" fill="url(#navHex)" />
+            <path d="M31 5 54 20 54 50 31 65 8 50 8 20Z" fill="url(#navHex)" stroke="url(#navHex)" strokeWidth="12" strokeLinejoin="round" />
             <g fill="#ffffff">
-              <rect x="19" y="31" width="5" height="10" rx="2.5" />
-              <rect x="27.5" y="25" width="5" height="16" rx="2.5" />
-              <rect x="36" y="19" width="5" height="22" rx="2.5" />
+              <rect x="21" y="37" width="4.8" height="9.5" rx="2.4" />
+              <rect x="28.6" y="30" width="4.8" height="16.5" rx="2.4" />
+              <rect x="36.2" y="23" width="4.8" height="23.5" rx="2.4" />
             </g>
           </svg>
         </span>
