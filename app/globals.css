@@ -7152,7 +7152,7 @@ td.v-strong,
   width: 100%;
   height: 100%;
   z-index: 0;
-  opacity: 0.85;
+  opacity: 1;
 }
 .lg-panels {
   position: relative;
@@ -7240,13 +7240,14 @@ td.v-strong,
 }
 .lg-fic {
   flex: 0 0 auto;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
   display: grid;
   place-items: center;
-  background: rgba(60, 120, 255, 0.12);
-  border: 1px solid rgba(120, 170, 255, 0.18);
+  background: linear-gradient(160deg, rgba(70, 130, 255, 0.22), rgba(30, 60, 150, 0.14));
+  border: 1px solid rgba(120, 175, 255, 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 0 16px rgba(60, 130, 255, 0.18);
 }
 .lg-ftx {
   display: flex;
@@ -7282,16 +7283,27 @@ td.v-strong,
 }
 .lg-lock {
   position: relative;
-  width: 176px;
-  height: 176px;
-  margin: 4px auto 24px;
+  width: 190px;
+  height: 190px;
+  margin: 6px auto 26px;
   display: grid;
   place-items: center;
+}
+/* 中央の淡いグロー */
+.lg-lock::before {
+  content: "";
+  position: absolute;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(50, 130, 255, 0.35) 0%, transparent 68%);
+  filter: blur(4px);
 }
 .lg-lock > svg {
   position: relative;
   z-index: 2;
-  filter: drop-shadow(0 0 12px rgba(80, 150, 255, 0.65));
+  filter: drop-shadow(0 0 6px rgba(120, 190, 255, 0.9))
+    drop-shadow(0 0 18px rgba(60, 140, 255, 0.7));
 }
 .lg-ring {
   position: absolute;
@@ -7299,24 +7311,25 @@ td.v-strong,
   left: 50%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  border: 1px solid rgba(90, 150, 255, 0.28);
 }
 .lg-ring.r1 {
-  width: 122px;
-  height: 122px;
+  width: 126px;
+  height: 126px;
+  border: 1.5px solid rgba(90, 160, 255, 0.45);
+  box-shadow: 0 0 18px rgba(60, 140, 255, 0.25), inset 0 0 18px rgba(60, 140, 255, 0.12);
 }
 .lg-ring.r2 {
-  width: 174px;
-  height: 174px;
-  border-color: rgba(90, 150, 255, 0.14);
+  width: 184px;
+  height: 184px;
+  border: 1px solid rgba(90, 160, 255, 0.2);
 }
 .lg-dot {
   position: absolute;
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background: #5aa0ff;
-  box-shadow: 0 0 9px rgba(90, 160, 255, 0.95);
+  background: #7fc0ff;
+  box-shadow: 0 0 10px rgba(120, 180, 255, 1);
 }
 .lg-dot.d1 { top: 12px; left: calc(50% - 3px); }
 .lg-dot.d2 { bottom: 14px; left: 38%; }

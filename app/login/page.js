@@ -96,23 +96,34 @@ export default function LoginPage() {
 
   return (
     <div className="lg">
-      {/* 背景：ダークブルー＋青い光のリボン */}
+      {/* 背景：ダークブルー＋青い光の渦（オーロラ状のリボン） */}
       <svg className="lg-bg" viewBox="0 0 1400 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <defs>
-          <linearGradient id="lgStreak" x1="0" y1="0" x2="1" y2="1">
+          <linearGradient id="lgR" x1="0" y1="0" x2="1" y2="0">
             <stop offset="0" stopColor="#1e5bff" stopOpacity="0" />
-            <stop offset="0.5" stopColor="#3f8bff" stopOpacity="0.9" />
+            <stop offset="0.5" stopColor="#74b6ff" stopOpacity="1" />
             <stop offset="1" stopColor="#1e5bff" stopOpacity="0" />
           </linearGradient>
-          <filter id="lgBlur" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="14" />
+          <filter id="lgGlow" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="8" />
+          </filter>
+          <filter id="lgGlowBig" x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur stdDeviation="28" />
           </filter>
         </defs>
-        <g filter="url(#lgBlur)" fill="none" stroke="url(#lgStreak)">
-          <path d="M-100 250 C 250 120, 500 360, 850 200 S 1300 120, 1520 260" strokeWidth="3" opacity="0.7" />
-          <path d="M-100 340 C 260 220, 520 460, 880 300 S 1320 240, 1520 360" strokeWidth="2" opacity="0.5" />
-          <path d="M-120 760 C 250 900, 520 620, 880 800 S 1320 900, 1520 720" strokeWidth="3" opacity="0.6" />
-          <path d="M-120 850 C 260 980, 540 720, 900 880 S 1330 980, 1520 820" strokeWidth="2" opacity="0.45" />
+        {/* 太く柔らかい光の帯（渦の芯） */}
+        <g filter="url(#lgGlowBig)" fill="none" stroke="url(#lgR)" opacity="0.78">
+          <path d="M-160 210 C 320 20, 760 360, 1120 130 S 1540 40, 1620 250" strokeWidth="14" />
+          <path d="M-160 840 C 320 1030, 760 640, 1120 880 S 1540 980, 1620 700" strokeWidth="14" />
+          <path d="M980 -80 C 1180 220, 1080 480, 1320 620" strokeWidth="12" opacity="0.7" />
+        </g>
+        {/* 細く明るい光の筋 */}
+        <g filter="url(#lgGlow)" fill="none" stroke="url(#lgR)">
+          <path d="M-160 250 C 330 70, 780 400, 1140 170 S 1560 80, 1620 280" strokeWidth="2.6" opacity="0.95" />
+          <path d="M-160 320 C 330 160, 780 460, 1140 250 S 1560 170, 1620 360" strokeWidth="1.6" opacity="0.6" />
+          <path d="M-160 800 C 330 980, 780 620, 1140 860 S 1560 940, 1620 680" strokeWidth="2.6" opacity="0.85" />
+          <path d="M-160 880 C 330 1040, 800 700, 1160 900 S 1560 980, 1620 760" strokeWidth="1.6" opacity="0.5" />
+          <path d="M1000 -80 C 1200 230, 1090 500, 1330 640" strokeWidth="2.2" opacity="0.7" />
         </g>
       </svg>
 
