@@ -7516,27 +7516,14 @@ td.v-strong,
   overflow: hidden auto;
   background: linear-gradient(165deg, #f3f7ff 0%, #e4edfd 45%, #d3e2fb 100%);
 }
-/* 背景のやわらかいウェーブ（白いリボン状の光） */
-.lg2::before,
-.lg2::after {
-  content: "";
+/* 背景の白い風の流れ（流れるようなウェーブ線） */
+.lg2-waves {
   position: absolute;
-  left: -30%;
-  right: -30%;
-  height: 70%;
-  border-radius: 42%;
-  pointer-events: none;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   z-index: 0;
-}
-.lg2::before {
-  top: -34%;
-  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.7), transparent 70%);
-  transform: rotate(-8deg);
-}
-.lg2::after {
-  bottom: -38%;
-  background: radial-gradient(closest-side, rgba(150, 190, 255, 0.35), transparent 70%);
-  transform: rotate(7deg);
+  pointer-events: none;
 }
 .lg2-card {
   position: relative;

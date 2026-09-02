@@ -52,6 +52,30 @@ export default function LoginPage() {
 
   return (
     <div className="lg2">
+      <svg className="lg2-waves" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <defs>
+          <filter id="lgSoft" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="16" />
+          </filter>
+          <linearGradient id="lgWhite" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor="#ffffff" stopOpacity="0" />
+            <stop offset="0.5" stopColor="#ffffff" stopOpacity="1" />
+            <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient id="lgBlue" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor="#a9c9ff" stopOpacity="0" />
+            <stop offset="0.5" stopColor="#a9c9ff" stopOpacity="1" />
+            <stop offset="1" stopColor="#a9c9ff" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <g fill="none" filter="url(#lgSoft)">
+          <path d="M-140 210 C 300 90 560 300 900 185 C 1180 90 1380 250 1580 175" stroke="url(#lgWhite)" strokeWidth="24" opacity="0.6" />
+          <path d="M-140 320 C 320 220 660 430 1000 315 C 1250 230 1430 375 1580 300" stroke="url(#lgBlue)" strokeWidth="16" opacity="0.5" />
+          <path d="M-140 470 C 330 370 700 590 1050 460 C 1300 375 1450 520 1580 450" stroke="url(#lgWhite)" strokeWidth="32" opacity="0.42" />
+          <path d="M-140 630 C 300 530 720 750 1080 620 C 1330 535 1470 675 1580 610" stroke="url(#lgWhite)" strokeWidth="20" opacity="0.36" />
+          <path d="M-140 760 C 350 670 700 860 1080 740 C 1320 665 1470 800 1580 745" stroke="url(#lgBlue)" strokeWidth="26" opacity="0.3" />
+        </g>
+      </svg>
       <div className="lg2-card">
         <span className="lg2-logo" aria-hidden="true">
           <svg width="62" height="68" viewBox="0 0 62 68" fill="none">
