@@ -7367,10 +7367,11 @@ td.v-strong,
   display: block;
   width: 236px;
   height: auto;
+  /* 暗い背景を screen で飛ばし、ごく外周だけ放射マスクでフェードして「貼った感」を消す
+     （中央〜リング/ドットは鮮明なまま残す） */
   mix-blend-mode: screen;
-  -webkit-mask-image: radial-gradient(farthest-side, #000 68%, transparent 100%);
-  mask-image: radial-gradient(farthest-side, #000 68%, transparent 100%);
-  animation: lg-float 3.6s ease-in-out infinite;
+  -webkit-mask-image: radial-gradient(farthest-side, #000 82%, transparent 100%);
+  mask-image: radial-gradient(farthest-side, #000 82%, transparent 100%);
 }
 .lg-lock-svg {
   width: 86px;
