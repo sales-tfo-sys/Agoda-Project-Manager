@@ -7503,7 +7503,7 @@ td.v-strong,
   }
 }
 
-/* ══ ログイン（中央1カード・ダークブルー） ══ */
+/* ══ ログイン（中央1カード・ライト） ══ */
 .lg2 {
   position: relative;
   min-height: 100vh;
@@ -7511,35 +7511,55 @@ td.v-strong,
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
   padding: 24px;
-  overflow-y: auto;
-  background: radial-gradient(58% 44% at 50% 22%, rgba(40, 92, 205, 0.16) 0%, transparent 60%),
-    radial-gradient(70% 55% at 86% 110%, rgba(20, 60, 150, 0.12) 0%, transparent 60%),
-    radial-gradient(60% 50% at 6% 0%, rgba(30, 80, 200, 0.08) 0%, transparent 55%),
-    #0a0e18;
+  overflow: hidden auto;
+  background: radial-gradient(60% 45% at 16% 12%, rgba(255, 255, 255, 0.75) 0%, transparent 58%),
+    radial-gradient(55% 45% at 92% 88%, rgba(255, 255, 255, 0.5) 0%, transparent 55%),
+    radial-gradient(70% 55% at 80% 6%, rgba(150, 190, 255, 0.32) 0%, transparent 55%),
+    linear-gradient(155deg, #eaf0fd 0%, #dde8fb 46%, #cfe0f8 100%);
+}
+/* 背景のやわらかい波（うっすら） */
+.lg2::before,
+.lg2::after {
+  content: "";
+  position: absolute;
+  left: -20%;
+  right: -20%;
+  height: 46%;
+  border-radius: 45%;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.55), transparent 72%);
+  pointer-events: none;
+  z-index: 0;
+}
+.lg2::before {
+  top: -14%;
+  transform: rotate(-4deg);
+}
+.lg2::after {
+  bottom: -16%;
+  background: radial-gradient(closest-side, rgba(170, 200, 255, 0.32), transparent 72%);
+  transform: rotate(5deg);
 }
 .lg2-card {
   position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 430px;
-  padding: 46px 34px 30px;
+  padding: 44px 34px 26px;
   text-align: center;
-  background: linear-gradient(180deg, rgba(28, 40, 70, 0.62), rgba(14, 20, 38, 0.62));
-  -webkit-backdrop-filter: blur(18px) saturate(1.2);
-  backdrop-filter: blur(18px) saturate(1.2);
-  border: 1px solid rgba(110, 165, 255, 0.2);
-  border-radius: 24px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 26px 60px rgba(0, 0, 0, 0.5);
+  background: #ffffff;
+  border: 1px solid rgba(120, 150, 220, 0.16);
+  border-radius: 26px;
+  box-shadow: 0 24px 60px rgba(52, 84, 170, 0.16), 0 3px 10px rgba(52, 84, 170, 0.07);
 }
 .lg2-logo {
   display: inline-grid;
   place-items: center;
-  width: 58px;
-  height: 58px;
-  border-radius: 17px;
-  background: linear-gradient(140deg, #5b9dff, #2f6be0 55%, #1e3fae);
-  box-shadow: 0 8px 26px rgba(40, 110, 255, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  width: 60px;
+  height: 66px;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  background: linear-gradient(140deg, #5b9dff, #2f6be0 55%, #1e40af);
+  box-shadow: 0 10px 24px rgba(47, 107, 224, 0.4);
   margin-bottom: 18px;
 }
 .lg2-title {
@@ -7547,20 +7567,26 @@ td.v-strong,
   font-size: 20px;
   font-weight: 800;
   letter-spacing: -0.01em;
-  color: #eaf1ff;
+  color: #1a2540;
 }
 .lg2-sub {
-  margin: 0 0 22px;
+  margin: 0 0 20px;
   font-size: 11.5px;
   line-height: 1.6;
   letter-spacing: -0.01em;
   white-space: nowrap;
-  color: #9fb2d8;
+  color: #6b7a9c;
 }
-.lg2-divider {
-  height: 1px;
-  margin: 0 0 22px;
-  background: linear-gradient(90deg, transparent, rgba(120, 170, 255, 0.24), transparent);
+.lg2-lock {
+  display: inline-grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  margin-bottom: 22px;
+  background: #eaf1fe;
+  border: 1px solid rgba(120, 160, 240, 0.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 4px 12px rgba(47, 107, 224, 0.14);
 }
 .lg2-google {
   display: flex;
@@ -7571,18 +7597,18 @@ td.v-strong,
   height: 48px;
   font-size: 14px;
   font-weight: 700;
-  color: #eaf1ff;
+  color: #2b3550;
   text-decoration: none;
-  background: rgba(24, 38, 70, 0.55);
-  border: 1px solid rgba(120, 170, 255, 0.28);
+  background: #ffffff;
+  border: 1px solid rgba(90, 120, 190, 0.26);
   border-radius: 12px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 6px 18px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 14px rgba(52, 84, 170, 0.1);
   transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease;
 }
 .lg2-google:hover {
   transform: translateY(-1px);
-  border-color: rgba(120, 170, 255, 0.5);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 8px 24px rgba(50, 120, 255, 0.22);
+  border-color: rgba(90, 120, 190, 0.5);
+  box-shadow: 0 8px 22px rgba(52, 84, 170, 0.18);
 }
 .lg2-pwform {
   margin-top: 16px;
@@ -7594,78 +7620,16 @@ td.v-strong,
 .lg2-foot {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 7px;
-  margin: 2px 0 0;
+  margin: 24px 0 0;
   font-size: 11px;
-  color: #6c7ea6;
+  color: #8a97b6;
 }
 .lg2-foot-mark {
-  width: 11px;
-  height: 11px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: linear-gradient(140deg, #5b9dff, #2f6be0);
-  box-shadow: 0 0 8px rgba(60, 120, 255, 0.5);
-}
-
-/* ログイン中央カード：サブ下の小さなカギ（アニメーション） */
-.lg2-lock {
-  position: relative;
-  width: 96px;
-  height: 96px;
-  margin: 2px auto 20px;
-  display: grid;
-  place-items: center;
-}
-.lg2-lock-svg {
-  position: relative;
-  z-index: 2;
-  width: 46px;
-  height: 46px;
-  filter: drop-shadow(0 0 4px rgba(120, 180, 255, 0.85))
-    drop-shadow(0 0 12px rgba(60, 140, 255, 0.55));
-}
-.lg2-pulse {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 56px;
-  height: 56px;
-  transform: translate(-50%, -50%) scale(0.55);
-  border-radius: 50%;
-  border: 1.4px solid rgba(95, 165, 255, 0.5);
-  opacity: 0;
-  animation: lg2-pulse 2.8s ease-out infinite;
-}
-.lg2-pulse.p2 {
-  animation-delay: 1.4s;
-}
-@keyframes lg2-float {
-  0%,
-  100% {
-    transform: translateY(0) scale(1);
-  }
-  50% {
-    transform: translateY(-2px) scale(1.05);
-  }
-}
-@keyframes lg2-pulse {
-  0% {
-    transform: translate(-50%, -50%) scale(0.55);
-    opacity: 0;
-  }
-  18% {
-    opacity: 0.55;
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(1.7);
-    opacity: 0;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .lg2-pulse {
-    display: none;
-  }
-  .lg2-lock-svg {
-    animation: none;
-  }
+  box-shadow: 0 0 6px rgba(47, 107, 224, 0.4);
 }
