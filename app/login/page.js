@@ -97,8 +97,6 @@ export default function LoginPage() {
         <h1 className="lg2-title">Agoda Project Management</h1>
         <p className="lg2-sub">案件の進捗を可視化し、成果につなげる管理プラットフォーム。</p>
 
-        <div className="lg2-divider" aria-hidden="true" />
-
         <a className="lg2-google" href="/api/auth/google">
           <svg className="g-logo" width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
             <path fill="#4285F4" d="M45.1 24.5c0-1.6-.1-2.7-.4-3.9H24v7.1h12.1c-.2 1.8-1.6 4.6-4.5 6.4l-.1.3 6.5 5 .5.1c4.1-3.8 6.6-9.4 6.6-15z" />
