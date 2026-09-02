@@ -252,23 +252,10 @@ export default function Sidebar() {
             viewBox="0 0 24 24"
             fill="none"
           >
-            <polygon points="12 2.2 22 8 12 13.8 2 8" fill="#ffffff" />
-            <polyline
-              points="3.4 11.4 12 16.4 20.6 11.4"
-              stroke="#ffffff"
-              strokeWidth="2.1"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              opacity="0.82"
-            />
-            <polyline
-              points="3.4 15.6 12 20.6 20.6 15.6"
-              stroke="#ffffff"
-              strokeWidth="2.1"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              opacity="0.5"
-            />
+            <g fill="none" stroke="#ffffff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6.5 18 L12 5 L17.5 18" />
+              <path d="M8.6 12.6 H15.4" />
+            </g>
           </svg>
         </span>
         <span className="brand-text">Agoda案件管理</span>

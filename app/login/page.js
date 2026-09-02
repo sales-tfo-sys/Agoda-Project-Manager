@@ -44,30 +44,29 @@ export default function LoginPage() {
       <span className="auth-simple-glow" aria-hidden="true" />
       <div className="auth-card">
         <span className="auth-badge" aria-hidden="true">
-          {/* 角の丸い六角形（緑）＋錠前 */}
-          <svg className="auth-hex" width="60" height="60" viewBox="0 0 44 48">
+          {/* 高級感のあるブランドマーク：青グラデ角丸＋グロス＋ファセットダイヤ */}
+          <svg width="58" height="58" viewBox="0 0 48 48">
             <defs>
-              <linearGradient id="authHexGrad" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stopColor="#1ed760" />
-                <stop offset="1" stopColor="#0e9d48" />
+              <linearGradient id="brandBg" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stopColor="#5b9dff" />
+                <stop offset="0.55" stopColor="#2f6be0" />
+                <stop offset="1" stopColor="#1e3fae" />
+              </linearGradient>
+              <linearGradient id="brandGloss" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor="#ffffff" stopOpacity="0.4" />
+                <stop offset="0.5" stopColor="#ffffff" stopOpacity="0" />
               </linearGradient>
             </defs>
-            <polygon
-              points="22 4 38 13 38 35 22 44 6 35 6 13"
-              fill="url(#authHexGrad)"
-              stroke="url(#authHexGrad)"
-              strokeWidth="7"
-              strokeLinejoin="round"
-            />
-          </svg>
-          <svg className="auth-lock" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="5" y="11" width="14" height="9" rx="2.2" />
-            <path d="M8.4 11V8.2a3.6 3.6 0 0 1 7.2 0V11" />
+            <rect width="48" height="48" rx="14" fill="url(#brandBg)" />
+            <rect width="48" height="48" rx="14" fill="url(#brandGloss)" />
+            <g transform="translate(12 12)" fill="none" stroke="#ffffff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6.5 18 L12 5 L17.5 18" />
+              <path d="M8.6 12.6 H15.4" />
+            </g>
           </svg>
         </span>
 
         <h1 className="auth-title">Agoda案件管理</h1>
-        <p className="auth-sub">続けるには Google アカウントでログイン</p>
 
         <a className="auth-google" href="/api/auth/google">
           <svg className="g-logo" width="22" height="22" viewBox="0 0 48 48" aria-hidden="true">

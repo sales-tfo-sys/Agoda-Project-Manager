@@ -1,30 +1,30 @@
 /* Spotify風ダーク×グリーン：緑がかった黒地×白系文字、緑のアクセント＋アンビエント光 */
 :root {
-  --bg: #0a0f0c; /* 下地。緑がかったほぼ黒 */
-  --surface: #121815; /* カード */
-  --surface-soft: #18201b;
-  --head: #17201a; /* 表ヘッダー行 */
-  --zebra: #0f1512;
-  --border: #233029; /* 罫線（緑みの暗色） */
-  --border2: #33443a;
-  --ink: #eef3f0; /* 文字（ほぼ白） */
-  --ink-2: #a6b3ac;
-  --ink-3: #74827b;
-  --accent: #1ed760; /* Spotifyグリーン（操作要素の強調） */
-  --accent-soft: #10251a;
-  --ok: #1ed760;
-  --ok-bg: #10251a;
+  --bg: #0a0e18; /* 下地。緑がかったほぼ黒 */
+  --surface: #121826; /* カード */
+  --surface-soft: #182234;
+  --head: #172233; /* 表ヘッダー行 */
+  --zebra: #0f1422;
+  --border: #23324e; /* 罫線（緑みの暗色） */
+  --border2: #334560;
+  --ink: #eef1f8; /* 文字（ほぼ白） */
+  --ink-2: #a4b0c6;
+  --ink-3: #737f96;
+  --accent: #4a90ff; /* Spotifyグリーン（操作要素の強調） */
+  --accent-soft: #10203f;
+  --ok: #4a90ff;
+  --ok-bg: #10203f;
   --warn: #e2b45c; /* 警告は視認性のため暖色を維持 */
   --warn-bg: #2a2412;
-  --gold: #1ed760;
-  --gold-soft: #1a7d43;
-  --header-bg: #0b120e;
-  --header-ink: #eef3f0;
-  --scroll-thumb: #2a3a30;
-  --scroll-thumb-hover: #1ed760;
+  --gold: #4a90ff;
+  --gold-soft: #2a4a86;
+  --header-bg: #0b1222;
+  --header-ink: #eef1f8;
+  --scroll-thumb: #2a3a58;
+  --scroll-thumb-hover: #4a90ff;
   /* ブランド色（グリーン） */
-  --brand-1: #1ed760;
-  --brand-2: #0e9d48;
+  --brand-1: #4a90ff;
+  --brand-2: #1e40af;
 }
 
 * {
@@ -65,9 +65,9 @@ body {
 body {
   /* ヘッダー／メニューバーの濃紺と同系のにじみ。彩度と濃さを抑えて
      淡い青グレーの下地となじませる（3層で違和感が出ないように） */
-  background: radial-gradient(80% 55% at 88% -10%, rgba(30, 215, 96, 0.12) 0%, transparent 60%),
-    radial-gradient(70% 50% at -8% 104%, rgba(20, 160, 82, 0.1) 0%, transparent 60%),
-    radial-gradient(60% 42% at 50% 45%, rgba(30, 215, 96, 0.045) 0%, transparent 70%),
+  background: radial-gradient(80% 55% at 88% -10%, rgba(74, 144, 255, 0.12) 0%, transparent 60%),
+    radial-gradient(70% 50% at -8% 104%, rgba(40, 100, 210, 0.1) 0%, transparent 60%),
+    radial-gradient(60% 42% at 50% 45%, rgba(74, 144, 255, 0.045) 0%, transparent 70%),
     var(--bg);
   background-attachment: fixed;
   color: var(--ink);
@@ -93,9 +93,9 @@ body {
   height: 100vh;
   width: 52px;
   /* 右端のヘアライン（緑みの細線） */
-  border-right: 1px solid rgba(120, 210, 150, 0.12);
+  border-right: 1px solid rgba(120, 165, 240, 0.12);
   /* ガラス：半透明の緑みダーク＋背後をぼかす */
-  background: linear-gradient(168deg, rgba(20, 28, 23, 0.66) 0%, rgba(12, 18, 15, 0.7) 100%);
+  background: linear-gradient(168deg, rgba(18, 24, 40, 0.66) 0%, rgba(11, 16, 28, 0.7) 100%);
   -webkit-backdrop-filter: blur(20px) saturate(1.3);
   backdrop-filter: blur(20px) saturate(1.3);
   padding: 12px 6px;
@@ -134,10 +134,10 @@ body {
   width: 26px;
   height: 26px;
   border-radius: 9px;
-  background: linear-gradient(140deg, #1ed760 0%, #12b455 50%, #0e9d48 100%);
+  background: linear-gradient(140deg, #4a90ff 0%, #2f6be0 50%, #1e40af 100%);
   display: grid;
   place-items: center;
-  box-shadow: 0 3px 12px rgba(30, 215, 96, 0.5),
+  box-shadow: 0 3px 12px rgba(74, 144, 255, 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 .brand-mark .brand-glyph {
@@ -188,8 +188,8 @@ body {
   color: #ffffff;
 }
 .side-tab.active {
-  background: rgba(30, 215, 96, 0.15);
-  color: #1ed760;
+  background: rgba(74, 144, 255, 0.15);
+  color: #4a90ff;
 }
 .main {
   flex: 1;
@@ -568,8 +568,8 @@ h1 {
 
 /* 四半期テーブル */
 .qcard {
-  background: linear-gradient(180deg, rgba(26, 34, 29, 0.8), rgba(18, 24, 21, 0.8));
-  border: 1px solid rgba(120, 210, 150, 0.13);
+  background: linear-gradient(180deg, rgba(24, 31, 50, 0.8), rgba(16, 21, 36, 0.8));
+  border: 1px solid rgba(120, 165, 240, 0.13);
   border-radius: 14px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 8px 22px rgba(0, 0, 0, 0.38);
   overflow: hidden;
@@ -918,10 +918,10 @@ h1 {
 }
 
 .card {
-  background: linear-gradient(180deg, rgba(28, 37, 31, 0.6), rgba(18, 24, 21, 0.6));
+  background: linear-gradient(180deg, rgba(26, 33, 52, 0.6), rgba(16, 21, 36, 0.6));
   -webkit-backdrop-filter: blur(16px) saturate(1.25);
   backdrop-filter: blur(16px) saturate(1.25);
-  border: 1px solid rgba(120, 210, 150, 0.16);
+  border: 1px solid rgba(120, 165, 240, 0.16);
   border-radius: 16px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 12px 30px rgba(0, 0, 0, 0.4);
   overflow: hidden;
@@ -1495,8 +1495,8 @@ tbody tr.clickable {
   font: inherit;
   font-size: 13px;
   font-weight: 700;
-  color: #08130c;
-  background: #1ed760;
+  color: #ffffff;
+  background: linear-gradient(135deg, #5b9dff, #2f6be0);
   border: 0;
   border-radius: 999px;
   padding: 8px 20px;
@@ -1504,17 +1504,17 @@ tbody tr.clickable {
   text-decoration: none;
   display: inline-flex;
   align-items: center;
-  box-shadow: 0 4px 16px rgba(30, 215, 96, 0.26);
-  transition: transform 0.14s ease, box-shadow 0.14s ease, background 0.14s ease;
+  box-shadow: 0 4px 16px rgba(74, 144, 255, 0.3);
+  transition: transform 0.14s ease, box-shadow 0.14s ease, filter 0.14s ease;
 }
 .save-btn.sm {
   padding: 6px 14px;
   font-size: 12.5px;
 }
 .save-btn:hover {
-  background: #34e07d;
+  filter: brightness(1.08);
   transform: translateY(-1px);
-  box-shadow: 0 7px 22px rgba(30, 215, 96, 0.42);
+  box-shadow: 0 7px 22px rgba(74, 144, 255, 0.46);
 }
 .save-btn:disabled {
   opacity: 0.5;
@@ -4004,8 +4004,8 @@ tbody tr.clickable {
   width: 44px;
   height: 44px;
   border-radius: 13px;
-  background: linear-gradient(150deg, #1ed760, #0e9d48);
-  box-shadow: 0 8px 22px rgba(30, 215, 96, 0.4);
+  background: linear-gradient(150deg, #4a90ff, #1e40af);
+  box-shadow: 0 8px 22px rgba(74, 144, 255, 0.4);
 }
 .auth-logo-text {
   font-size: 15px;
@@ -4226,7 +4226,7 @@ tbody tr.clickable {
   margin: 0 auto 22px;
   color: #ffffff;
   /* 影は六角形の形に沿わせる（矩形の box-shadow をやめて drop-shadow に） */
-  filter: drop-shadow(0 10px 26px rgba(30, 215, 96, 0.4));
+  filter: drop-shadow(0 10px 26px rgba(74, 144, 255, 0.4));
 }
 /* 角丸六角形の本体 */
 .auth-badge .auth-hex {
@@ -4600,10 +4600,10 @@ tbody tr.clickable {
 }
 .auth-google:hover {
   transform: translateY(-1px);
-  border-color: rgba(30, 215, 96, 0.42);
+  border-color: rgba(74, 144, 255, 0.42);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    0 0 0 1px rgba(30, 215, 96, 0.2), 0 14px 34px rgba(0, 0, 0, 0.5),
-    0 6px 26px rgba(30, 215, 96, 0.18);
+    0 0 0 1px rgba(74, 144, 255, 0.2), 0 14px 34px rgba(0, 0, 0, 0.5),
+    0 6px 26px rgba(74, 144, 255, 0.18);
 }
 .auth-google:hover .g-arrow {
   transform: translateX(3px);
@@ -5967,13 +5967,13 @@ td.v-strong,
 }
 /* サイドバーの選択中タブをブランドのグラデーションに */
 .side-tab.active {
-  background: rgba(30, 215, 96, 0.15);
-  color: #1ed760;
-  box-shadow: inset 0 0 0 1px rgba(30, 215, 96, 0.24),
-    0 0 14px rgba(30, 215, 96, 0.13);
+  background: rgba(74, 144, 255, 0.15);
+  color: #4a90ff;
+  box-shadow: inset 0 0 0 1px rgba(74, 144, 255, 0.24),
+    0 0 14px rgba(74, 144, 255, 0.13);
 }
 .side-tab.active svg {
-  color: #1ed760;
+  color: #4a90ff;
 }
 /* 補助ボタンの枠を青みに */
 .ghost-btn,
@@ -6798,7 +6798,7 @@ td.v-strong,
 }
 /* モノクロ：オン＝明るいグレー地、オフ＝暗いグレー地。ノブ位置＋濃淡で区別 */
 .persons-page .switch.on {
-  background: #1db954;
+  background: #2f6be0;
 }
 .persons-page .login-switch.off {
   background: #33353a;
@@ -7079,10 +7079,10 @@ td.v-strong,
   place-items: center;
   padding: 24px;
   overflow: hidden;
-  background: radial-gradient(58% 42% at 50% 28%, rgba(30, 215, 96, 0.16) 0%, transparent 60%),
-    radial-gradient(70% 55% at 88% 112%, rgba(20, 160, 82, 0.12) 0%, transparent 60%),
-    radial-gradient(60% 50% at 6% 0%, rgba(30, 215, 96, 0.08) 0%, transparent 55%),
-    #0a0f0c;
+  background: radial-gradient(58% 42% at 50% 28%, rgba(74, 144, 255, 0.16) 0%, transparent 60%),
+    radial-gradient(70% 55% at 88% 112%, rgba(40, 100, 210, 0.12) 0%, transparent 60%),
+    radial-gradient(60% 50% at 6% 0%, rgba(74, 144, 255, 0.08) 0%, transparent 55%),
+    #0a0e18;
 }
 .auth-simple-glow {
   position: absolute;
@@ -7092,7 +7092,7 @@ td.v-strong,
   top: -150px;
   left: 50%;
   transform: translateX(-50%);
-  background: radial-gradient(circle, rgba(30, 215, 96, 0.22) 0%, transparent 68%);
+  background: radial-gradient(circle, rgba(74, 144, 255, 0.22) 0%, transparent 68%);
   filter: blur(34px);
   pointer-events: none;
 }
@@ -7103,15 +7103,15 @@ td.v-strong,
   max-width: 400px;
   padding: 42px 34px 24px;
   text-align: center;
-  background: linear-gradient(180deg, rgba(28, 37, 31, 0.62), rgba(15, 21, 18, 0.62));
+  background: linear-gradient(180deg, rgba(26, 33, 52, 0.62), rgba(14, 19, 33, 0.62));
   -webkit-backdrop-filter: blur(20px) saturate(1.25);
   backdrop-filter: blur(20px) saturate(1.25);
-  border: 1px solid rgba(120, 210, 150, 0.16);
+  border: 1px solid rgba(120, 165, 240, 0.16);
   border-radius: 22px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 26px 64px rgba(0, 0, 0, 0.5);
 }
 .auth-title {
-  margin: 4px 0 6px;
+  margin: 6px 0 22px;
   font-size: 22px;
   font-weight: 800;
   letter-spacing: -0.01em;
