@@ -7176,8 +7176,9 @@ td.v-strong,
   min-height: 100vh;
   display: grid;
   place-items: center;
-  padding: 32px;
-  overflow: hidden;
+  padding: 22px;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: radial-gradient(72% 60% at 50% -6%, #12397f 0%, transparent 55%),
     radial-gradient(60% 55% at 104% 106%, #0e2f6e 0%, transparent 55%),
     radial-gradient(50% 45% at -6% 60%, #0c2a63 0%, transparent 55%),
@@ -7210,8 +7211,8 @@ td.v-strong,
 /* 参照イメージのように右パネルを手前にし、左パネルはその下へ潜り込ませる */
 .lg-left {
   flex: 0 0 40%;
-  margin: 22px 0;
-  padding: 40px 46px 40px 34px;
+  margin: 16px 0;
+  padding: 28px 44px 28px 30px;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -7220,8 +7221,8 @@ td.v-strong,
 }
 .lg-right {
   flex: 1;
-  margin-left: -34px;
-  padding: 46px 46px;
+  margin-left: -32px;
+  padding: 32px 40px;
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -7232,24 +7233,28 @@ td.v-strong,
     -18px 0 44px rgba(0, 0, 0, 0.4), 0 34px 74px rgba(0, 0, 0, 0.5);
 }
 .lg-logo {
-  width: 64px;
-  height: 64px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   background: radial-gradient(circle at 34% 28%, #86bcff 0%, #2f6be0 52%, #1a44b8 100%);
-  box-shadow: 0 0 0 7px rgba(60, 120, 255, 0.12), 0 10px 34px rgba(40, 110, 255, 0.55);
-  margin-bottom: 26px;
+  box-shadow: 0 0 0 6px rgba(60, 120, 255, 0.12), 0 10px 30px rgba(40, 110, 255, 0.5);
+  margin-bottom: 16px;
 }
 .lg-right .lg-logo {
-  margin: 0 auto 20px;
+  margin: 0 auto 14px;
+}
+.lg-logo svg {
+  width: 26px;
+  height: 26px;
 }
 /* 左パネル */
 .lg-lede {
-  margin: 4px 0 14px;
-  font-size: 30px;
+  margin: 2px 0 12px;
+  font-size: 25px;
   font-weight: 800;
-  line-height: 1.28;
+  line-height: 1.26;
   letter-spacing: -0.01em;
   color: #eaf1ff;
 }
@@ -7257,9 +7262,9 @@ td.v-strong,
   color: #5aa0ff;
 }
 .lg-sub {
-  margin: 0 0 30px;
-  font-size: 13.5px;
-  line-height: 1.7;
+  margin: 0 0 22px;
+  font-size: 13px;
+  line-height: 1.65;
   color: #9fb2d8;
 }
 .lg-feats {
@@ -7268,7 +7273,7 @@ td.v-strong,
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 13px;
 }
 .lg-feats li {
   display: flex;
@@ -7277,9 +7282,9 @@ td.v-strong,
 }
 .lg-fic {
   flex: 0 0 auto;
-  width: 44px;
-  height: 44px;
-  border-radius: 13px;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
   display: grid;
   place-items: center;
   background: linear-gradient(160deg, rgba(70, 130, 255, 0.22), rgba(30, 60, 150, 0.14));
@@ -7302,14 +7307,14 @@ td.v-strong,
 }
 .lg-copy {
   margin: auto 0 0;
-  padding-top: 28px;
+  padding-top: 18px;
   font-size: 11px;
   color: #5f7098;
 }
 /* 右パネル */
 .lg-welcome {
-  margin: 2px 0 22px;
-  font-size: 22px;
+  margin: 2px 0 14px;
+  font-size: 21px;
   font-weight: 800;
   letter-spacing: -0.01em;
   color: #eaf1ff;
@@ -7321,18 +7326,22 @@ td.v-strong,
 }
 .lg-lock {
   position: relative;
-  width: 190px;
-  height: 190px;
-  margin: 6px auto 26px;
+  width: 158px;
+  height: 158px;
+  margin: 2px auto 16px;
   display: grid;
   place-items: center;
+}
+.lg-lock-svg {
+  width: 78px;
+  height: 78px;
 }
 /* 中央の淡いグロー */
 .lg-lock::before {
   content: "";
   position: absolute;
-  width: 130px;
-  height: 130px;
+  width: 110px;
+  height: 110px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(50, 130, 255, 0.35) 0%, transparent 68%);
   filter: blur(4px);
@@ -7351,14 +7360,14 @@ td.v-strong,
   border-radius: 50%;
 }
 .lg-ring.r1 {
-  width: 126px;
-  height: 126px;
+  width: 108px;
+  height: 108px;
   border: 1.5px solid rgba(90, 160, 255, 0.45);
   box-shadow: 0 0 18px rgba(60, 140, 255, 0.25), inset 0 0 18px rgba(60, 140, 255, 0.12);
 }
 .lg-ring.r2 {
-  width: 184px;
-  height: 184px;
+  width: 154px;
+  height: 154px;
   border: 1px solid rgba(90, 160, 255, 0.2);
 }
 .lg-dot {
@@ -7380,9 +7389,9 @@ td.v-strong,
   color: #eaf1ff;
 }
 .lg-safe-desc {
-  margin: 18px 0 0;
+  margin: 12px 0 0;
   font-size: 12px;
-  line-height: 1.75;
+  line-height: 1.7;
   color: #8fa4c9;
 }
 .lg-google {
