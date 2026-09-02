@@ -166,8 +166,7 @@ export default function LoginPage() {
             <BrandGlyph />
           </span>
 
-          <h2 className="lg-welcome">ようこそ</h2>
-          <p className="lg-welcome-sub">アカウントにログインしてください</p>
+          <h2 className="lg-welcome">Agoda Project Management</h2>
 
           <div className="lg-lock" aria-hidden="true">
             <span className="lg-ring r1" />
@@ -176,20 +175,19 @@ export default function LoginPage() {
             <span className="lg-dot d2" />
             <span className="lg-dot d3" />
             <span className="lg-dot d4" />
-            <svg className="lg-lock-svg" width="88" height="88" viewBox="0 0 24 24" fill="none" stroke="#6ab0ff" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="4" y="10.3" width="16" height="11.2" rx="3.2" />
-              <path d="M7.4 10.3V7.5a4.6 4.6 0 0 1 9.2 0v2.8" />
-              <circle cx="12" cy="15.9" r="3.1" />
-              <path d="M10.6 15.9 L11.6 17 L13.5 14.7" />
+            <svg className="lg-lock-svg" width="94" height="94" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+              <defs>
+                <linearGradient id="lockGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stopColor="#a9d8ff" />
+                  <stop offset="1" stopColor="#2f6be0" />
+                </linearGradient>
+              </defs>
+              <path d="M7 10.2V7.4a5 5 0 0 1 10 0v2.8" stroke="url(#lockGrad)" strokeWidth="1.9" />
+              <rect x="3.4" y="10" width="17.2" height="11.8" rx="3.6" fill="rgba(70,140,255,0.16)" stroke="url(#lockGrad)" strokeWidth="1.7" />
+              <circle cx="12" cy="15.7" r="3.3" stroke="#cfe6ff" strokeWidth="1.5" />
+              <path d="M10.4 15.7 L11.6 17 L13.7 14.3" stroke="#eaf5ff" strokeWidth="1.8" />
             </svg>
           </div>
-
-          <h3 className="lg-safe">安心・安全なログイン</h3>
-          <p className="lg-safe-desc">
-            Google アカウントで安全にログインします。
-            <br />
-            情報は Google アカウントで保護されます。
-          </p>
 
           <a className="lg-google" href="/api/auth/google">
             <svg className="g-logo" width="22" height="22" viewBox="0 0 48 48" aria-hidden="true">
@@ -200,6 +198,12 @@ export default function LoginPage() {
             </svg>
             <span className="lg-g-text">Google でログイン</span>
           </a>
+
+          <p className="lg-safe-desc">
+            Google アカウントで安全にログインします。
+            <br />
+            情報は Google アカウントで保護されます。
+          </p>
 
           {showPwForm && (
             <form onSubmit={submit} className="lg-pwform">
