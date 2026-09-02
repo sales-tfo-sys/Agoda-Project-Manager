@@ -58,11 +58,7 @@ export default function LoginPage() {
         </span>
 
         <h1 className="lg2-title">Agoda Project Management</h1>
-        <p className="lg2-sub">
-          案件の進捗を可視化し、
-          <br />
-          成果につなげる管理プラットフォーム
-        </p>
+        <p className="lg2-sub">案件の進捗を可視化し、成果につなげる管理プラットフォーム</p>
 
         <div className="lg2-divider" aria-hidden="true" />
 
