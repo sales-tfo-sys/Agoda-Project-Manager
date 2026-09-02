@@ -79,7 +79,7 @@ export default function LoginPage() {
         <p className="lg2-sub">案件の進捗を可視化し、成果につなげる管理プラットフォーム。</p>
 
         <span className="lg2-lock" aria-hidden="true">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2f6be0" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2f6be0" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
             <rect x="5" y="11" width="14" height="9" rx="2.4" />
             <path d="M8 11V8.2a4 4 0 0 1 8 0V11" />
           </svg>
@@ -127,8 +127,8 @@ export default function LoginPage() {
           <svg className="lg2-foot-mark" width="14" height="15" viewBox="0 0 24 26" fill="none" aria-hidden="true">
             <defs>
               <linearGradient id="lgShield" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stopColor="#34d17f" />
-                <stop offset="1" stopColor="#16a34a" />
+                <stop offset="0" stopColor="#5b9dff" />
+                <stop offset="1" stopColor="#2f6be0" />
               </linearGradient>
             </defs>
             <path d="M12 1 21 4.2v7.2c0 5.7-3.8 10.6-9 12.6-5.2-2-9-6.9-9-12.6V4.2L12 1Z" fill="url(#lgShield)" />
