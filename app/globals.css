@@ -7355,19 +7355,19 @@ td.v-strong,
 }
 .lg-lock {
   position: relative;
-  width: 288px;
-  height: 192px;
-  margin: 6px auto 18px;
+  width: 250px;
+  height: 250px;
+  margin: 2px auto 12px;
   display: grid;
   place-items: center;
 }
-/* 背景色を合わせた画像をそのまま埋め込み。縁だけごく軽くフェードして境目を消す。 */
+/* 背景色を合わせた正方形画像をそのまま埋め込み。縁を放射マスクでフェードして境目を消す。 */
 .lg-lock-img {
   display: block;
-  width: 288px;
-  height: auto;
-  -webkit-mask-image: radial-gradient(farthest-side, #000 78%, transparent 100%);
-  mask-image: radial-gradient(farthest-side, #000 78%, transparent 100%);
+  width: 250px;
+  height: 250px;
+  -webkit-mask-image: radial-gradient(closest-side, #000 74%, transparent 100%);
+  mask-image: radial-gradient(closest-side, #000 74%, transparent 100%);
 }
 .lg-lock-svg {
   width: 86px;
