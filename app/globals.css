@@ -5292,11 +5292,6 @@ tbody tr.clickable {
   align-items: center;
   gap: 8px;
 }
-.manage-edit-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
 .manage-edit-btn.on {
   color: #ffffff;
   background: var(--accent);
