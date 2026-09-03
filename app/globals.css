@@ -7528,7 +7528,7 @@ td.v-strong,
   z-index: 1;
   width: 100%;
   max-width: 430px;
-  padding: 58px 34px 42px;
+  padding: 44px 34px 42px;
   text-align: center;
   background: #ffffff;
   border: 1px solid rgba(120, 150, 220, 0.16);
@@ -7551,11 +7551,11 @@ td.v-strong,
 .lg2-sub {
   margin: 0 0 40px;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 700;
   line-height: 1.6;
   letter-spacing: -0.01em;
   white-space: nowrap;
-  color: #4a5674;
+  color: #6a6f78;
 }
 .lg2-google {
   display: flex;
@@ -7594,7 +7594,7 @@ td.v-strong,
   margin: 15px 0 0;
   font-size: 11px;
   font-weight: 500;
-  color: #626f8d;
+  color: #808690;
 }
 .lg2-foot-mark {
   flex: none;
