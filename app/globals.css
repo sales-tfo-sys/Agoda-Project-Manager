@@ -5136,6 +5136,14 @@ tbody tr.clickable {
   font-weight: 700;
   color: var(--ink-2);
 }
+/* 「今月」チップは回答数より控えめに（総数=青の主役、今月=副） */
+.form-card-metric.is-month {
+  background: #f2f6fe;
+}
+.form-card-metric.is-month .form-card-num {
+  font-size: 18px;
+  color: var(--ink-2);
+}
 .form-card-dim {
   font-size: 20px;
   font-weight: 800;
@@ -5164,25 +5172,30 @@ tbody tr.clickable {
   width: 16px;
   flex: none;
   color: var(--ink-3);
-  opacity: 0;
+  opacity: 0.4;
   cursor: grab;
   transition: opacity 0.12s;
   order: -1;
   margin: -4px -8px -4px -6px;
 }
 .form-card:hover .form-card-grip {
-  opacity: 0.5;
+  opacity: 0.75;
 }
 .form-card-grip:active {
   cursor: grabbing;
 }
 .form-card-ops {
   flex: none;
-  display: none;
+  /* 常に領域を確保しておき、ホバーでフェード表示（回答数がずれないように） */
+  display: inline-flex;
   gap: 4px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s ease;
 }
 .form-card:hover .form-card-ops {
-  display: inline-flex;
+  opacity: 1;
+  visibility: visible;
 }
 .forms-back {
   margin-right: 2px;

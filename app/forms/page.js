@@ -429,6 +429,18 @@ export default function FormsPage() {
                       )}
                     </span>
 
+                    <span className="form-card-metric is-month">
+                      <span className="form-card-caption">今月</span>
+                      {c && !c.error ? (
+                        <>
+                          <span className="form-card-num">{Number(c.month || 0).toLocaleString("ja-JP")}</span>
+                          <span className="form-card-unit">件</span>
+                        </>
+                      ) : (
+                        <span className="form-card-dim">—</span>
+                      )}
+                    </span>
+
                     {canEdit && (
                       <span className="form-card-ops">
                         <button className="forms-op" onClick={(e) => { e.stopPropagation(); setEditTarget({ id: f.id, title: f.title, url: f.url, description: f.description }); }} title="編集" aria-label="編集">
