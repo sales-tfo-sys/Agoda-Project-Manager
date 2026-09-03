@@ -5245,6 +5245,35 @@ th.forms-rownum {
 th.forms-rownum {
   z-index: 3;
 }
+/* チェックボックス列（TRUE/FALSE）の表示 */
+.forms-check-cell {
+  text-align: center;
+}
+.forms-check {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1.5px solid #c3ccdd;
+  background: #ffffff;
+  vertical-align: middle;
+  position: relative;
+}
+.forms-check.on {
+  background: #2f6be0;
+  border-color: #2f6be0;
+}
+.forms-check.on::after {
+  content: "";
+  position: absolute;
+  left: 4.5px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid #ffffff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
 @media (max-width: 560px) {
   .forms-grid {
     grid-template-columns: 1fr;

@@ -275,9 +275,20 @@ export default function FormsPage() {
                       <td className="forms-rownum">{ri + 1}</td>
                       {grid.headers.map((_, ci) => {
                         const v = r[ci] ?? "";
+                        // チェックボックス列（TRUE/FALSE）はチェックボックス表記で表示
+                        const b = String(v).trim().toUpperCase();
+                        const isBool = b === "TRUE" || b === "FALSE";
                         return (
-                          <td key={ci} title={v || undefined}>
-                            {v}
+                          <td key={ci} className={isBool ? "forms-check-cell" : undefined} title={v || undefined}>
+                            {isBool ? (
+                              <span
+                                className={"forms-check" + (b === "TRUE" ? " on" : "")}
+                                role="img"
+                                aria-label={b === "TRUE" ? "チェックあり" : "チェックなし"}
+                              />
+                            ) : (
+                              v
+                            )}
                           </td>
                         );
                       })}
