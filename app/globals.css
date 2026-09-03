@@ -5130,6 +5130,10 @@ tbody tr.clickable {
   letter-spacing: -0.01em;
   color: var(--accent);
   font-variant-numeric: tabular-nums;
+  /* 桁数が違ってもチップ幅を揃える（数字は右寄せの固定幅スロット） */
+  display: inline-block;
+  min-width: 4.8ch;
+  text-align: right;
 }
 .form-card-unit {
   font-size: 12px;
@@ -5143,6 +5147,7 @@ tbody tr.clickable {
 .form-card-metric.is-month .form-card-num {
   font-size: 18px;
   color: var(--ink-2);
+  min-width: 2.6ch;
 }
 .form-card-dim {
   font-size: 20px;
