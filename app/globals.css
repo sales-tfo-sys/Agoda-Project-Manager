@@ -118,11 +118,13 @@ body {
   display: flex;
   align-items: center;
   gap: 9px;
+  height: 50px;
+  box-sizing: border-box;
   font-size: 13px;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: #0b0b0b;
-  padding: 3px 6px 9px;
+  padding: 0 6px;
   margin-bottom: 8px;
   border-bottom: 1px solid rgba(120, 150, 220, 0.14);
 }
@@ -158,9 +160,10 @@ body {
   min-width: 0;
   display: flex;
   flex-direction: column;
+  gap: 2px;
   white-space: nowrap;
-  font-size: 12.5px;
-  line-height: 1.12;
+  font-size: 13px;
+  line-height: 1.25;
   letter-spacing: -0.01em;
 }
 .brand-line {
@@ -223,7 +226,7 @@ body {
      高さはメニューバーのロゴ帯（＝サイドバー上部）と揃えて 57px 固定にし、
      下端の白線がロゴ帯の下線と一直線になるようにしている */
   box-sizing: border-box;
-  min-height: 50px;
+  min-height: 58px;
   padding: 0 18px;
   margin: 0 -16px 10px;
   /* sticky なので不透明にする必要がある。
