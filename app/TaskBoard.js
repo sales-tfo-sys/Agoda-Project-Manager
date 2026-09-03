@@ -1027,8 +1027,10 @@ export default function TaskBoard({ mode = "view" }) {
   // プロジェクト管理（管理表）の行ドラッグ並べ替え用
   const mngDragKey = useRef(null);
   const [mngOverKey, setMngOverKey] = useState(null);
-  // 区分フィルター: "all" | "regular" | "adhoc"
+  // 区分フィルター: "all" | "regular" | "pending" | "adhoc"
   const [mngFilter, setMngFilter] = useState("all");
+  // Ad Hoc 選択時の進捗フィルター: "all" | "On Track" | "Behind" | "Onhold" | "Complete"
+  const [mngStatus, setMngStatus] = useState("all");
   const [deleting, setDeleting] = useState(false);
   const removeAdhoc = (row) => setDelTarget(row);
   const doRemoveAdhoc = async () => {
@@ -1317,7 +1319,9 @@ export default function TaskBoard({ mode = "view" }) {
                   ? Number(String(o.pct).replace(/[^0-9.]/g, ""))
                   : null;
               const isReg = o.board === "regular";
-              return { scope: "adhoc", key: t, kind: isReg ? "Regular" : "Ad Hoc", name: o.name ?? t, count: total, done, rate, status: o.status, customId: a.customId };
+              // 進捗はダッシュボードと同じく「上書き → シート値」の順で効かせる
+              const st = o.status ?? a.status ?? "";
+              return { scope: "adhoc", key: t, kind: isReg ? "Regular" : "Ad Hoc", name: o.name ?? t, count: total, done, rate, status: st, customId: a.customId };
             });
             const customRegRows = adhocRows.filter((r) => r.kind === "Regular");
             const adhocOnlyRows = adhocRows.filter((r) => r.kind !== "Regular");
@@ -1338,13 +1342,21 @@ export default function TaskBoard({ mode = "view" }) {
               ...byPrio(adhocOnlyRows, "adhoc"),
             ];
             const kindOfFilter = { regular: "Regular", pending: "Pending", adhoc: "Ad Hoc" };
-            const shown = mngFilter === "all" ? rows : rows.filter((r) => r.kind === kindOfFilter[mngFilter]);
+            let shown = mngFilter === "all" ? rows : rows.filter((r) => r.kind === kindOfFilter[mngFilter]);
+            // Ad Hoc のときは進捗ステータスでも絞り込む
+            if (mngFilter === "adhoc" && mngStatus !== "all") {
+              shown = shown.filter((r) => (r.status || "") === mngStatus);
+            }
             const cnt = {
               all: rows.length,
               regular: rows.filter((r) => r.kind === "Regular").length,
               pending: rows.filter((r) => r.kind === "Pending").length,
               adhoc: rows.filter((r) => r.kind === "Ad Hoc").length,
             };
+            const STATUS_FILTERS = ["Onhold", "Behind", "On Track", "Complete"];
+            const adhocForStatus = rows.filter((r) => r.kind === "Ad Hoc");
+            const statusCnt = { all: adhocForStatus.length };
+            for (const s of STATUS_FILTERS) statusCnt[s] = adhocForStatus.filter((r) => (r.status || "") === s).length;
             const onDrop = (row) => {
               const from = mngDragKey.current;
               if (!from || from.scope !== row.scope || from.kind !== row.kind || from.key === row.key) {
@@ -1384,6 +1396,14 @@ export default function TaskBoard({ mode = "view" }) {
                     <button type="button" className={"mng-filter-btn" + (mngFilter === "pending" ? " active" : "")} onClick={() => setMngFilter("pending")}>Pending<span className="mng-fcount">{cnt.pending}</span></button>
                     <button type="button" className={"mng-filter-btn" + (mngFilter === "adhoc" ? " active" : "")} onClick={() => setMngFilter("adhoc")}>Ad Hoc<span className="mng-fcount">{cnt.adhoc}</span></button>
                   </div>
+                  {mngFilter === "adhoc" && (
+                    <div className="mng-filter mng-filter-sub" role="group" aria-label="進捗で絞り込み">
+                      <button type="button" className={"mng-filter-btn" + (mngStatus === "all" ? " active" : "")} onClick={() => setMngStatus("all")}>すべて<span className="mng-fcount">{statusCnt.all}</span></button>
+                      {STATUS_FILTERS.map((s) => (
+                        <button key={s} type="button" className={"mng-filter-btn" + (mngStatus === s ? " active" : "")} onClick={() => setMngStatus(s)}>{s}<span className="mng-fcount">{statusCnt[s]}</span></button>
+                      ))}
+                    </div>
+                  )}
                   {editable &&
                     (adding ? (
                       <span className="addbar">
@@ -1437,7 +1457,7 @@ export default function TaskBoard({ mode = "view" }) {
                             <td className="l">{editable ? (<input className="ed-input" type="text" value={o.name ?? row.key} onChange={(e) => setOvField(row.scope, row.key, "name", e.target.value)} />) : (o.name ?? row.key)}</td>
                             <td>{editable ? (<input className="prio-input" type="number" value={prioOf(row.scope, row.key, "")} onChange={(e) => setPriority(row.scope, row.key, e.target.value)} />) : (prioOf(row.scope, row.key, "") || "—")}</td>
                             <td className="l">{editable ? (<AssignCell scope={row.scope} akey={row.key} ids={ids} persons={persons} setAssign={setAssign} />) : (ids.map((id) => persons.find((p) => p.id === id)?.name).filter(Boolean).join("、") || "—")}</td>
-                            <td>{editable ? (<select className="ed-input ed-sel" value={o.status || ""} onChange={(e) => setOvField(row.scope, row.key, "status", e.target.value)}><option value="">—</option>{STATUS_OPTIONS.map((s) => (<option key={s} value={s}>{s}</option>))}</select>) : (<span className={"st-pill " + statusClass(o.status)}>{o.status || "—"}</span>)}</td>
+                            <td>{editable ? (<select className="ed-input ed-sel" value={row.status || ""} onChange={(e) => setOvField(row.scope, row.key, "status", e.target.value)}><option value="">—</option>{STATUS_OPTIONS.map((s) => (<option key={s} value={s}>{s}</option>))}</select>) : (<span className={"st-pill " + statusClass(row.status)}>{row.status || "—"}</span>)}</td>
                             <td className="v-strong">{row.count == null ? "—" : row.count}</td>
                             <td>{row.done == null ? "—" : row.done}</td>
                             <td>{row.rate == null ? "—" : row.rate + "%"}</td>
