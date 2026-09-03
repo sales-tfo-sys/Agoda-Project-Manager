@@ -1,6 +1,6 @@
 /* ライトテーマ：淡い青グレー地×濃紺文字、ブルーのアクセント */
 :root {
-  --bg: #eef2fb; /* 下地。淡い青グレー */
+  --bg: #f4f7fd; /* 下地。淡い青グレー（薄め） */
   --surface: #ffffff; /* カード */
   --surface-soft: #f4f7fe;
   --head: #eaf0fb; /* 表ヘッダー行 */
@@ -5530,7 +5530,7 @@ th.wr-opcol {
 }
 .tw table tbody tr:nth-child(even) td.wr-freeze,
 .tw table tbody tr:nth-child(even) td.wr-opcol {
-  background: var(--zebra);
+  background: var(--surface);
   background-clip: padding-box;
 }
 /* border-collapse の共有ボーダーは sticky セルの背景に負けて消えるため、
