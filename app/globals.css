@@ -5245,6 +5245,10 @@ th.forms-rownum {
 th.forms-rownum {
   z-index: 3;
 }
+/* ゼブラ（偶数行の背景）をやめて全行同色にする */
+.forms-tw table tbody tr:nth-child(even) {
+  background: transparent;
+}
 /* チェックボックス列（TRUE/FALSE）の表示 */
 .forms-check-cell {
   text-align: center;
