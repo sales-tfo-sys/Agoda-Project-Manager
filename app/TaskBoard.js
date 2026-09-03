@@ -1321,7 +1321,9 @@ export default function TaskBoard({ mode = "view" }) {
               const isReg = o.board === "regular";
               // 進捗はダッシュボードと同じく「上書き → シート値」の順で効かせる
               const st = o.status ?? a.status ?? "";
-              return { scope: "adhoc", key: t, kind: isReg ? "Regular" : "Ad Hoc", name: o.name ?? t, count: total, done, rate, status: st, customId: a.customId };
+              const start = o.start ?? a.start ?? "";
+              const end = o.end ?? a.end ?? "";
+              return { scope: "adhoc", key: t, kind: isReg ? "Regular" : "Ad Hoc", name: o.name ?? t, count: total, done, rate, status: st, start, end, customId: a.customId };
             });
             const customRegRows = adhocRows.filter((r) => r.kind === "Regular");
             const adhocOnlyRows = adhocRows.filter((r) => r.kind !== "Regular");
@@ -1432,6 +1434,8 @@ export default function TaskBoard({ mode = "view" }) {
                         <th className="mng-grip-th" aria-label="並べ替え" />
                         <th>区分</th>
                         <th className="l">タスク</th>
+                        <th>開始</th>
+                        <th>期日</th>
                         <th>優先</th>
                         <th className="l">対応者</th>
                         <th>進捗</th>
@@ -1460,6 +1464,8 @@ export default function TaskBoard({ mode = "view" }) {
                             <td className="mng-grip-td">{editable && (<span className="grip"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="1.7" /><circle cx="15" cy="5" r="1.7" /><circle cx="9" cy="12" r="1.7" /><circle cx="15" cy="12" r="1.7" /><circle cx="9" cy="19" r="1.7" /><circle cx="15" cy="19" r="1.7" /></svg></span>)}</td>
                             <td><span className={"mng-badge " + kindBadge[row.kind]}>{row.kind}</span></td>
                             <td className="l">{editable ? (<input className="ed-input" type="text" value={o.name ?? row.key} onChange={(e) => setOvField(row.scope, row.key, "name", e.target.value)} />) : (o.name ?? row.key)}</td>
+                            <td className="mng-date">{row.kind === "Ad Hoc" ? (editable ? (<input className="ed-input mng-date-in" type="date" value={toDateInput(row.start) || ""} onChange={(e) => setOvField(row.scope, row.key, "start", fromDateInput(e.target.value))} aria-label="開始" />) : (row.start || "—")) : <span className="mng-dim">—</span>}</td>
+                            <td className="mng-date">{row.kind === "Ad Hoc" ? (editable ? (<input className="ed-input mng-date-in" type="date" value={toDateInput(row.end) || ""} onChange={(e) => setOvField(row.scope, row.key, "end", fromDateInput(e.target.value))} aria-label="期日" />) : (row.end || "—")) : <span className="mng-dim">—</span>}</td>
                             <td>{editable ? (<input className="prio-input" type="number" value={prioOf(row.scope, row.key, "")} onChange={(e) => setPriority(row.scope, row.key, e.target.value)} />) : (prioOf(row.scope, row.key, "") || "—")}</td>
                             <td className="l">{editable ? (<AssignCell scope={row.scope} akey={row.key} ids={ids} persons={persons} setAssign={setAssign} />) : (ids.map((id) => persons.find((p) => p.id === id)?.name).filter(Boolean).join("、") || "—")}</td>
                             <td>{editable ? (<select className="ed-input ed-sel" value={row.status || ""} onChange={(e) => setOvField(row.scope, row.key, "status", e.target.value)}><option value="">—</option>{STATUS_OPTIONS.map((s) => (<option key={s} value={s}>{s}</option>))}</select>) : (<span className={"st-pill " + statusClass(row.status)}>{row.status || "—"}</span>)}</td>

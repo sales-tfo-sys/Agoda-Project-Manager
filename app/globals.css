@@ -5290,10 +5290,10 @@ tbody tr.clickable {
 .mng-filter {
   display: inline-flex;
   gap: 4px;
-  padding: 3px;
+  padding: 2px;
   background: #eef2fb;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 9px;
 }
 .mng-filter-btn {
   display: inline-flex;
@@ -5305,8 +5305,8 @@ tbody tr.clickable {
   color: var(--ink-2);
   background: transparent;
   border: 0;
-  border-radius: 8px;
-  padding: 4px 12px;
+  border-radius: 7px;
+  padding: 2px 11px;
   cursor: pointer;
 }
 .mng-filter-btn.active {
@@ -5413,6 +5413,13 @@ tbody tr.clickable {
 .manage-table .ed-input {
   width: 100%;
   min-width: 90px;
+}
+.manage-table .mng-date {
+  white-space: nowrap;
+}
+.manage-table .mng-date-in {
+  width: 122px;
+  min-width: 122px;
 }
 
 /* 詳細テーブルはヘッダー直下から画面下端までピッタリ広げる */
