@@ -287,7 +287,10 @@ export default function Sidebar() {
             </g>
           </svg>
         </span>
-        <span className="brand-text">Agoda Management System</span>
+        <span className="brand-text">
+          <span className="brand-line">Agoda</span>
+          <span className="brand-line">Management System</span>
+        </span>
       </div>
       <nav className="side-nav">
         {tabs.map(({ href, label, Icon }) => (

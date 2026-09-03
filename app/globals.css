@@ -156,9 +156,15 @@ body {
 }
 .brand-text {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
   white-space: nowrap;
-  font-size: 11.5px;
-  letter-spacing: -0.02em;
+  font-size: 12.5px;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+}
+.brand-line {
+  display: block;
 }
 .side-nav {
   display: flex;
