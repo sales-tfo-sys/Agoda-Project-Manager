@@ -5,8 +5,8 @@
   --surface-soft: #f4f7fe;
   --head: #eaf0fb; /* 表ヘッダー行 */
   --zebra: #f6f9fe;
-  --border: #e3e9f4; /* 罫線（淡いグレー） */
-  --border2: #d3dcec;
+  --border: #cfd8e8; /* 罫線（表がはっきり見える濃さ） */
+  --border2: #b3c1da;
   --ink: #1a2540; /* 文字（濃紺） */
   --ink-2: #5a6a8c;
   --ink-3: #8a97b6;
