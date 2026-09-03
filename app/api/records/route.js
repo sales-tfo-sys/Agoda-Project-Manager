@@ -15,6 +15,11 @@ export const dynamic = "force-dynamic";
 // 期限切れ後も古い値を即返して裏で更新するので、待たされるのは本当に初回だけ。
 const TTL = 3 * 60 * 1000;
 
+// Supabase のスナップショット（約7MB）はリクエストごとに読むと重い。
+// メモリに短時間ためて、2回目以降（別ページ・自動更新・複数ウィジェット）は
+// Supabase を叩かず即返す。取込（/api/kintone-sync）時に明示破棄する。
+const SNAP_TTL = 60 * 1000;
+
 const mockPayload = () => ({
   configured: false,
   source: "mock",
@@ -40,7 +45,7 @@ export async function GET() {
   // ① Supabase に保存済みスナップショットがあれば最優先で返す（高速）
   if (supabaseConfigured()) {
     try {
-      const snap = await readSnapshot();
+      const snap = await cached("records:snapshot", SNAP_TTL, readSnapshot);
       if (snap) {
         return NextResponse.json({
           ...snap.data,

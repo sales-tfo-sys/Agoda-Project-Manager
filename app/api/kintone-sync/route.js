@@ -40,6 +40,7 @@ export async function POST(req) {
     await writeSnapshot(payload);
     // メモリキャッシュも捨てて、次の表示で新しいデータが反映されるようにする
     invalidate("kintone:records");
+    invalidate("records:snapshot");
     return NextResponse.json({
       ok: true,
       count: payload.count,
