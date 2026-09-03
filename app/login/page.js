@@ -94,7 +94,7 @@ export default function LoginPage() {
           </svg>
         </span>
 
-        <h1 className="lg2-title">Agoda Project Management</h1>
+        <h1 className="lg2-title">Agoda Management System</h1>
         <p className="lg2-sub">案件の進捗を可視化し、成果につなげる管理プラットフォーム</p>
 
         <a className="lg2-google" href="/api/auth/google">
@@ -146,7 +146,7 @@ export default function LoginPage() {
             <path d="M12 1 21 4.2v7.2c0 5.7-3.8 10.6-9 12.6-5.2-2-9-6.9-9-12.6V4.2L12 1Z" fill="url(#lgShield)" />
             <path d="M7.7 12.6l2.9 2.9 5.7-5.9" stroke="#ffffff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          © 2026 Agoda Project Management. All rights reserved.
+          © 2026 Agoda Management System. All rights reserved.
         </p>
       </div>
     </div>
