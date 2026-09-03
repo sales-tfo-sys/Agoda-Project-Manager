@@ -1357,7 +1357,10 @@ export default function TaskBoard({ mode = "view" }) {
             let shown = mngFilter === "all" ? rows : rows.filter((r) => r.kind === kindOfFilter[mngFilter]);
             // Ad Hoc のときは進捗ステータスでも絞り込む
             if (mngFilter === "adhoc" && mngStatus !== "all") {
-              shown = shown.filter((r) => (r.status || "") === mngStatus);
+              shown =
+                mngStatus === "not-complete"
+                  ? shown.filter((r) => (r.status || "") !== "Complete")
+                  : shown.filter((r) => (r.status || "") === mngStatus);
             }
             const cnt = {
               all: rows.length,
@@ -1369,6 +1372,7 @@ export default function TaskBoard({ mode = "view" }) {
             const adhocForStatus = rows.filter((r) => r.kind === "Ad Hoc");
             const statusCnt = { all: adhocForStatus.length };
             for (const s of STATUS_FILTERS) statusCnt[s] = adhocForStatus.filter((r) => (r.status || "") === s).length;
+            statusCnt["not-complete"] = adhocForStatus.filter((r) => (r.status || "") !== "Complete").length;
             const onDrop = (row) => {
               const from = mngDragKey.current;
               if (!from || from.scope !== row.scope || from.kind !== row.kind || from.key === row.key) {
@@ -1427,6 +1431,7 @@ export default function TaskBoard({ mode = "view" }) {
                       {STATUS_FILTERS.map((s) => (
                         <button key={s} type="button" className={"mng-filter-btn" + (mngStatus === s ? " active" : "")} onClick={() => setMngStatus(s)}>{s}<span className="mng-fcount">{statusCnt[s]}</span></button>
                       ))}
+                      <button type="button" className={"mng-filter-btn" + (mngStatus === "not-complete" ? " active" : "")} onClick={() => setMngStatus("not-complete")}>Complete以外<span className="mng-fcount">{statusCnt["not-complete"]}</span></button>
                     </div>
                   )}
                   {canEditTasks && (
