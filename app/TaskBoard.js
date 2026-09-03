@@ -303,7 +303,7 @@ function AssignCell({ scope, akey, ids, persons, setAssign }) {
       ref={popRef}
       style={pos ? { top: pos.top, left: pos.left } : undefined}
     >
-      <div className="asg-pop-h">担当者（先頭＝主担当）</div>
+      <div className="asg-pop-h">担当者</div>
       {persons.length === 0 ? (
         <div className="asg-none">担当者が未登録です</div>
       ) : (
@@ -1337,11 +1337,14 @@ export default function TaskBoard({ mode = "view" }) {
               ...byPrio(penRows, "pending"),
               ...byPrio(adhocOnlyRows, "adhoc"),
             ];
-            const shown =
-              mngFilter === "all"
-                ? rows
-                : rows.filter((r) => (mngFilter === "regular" ? r.kind !== "Ad Hoc" : r.kind === "Ad Hoc"));
-            const cnt = { all: rows.length, regular: rows.filter((r) => r.kind !== "Ad Hoc").length, adhoc: rows.filter((r) => r.kind === "Ad Hoc").length };
+            const kindOfFilter = { regular: "Regular", pending: "Pending", adhoc: "Ad Hoc" };
+            const shown = mngFilter === "all" ? rows : rows.filter((r) => r.kind === kindOfFilter[mngFilter]);
+            const cnt = {
+              all: rows.length,
+              regular: rows.filter((r) => r.kind === "Regular").length,
+              pending: rows.filter((r) => r.kind === "Pending").length,
+              adhoc: rows.filter((r) => r.kind === "Ad Hoc").length,
+            };
             const onDrop = (row) => {
               const from = mngDragKey.current;
               if (!from || from.scope !== row.scope || from.kind !== row.kind || from.key === row.key) {
@@ -1378,6 +1381,7 @@ export default function TaskBoard({ mode = "view" }) {
                   <div className="mng-filter" role="group" aria-label="区分で絞り込み">
                     <button type="button" className={"mng-filter-btn" + (mngFilter === "all" ? " active" : "")} onClick={() => setMngFilter("all")}>すべて<span className="mng-fcount">{cnt.all}</span></button>
                     <button type="button" className={"mng-filter-btn" + (mngFilter === "regular" ? " active" : "")} onClick={() => setMngFilter("regular")}>Regular<span className="mng-fcount">{cnt.regular}</span></button>
+                    <button type="button" className={"mng-filter-btn" + (mngFilter === "pending" ? " active" : "")} onClick={() => setMngFilter("pending")}>Pending<span className="mng-fcount">{cnt.pending}</span></button>
                     <button type="button" className={"mng-filter-btn" + (mngFilter === "adhoc" ? " active" : "")} onClick={() => setMngFilter("adhoc")}>Ad Hoc<span className="mng-fcount">{cnt.adhoc}</span></button>
                   </div>
                   {editable &&
