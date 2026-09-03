@@ -1327,13 +1327,19 @@ export default function TaskBoard({ mode = "view" }) {
               const st = o.status ?? a.status ?? "";
               const start = o.start ?? a.start ?? "";
               const end = o.end ?? a.end ?? "";
-              return { scope: "adhoc", key: t, kind: isReg ? "Regular" : "Ad Hoc", name: o.name ?? t, count: total, done, rate, status: st, start, end, customId: a.customId };
+              return { scope: "adhoc", key: t, kind: isReg ? "Regular" : "Ad Hoc", name: o.name ?? t, count: total, done, rate, status: st, start, end, no: a.no ?? null, customId: a.customId };
             });
             const customRegRows = adhocRows.filter((r) => r.kind === "Regular");
             const adhocOnlyRows = adhocRows.filter((r) => r.kind !== "Regular");
+            // 実効優先度：明示設定 → シート#(no) の順。0・空は「優先なし」(null) とする。
+            const effPrio = (scope, key, no) => {
+              const v = prioOf(scope, key, no ?? null);
+              const n = Number(v);
+              return Number.isFinite(n) && n > 0 ? n : null;
+            };
             const byPrio = (arr, scope) =>
               [...arr]
-                .map((r, i) => ({ r, i, p: prioOf(scope, r.key, null) }))
+                .map((r, i) => ({ r, i, p: effPrio(scope, r.key, r.no) }))
                 .sort((a, b) => {
                   if (a.p == null && b.p == null) return a.i - b.i;
                   if (a.p == null) return 1;
@@ -1425,36 +1431,32 @@ export default function TaskBoard({ mode = "view" }) {
                   )}
                   {canEditTasks && (
                     <span className="manage-actions">
-                      <button type="button" className={"edit-btn manage-edit-btn" + (mngEdit ? " on" : "")} onClick={() => { setAdding(false); setMngEdit((v) => !v); }} title={mngEdit ? "編集を終了" : "編集"}>
+                      <button type="button" className={"icon-btn manage-edit-btn" + (mngEdit ? " on" : "")} onClick={() => setMngEdit((v) => !v)} title={mngEdit ? "編集を終了" : "編集"} aria-label={mngEdit ? "編集を終了" : "編集"}>
                         {mngEdit ? (
-                          "完了"
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
                         ) : (
-                          <>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z" /></svg>
-                            編集
-                          </>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z" /></svg>
                         )}
                       </button>
-                      {editable &&
-                        (adding ? (
-                          <span className="addbar">
-                            <select className="ed-input ed-sel" value={newBoard} onChange={(e) => setNewBoard(e.target.value)} aria-label="区分">
-                              <option value="adhoc">Ad Hoc</option>
-                              <option value="regular">Regular</option>
-                            </select>
-                            <input className="ed-input" type="text" value={newTask} onChange={(e) => setNewTask(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addAdhoc(); if (e.key === "Escape") { setAdding(false); setAddError(null); } }} placeholder="タスク名" autoFocus />
-                            <button type="button" className="edit-btn on" onClick={addAdhoc}>追加</button>
-                            <button type="button" className="edit-btn" onClick={() => { setAdding(false); setNewTask(""); setNewBoard("adhoc"); setAddError(null); }}>取消</button>
-                            {addError && <span className="add-err">{addError}</span>}
-                          </span>
-                        ) : (
-                          <button type="button" className="icon-btn" onClick={() => setAdding(true)} title="タスク追加" aria-label="タスク追加">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                              <line x1="12" y1="5" x2="12" y2="19" />
-                              <line x1="5" y1="12" x2="19" y2="12" />
-                            </svg>
-                          </button>
-                        ))}
+                      {adding ? (
+                        <span className="addbar">
+                          <select className="ed-input ed-sel" value={newBoard} onChange={(e) => setNewBoard(e.target.value)} aria-label="区分">
+                            <option value="adhoc">Ad Hoc</option>
+                            <option value="regular">Regular</option>
+                          </select>
+                          <input className="ed-input" type="text" value={newTask} onChange={(e) => setNewTask(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addAdhoc(); if (e.key === "Escape") { setAdding(false); setAddError(null); } }} placeholder="タスク名" autoFocus />
+                          <button type="button" className="edit-btn on" onClick={addAdhoc}>追加</button>
+                          <button type="button" className="edit-btn" onClick={() => { setAdding(false); setNewTask(""); setNewBoard("adhoc"); setAddError(null); }}>取消</button>
+                          {addError && <span className="add-err">{addError}</span>}
+                        </span>
+                      ) : (
+                        <button type="button" className="icon-btn" onClick={() => setAdding(true)} title="タスク追加" aria-label="タスク追加">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                          </svg>
+                        </button>
+                      )}
                     </span>
                   )}
                 </div>
@@ -1462,7 +1464,6 @@ export default function TaskBoard({ mode = "view" }) {
                   <table className="manage-table">
                     <thead>
                       <tr>
-                        <th className="mng-grip-th" aria-label="並べ替え" />
                         <th>優先</th>
                         <th>区分</th>
                         <th className="l">タスク</th>
@@ -1484,16 +1485,8 @@ export default function TaskBoard({ mode = "view" }) {
                         return (
                           <tr
                             key={rk}
-                            draggable={editable}
-                            onDragStart={() => { mngDragKey.current = { scope: row.scope, key: row.key, kind: row.kind }; }}
-                            onDragOver={(e) => { if (!editable || mngDragKey.current?.scope !== row.scope || mngDragKey.current?.kind !== row.kind) return; e.preventDefault(); if (mngOverKey !== rk) setMngOverKey(rk); }}
-                            onDragLeave={() => { if (mngOverKey === rk) setMngOverKey(null); }}
-                            onDrop={() => onDrop(row)}
-                            onDragEnd={() => { mngDragKey.current = null; setMngOverKey(null); }}
-                            className={mngOverKey === rk ? "row-dragover" : ""}
                           >
-                            <td className="mng-grip-td">{editable && (<span className="grip"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="1.7" /><circle cx="15" cy="5" r="1.7" /><circle cx="9" cy="12" r="1.7" /><circle cx="15" cy="12" r="1.7" /><circle cx="9" cy="19" r="1.7" /><circle cx="15" cy="19" r="1.7" /></svg></span>)}</td>
-                            <td>{editable ? (<input className="prio-input" type="number" value={prioOf(row.scope, row.key, "")} onChange={(e) => setPriority(row.scope, row.key, e.target.value)} />) : (prioOf(row.scope, row.key, "") || "—")}</td>
+                            <td>{editable ? (<input className="prio-input" type="number" value={effPrio(row.scope, row.key, row.no) ?? ""} onChange={(e) => setPriority(row.scope, row.key, e.target.value)} />) : (effPrio(row.scope, row.key, row.no) ?? "—")}</td>
                             <td><span className={"mng-badge " + kindBadge[row.kind]}>{row.kind}</span></td>
                             <td className="l">{editable ? (<input className="ed-input" type="text" value={o.name ?? row.key} onChange={(e) => setOvField(row.scope, row.key, "name", e.target.value)} />) : (o.name ?? row.key)}</td>
                             <td className="mng-date">{row.kind === "Ad Hoc" ? (editable ? dateField(row, "start") : (row.start || "—")) : <span className="mng-dim">—</span>}</td>
