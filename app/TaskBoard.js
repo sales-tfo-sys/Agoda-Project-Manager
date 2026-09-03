@@ -1472,7 +1472,20 @@ export default function TaskBoard({ mode = "view" }) {
                             <td className="v-strong">{row.count == null ? "—" : row.count}</td>
                             <td>{row.done == null ? "—" : row.done}</td>
                             <td>{row.rate == null ? "—" : row.rate + "%"}</td>
-                            <td>{row.customId ? (<button className="forms-op danger" title="削除" aria-label="削除" onClick={() => removeAdhoc({ id: row.customId, task: row.key })}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg></button>) : (<span className="mng-dim">—</span>)}</td>
+                            <td className="mng-ops">{row.kind === "Ad Hoc" ? (
+                              <span className="mng-ops-wrap">
+                                {editable && (
+                                  <button type="button" className={"forms-op" + (o.sheetUrl ? " on" : "")} title="スプレッドシート連携（受注数・完了数を自動取得）" aria-label="シート連携" onClick={() => setCfgTask(row.key)}>
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="9" x2="9" y2="21" /></svg>
+                                  </button>
+                                )}
+                                {row.customId && (
+                                  <button type="button" className="forms-op danger" title="削除" aria-label="削除" onClick={() => removeAdhoc({ id: row.customId, task: row.key })}>
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                                  </button>
+                                )}
+                              </span>
+                            ) : (<span className="mng-dim">—</span>)}</td>
                           </tr>
                         );
                       })}

@@ -3860,14 +3860,14 @@ tbody tr.clickable {
   font-weight: 600;
   line-height: 15px;
   vertical-align: middle;
-  color: var(--ink-2);
+  color: #ffffff;
   white-space: nowrap;
-  background: var(--surface-soft);
-  border: 1px solid var(--border2);
+  background: var(--accent);
+  border: 1px solid var(--accent);
   border-radius: 9px;
 }
 .asg-chip.main {
-  color: #ebebeb;
+  color: #ffffff;
   background: var(--accent);
   border-color: var(--accent);
 }
@@ -5420,6 +5420,20 @@ tbody tr.clickable {
 .manage-table .mng-date-in {
   width: 122px;
   min-width: 122px;
+}
+.manage-table .mng-ops {
+  white-space: nowrap;
+}
+.mng-ops-wrap {
+  display: inline-flex;
+  gap: 4px;
+  justify-content: center;
+}
+/* シート連携中のボタン強調 */
+.forms-op.on {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: #eef4fe;
 }
 
 /* 詳細テーブルはヘッダー直下から画面下端までピッタリ広げる */
