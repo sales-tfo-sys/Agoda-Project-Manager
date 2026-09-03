@@ -5662,11 +5662,11 @@ th.hid-opcol {
 .cal-card {
   width: 340px;
   max-width: 100%;
-  background: #e8e7e5;
+  background: #ffffff;
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 12px 14px 14px;
-  box-shadow: 0 1px 2px rgba(215, 215, 215, 0.05);
+  border-radius: 16px;
+  padding: 14px 16px 16px;
+  box-shadow: 0 6px 20px rgba(52, 84, 170, 0.07);
 }
 .cal-head {
   display: flex;
@@ -5684,11 +5684,11 @@ th.hid-opcol {
 .cal-nav {
   display: inline-grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border: 1px solid var(--border2);
-  border-radius: 7px;
-  background: #e8e7e5;
+  border-radius: 8px;
+  background: #ffffff;
   color: var(--ink-2);
   cursor: pointer;
 }
@@ -5700,10 +5700,10 @@ th.hid-opcol {
   margin-left: auto;
   font-size: 12px;
   font-weight: 700;
-  padding: 4px 10px;
+  padding: 5px 12px;
   border: 1px solid var(--border2);
   border-radius: 999px;
-  background: #e8e7e5;
+  background: #ffffff;
   color: var(--ink-2);
   cursor: pointer;
 }
@@ -5727,17 +5727,18 @@ th.hid-opcol {
   padding: 2px 0;
 }
 .cal-dowc.sun {
-  color: #ff9aa5;
+  color: #e5484d;
 }
 .cal-dowc.sat {
-  color: #8fb6ff;
+  color: #3b82f6;
 }
 .cal-cell {
   position: relative;
   min-height: 40px;
-  border-radius: 7px;
-  padding: 3px 4px;
-  background: var(--zebra, #e4e4e4);
+  border-radius: 8px;
+  padding: 3px 5px;
+  background: #ffffff;
+  border: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -5745,6 +5746,7 @@ th.hid-opcol {
 }
 .cal-cell.empty {
   background: transparent;
+  border-color: transparent;
 }
 .cal-d {
   font-size: 12.5px;
@@ -5753,16 +5755,16 @@ th.hid-opcol {
   line-height: 1.1;
 }
 .cal-cell.sun .cal-d {
-  color: #ff9aa5;
+  color: #e5484d;
 }
 .cal-cell.sat .cal-d {
-  color: #8fb6ff;
+  color: #3b82f6;
 }
 .cal-hol {
   margin-top: 1px;
   font-size: 9px;
   font-weight: 700;
-  color: #ff9aa5;
+  color: #e5484d;
   line-height: 1.15;
   white-space: normal;
   word-break: break-all;
@@ -5770,7 +5772,8 @@ th.hid-opcol {
 .cal-cell.today {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
-  background: var(--accent-soft, #e3e3e3);
+  background: #eef4fe;
+  border-color: transparent;
 }
 
 /* Ad Hoc：同一優先度内のドラッグ並べ替え */
