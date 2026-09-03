@@ -5269,9 +5269,15 @@ tbody tr.clickable {
   border-bottom: 1px solid var(--border);
 }
 .manage-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-size: 14px;
   font-weight: 800;
   color: var(--ink);
+}
+.manage-title-ico {
+  color: var(--accent);
 }
 .manage-note {
   font-size: 11.5px;
@@ -5279,6 +5285,48 @@ tbody tr.clickable {
 }
 .manage-add {
   margin-left: auto;
+}
+/* 区分フィルター */
+.mng-filter {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  background: #eef2fb;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.mng-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-2);
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  padding: 4px 12px;
+  cursor: pointer;
+}
+.mng-filter-btn.active {
+  color: var(--accent);
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(52, 84, 170, 0.12);
+}
+.mng-fcount {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--ink-3);
+  background: rgba(120, 150, 220, 0.14);
+  border-radius: 999px;
+  padding: 0 6px;
+  min-width: 18px;
+  text-align: center;
+}
+.mng-filter-btn.active .mng-fcount {
+  color: #ffffff;
+  background: var(--accent);
 }
 .manage-tw {
   overflow: auto;

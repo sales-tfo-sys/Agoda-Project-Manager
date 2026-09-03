@@ -960,6 +960,7 @@ export default function TaskBoard({ mode = "view" }) {
   const [customAdhoc, setCustomAdhoc] = useState([]);
   const [adding, setAdding] = useState(false);
   const [newTask, setNewTask] = useState("");
+  const [newBoard, setNewBoard] = useState("adhoc"); // 追加するタスクの区分（adhoc / regular）
   const [addError, setAddError] = useState(null);
   // ログイン中の権限（タスク編集の可否・アカウント管理の閲覧可否）
   const [perms, setPerms] = useState(null);
@@ -1011,7 +1012,13 @@ export default function TaskBoard({ mode = "view" }) {
       setAddError(j.error);
       return;
     }
+    // Regular 区分として追加する場合は、カスタムタスクに区分マーカーを付ける
+    // （設定は scope="adhoc" に保存し、表示上 Regular セクションに並べる）
+    if (newBoard === "regular") {
+      setOvField("adhoc", name, "board", "regular");
+    }
     setNewTask("");
+    setNewBoard("adhoc");
     setAdding(false);
     loadCustomAdhoc();
   };
@@ -1020,6 +1027,8 @@ export default function TaskBoard({ mode = "view" }) {
   // プロジェクト管理（管理表）の行ドラッグ並べ替え用
   const mngDragKey = useRef(null);
   const [mngOverKey, setMngOverKey] = useState(null);
+  // 区分フィルター: "all" | "regular" | "adhoc"
+  const [mngFilter, setMngFilter] = useState("all");
   const [deleting, setDeleting] = useState(false);
   const removeAdhoc = (row) => setDelTarget(row);
   const doRemoveAdhoc = async () => {
@@ -1307,8 +1316,11 @@ export default function TaskBoard({ mode = "view" }) {
                   : o.pct != null
                   ? Number(String(o.pct).replace(/[^0-9.]/g, ""))
                   : null;
-              return { scope: "adhoc", key: t, kind: "Ad Hoc", name: o.name ?? t, count: total, done, rate, status: o.status, customId: a.customId };
+              const isReg = o.board === "regular";
+              return { scope: "adhoc", key: t, kind: isReg ? "Regular" : "Ad Hoc", name: o.name ?? t, count: total, done, rate, status: o.status, customId: a.customId };
             });
+            const customRegRows = adhocRows.filter((r) => r.kind === "Regular");
+            const adhocOnlyRows = adhocRows.filter((r) => r.kind !== "Regular");
             const byPrio = (arr, scope) =>
               [...arr]
                 .map((r, i) => ({ r, i, p: prioOf(scope, r.key, null) }))
@@ -1319,15 +1331,25 @@ export default function TaskBoard({ mode = "view" }) {
                   return a.p - b.p || a.i - b.i;
                 })
                 .map((x) => x.r);
-            const rows = [...byPrio(regRows, "regular"), ...byPrio(penRows, "pending"), ...byPrio(adhocRows, "adhoc")];
+            const rows = [
+              ...byPrio(regRows, "regular"),
+              ...byPrio(customRegRows, "adhoc"),
+              ...byPrio(penRows, "pending"),
+              ...byPrio(adhocOnlyRows, "adhoc"),
+            ];
+            const shown =
+              mngFilter === "all"
+                ? rows
+                : rows.filter((r) => (mngFilter === "regular" ? r.kind !== "Ad Hoc" : r.kind === "Ad Hoc"));
+            const cnt = { all: rows.length, regular: rows.filter((r) => r.kind !== "Ad Hoc").length, adhoc: rows.filter((r) => r.kind === "Ad Hoc").length };
             const onDrop = (row) => {
               const from = mngDragKey.current;
-              if (!from || from.scope !== row.scope || from.key === row.key) {
+              if (!from || from.scope !== row.scope || from.kind !== row.kind || from.key === row.key) {
                 mngDragKey.current = null;
                 setMngOverKey(null);
                 return;
               }
-              const keys = rows.filter((r) => r.scope === row.scope).map((r) => r.key);
+              const keys = rows.filter((r) => r.scope === row.scope && r.kind === row.kind).map((r) => r.key);
               const fi = keys.indexOf(from.key);
               const ti = keys.indexOf(row.key);
               if (fi < 0 || ti < 0) {
@@ -1345,18 +1367,33 @@ export default function TaskBoard({ mode = "view" }) {
             return (
               <div className="card no-pad manage-card">
                 <div className="manage-head">
-                  <span className="manage-title">タスク管理表</span>
-                  <span className="manage-note">数値は自動集計です。優先度・対応者・進捗・並び順はここで管理し、ダッシュボードに反映されます。</span>
+                  <span className="manage-title">
+                    <svg className="manage-title-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                      <line x1="9" y1="3" x2="9" y2="21" />
+                      <line x1="15" y1="3" x2="15" y2="21" />
+                    </svg>
+                    タスク管理表
+                  </span>
+                  <div className="mng-filter" role="group" aria-label="区分で絞り込み">
+                    <button type="button" className={"mng-filter-btn" + (mngFilter === "all" ? " active" : "")} onClick={() => setMngFilter("all")}>すべて<span className="mng-fcount">{cnt.all}</span></button>
+                    <button type="button" className={"mng-filter-btn" + (mngFilter === "regular" ? " active" : "")} onClick={() => setMngFilter("regular")}>Regular<span className="mng-fcount">{cnt.regular}</span></button>
+                    <button type="button" className={"mng-filter-btn" + (mngFilter === "adhoc" ? " active" : "")} onClick={() => setMngFilter("adhoc")}>Ad Hoc<span className="mng-fcount">{cnt.adhoc}</span></button>
+                  </div>
                   {editable &&
                     (adding ? (
                       <span className="addbar">
-                        <input className="ed-input" type="text" value={newTask} onChange={(e) => setNewTask(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addAdhoc(); if (e.key === "Escape") { setAdding(false); setAddError(null); } }} placeholder="Ad Hoc タスク名" autoFocus />
+                        <select className="ed-input ed-sel" value={newBoard} onChange={(e) => setNewBoard(e.target.value)} aria-label="区分">
+                          <option value="adhoc">Ad Hoc</option>
+                          <option value="regular">Regular</option>
+                        </select>
+                        <input className="ed-input" type="text" value={newTask} onChange={(e) => setNewTask(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addAdhoc(); if (e.key === "Escape") { setAdding(false); setAddError(null); } }} placeholder="タスク名" autoFocus />
                         <button type="button" className="edit-btn on" onClick={addAdhoc}>追加</button>
-                        <button type="button" className="edit-btn" onClick={() => { setAdding(false); setNewTask(""); setAddError(null); }}>取消</button>
+                        <button type="button" className="edit-btn" onClick={() => { setAdding(false); setNewTask(""); setNewBoard("adhoc"); setAddError(null); }}>取消</button>
                         {addError && <span className="add-err">{addError}</span>}
                       </span>
                     ) : (
-                      <button type="button" className="edit-btn manage-add" onClick={() => setAdding(true)}>＋ Ad Hoc タスク追加</button>
+                      <button type="button" className="edit-btn manage-add" onClick={() => setAdding(true)}>＋ タスク追加</button>
                     ))}
                 </div>
                 <div className="tw manage-tw">
@@ -1376,7 +1413,7 @@ export default function TaskBoard({ mode = "view" }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {rows.map((row) => {
+                      {shown.map((row) => {
                         const o = ovOf(row.scope, row.key);
                         const ids = assignOf(row.scope, row.key);
                         const rk = row.scope + "|" + row.key;
@@ -1384,8 +1421,8 @@ export default function TaskBoard({ mode = "view" }) {
                           <tr
                             key={rk}
                             draggable={editable}
-                            onDragStart={() => { mngDragKey.current = { scope: row.scope, key: row.key }; }}
-                            onDragOver={(e) => { if (!editable || mngDragKey.current?.scope !== row.scope) return; e.preventDefault(); if (mngOverKey !== rk) setMngOverKey(rk); }}
+                            onDragStart={() => { mngDragKey.current = { scope: row.scope, key: row.key, kind: row.kind }; }}
+                            onDragOver={(e) => { if (!editable || mngDragKey.current?.scope !== row.scope || mngDragKey.current?.kind !== row.kind) return; e.preventDefault(); if (mngOverKey !== rk) setMngOverKey(rk); }}
                             onDragLeave={() => { if (mngOverKey === rk) setMngOverKey(null); }}
                             onDrop={() => onDrop(row)}
                             onDragEnd={() => { mngDragKey.current = null; setMngOverKey(null); }}
