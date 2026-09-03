@@ -556,15 +556,6 @@ export default function Page() {
               </svg>
             </button>
           )}
-          <button
-            className="icon-btn"
-            onClick={load}
-            disabled={loading}
-            title="表示を再読み込み"
-            aria-label="表示を再読み込み"
-          >
-            <RefreshIcon spinning={loading} />
-          </button>
         </div>
       </div>
 

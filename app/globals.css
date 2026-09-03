@@ -5258,6 +5258,115 @@ tbody tr.clickable {
   border-color: #e5484d;
   color: #e5484d;
 }
+
+/* ── プロジェクト管理：タスク管理表（アカウント管理風） ── */
+.manage-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.manage-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.manage-note {
+  font-size: 11.5px;
+  color: var(--ink-2);
+}
+.manage-add {
+  margin-left: auto;
+}
+.manage-tw {
+  overflow: auto;
+  max-height: calc(100vh - 150px);
+}
+.manage-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.manage-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--head);
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border2);
+}
+.manage-table th.l,
+.manage-table td.l {
+  text-align: left;
+}
+.manage-table tbody td {
+  padding: 7px 10px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  color: var(--ink);
+  vertical-align: middle;
+}
+.manage-table tbody tr:hover td {
+  background: #f6f9fe;
+}
+.manage-table tbody tr.row-dragover td {
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+.mng-grip-th,
+.mng-grip-td {
+  width: 26px;
+}
+.mng-grip-td {
+  color: var(--ink-3);
+  cursor: grab;
+}
+.manage-table tbody tr:active .mng-grip-td {
+  cursor: grabbing;
+}
+.manage-table tbody tr:hover .mng-grip-td {
+  color: var(--accent);
+}
+.mng-badge {
+  display: inline-block;
+  min-width: 54px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+}
+.mng-b-reg {
+  color: #2f6be0;
+  background: rgba(47, 107, 224, 0.12);
+}
+.mng-b-pen {
+  color: #b7791a;
+  background: rgba(234, 179, 8, 0.14);
+}
+.mng-b-adhoc {
+  color: #7c3aed;
+  background: #efeafe;
+}
+.mng-dim {
+  color: var(--ink-3);
+}
+.manage-table .prio-input {
+  width: 46px;
+}
+.manage-table .ed-sel {
+  min-width: 92px;
+}
+.manage-table .ed-input {
+  width: 100%;
+  min-width: 90px;
+}
+
 /* 詳細テーブルはヘッダー直下から画面下端までピッタリ広げる */
 .wrap.page-compact.forms-page .head {
   margin-bottom: 6px;

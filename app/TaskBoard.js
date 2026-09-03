@@ -1017,6 +1017,9 @@ export default function TaskBoard({ mode = "view" }) {
   };
   // 削除の確認はモーダルで行う（ブラウザ標準のダイアログは使わない）
   const [delTarget, setDelTarget] = useState(null);
+  // プロジェクト管理（管理表）の行ドラッグ並べ替え用
+  const mngDragKey = useRef(null);
+  const [mngOverKey, setMngOverKey] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const removeAdhoc = (row) => setDelTarget(row);
   const doRemoveAdhoc = async () => {
@@ -1211,13 +1214,6 @@ export default function TaskBoard({ mode = "view" }) {
               </svg>
             </button>
           )}
-          <button className="icon-btn" onClick={load} disabled={loading} title="表示を再読み込み" aria-label="表示を再読み込み">
-            <svg className={loading ? "spin" : ""} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="23 4 23 10 17 10" />
-              <polyline points="1 20 1 14 7 14" />
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-            </svg>
-          </button>
         </div>
       </div>
 
@@ -1274,7 +1270,148 @@ export default function TaskBoard({ mode = "view" }) {
             {/* アカウント管理はサイドバーのメニューに移設 */}
           </div>
 
-          {activeTab === "overview" && (
+          {isEdit && (() => {
+            // 管理表の行データ（区分ごと）。数値は自動集計、設定（優先/対応者/進捗/名前/並び）を編集する。
+            const regRows = (regularTypes || [])
+              .map((t) => {
+                const s = summary?.[t];
+                if (!s) return null;
+                const juchu = s.total - s.pre - s.lost - s.na;
+                const rate = juchu ? Math.round((s.done / juchu) * 100) : 0;
+                const o = ovOf("regular", t);
+                return { scope: "regular", key: t, kind: "Regular", name: o.name ?? t, count: juchu, done: s.done, rate, status: o.status };
+              })
+              .filter(Boolean);
+            const ptypes = pending ? [...(regularTypes || []), "DSA"].filter((t) => pending[t] && pending[t].total > 0) : [];
+            const penRows = ptypes.map((t) => {
+              const s = pending[t];
+              const zan = s.total - s.pre - s.lost - s.na;
+              const rate = s.total ? Math.round((s.done / s.total) * 100) : 0;
+              const o = ovOf("pending", t);
+              return { scope: "pending", key: t, kind: "Pending", name: o.name ?? t, count: zan, done: s.done, rate, status: o.status };
+            });
+            const seenA = new Set((adhoc || []).map((a) => a.task));
+            const adhocList = [
+              ...(adhoc || []),
+              ...(customAdhoc || []).filter((c) => !seenA.has(c.task)).map((c) => ({ task: c.task, customId: c.id })),
+            ];
+            const adhocRows = adhocList.map((a) => {
+              const t = a.task;
+              const o = ovOf("adhoc", t);
+              const sc = sheetCounts?.[t] || {};
+              const total = o.total ?? a.total ?? sc.total ?? null;
+              const done = o.done ?? a.done ?? sc.done ?? null;
+              const rate =
+                total != null && Number(total) > 0 && done != null
+                  ? Math.round((Number(done) / Number(total)) * 100)
+                  : o.pct != null
+                  ? Number(String(o.pct).replace(/[^0-9.]/g, ""))
+                  : null;
+              return { scope: "adhoc", key: t, kind: "Ad Hoc", name: o.name ?? t, count: total, done, rate, status: o.status, customId: a.customId };
+            });
+            const byPrio = (arr, scope) =>
+              [...arr]
+                .map((r, i) => ({ r, i, p: prioOf(scope, r.key, null) }))
+                .sort((a, b) => {
+                  if (a.p == null && b.p == null) return a.i - b.i;
+                  if (a.p == null) return 1;
+                  if (b.p == null) return -1;
+                  return a.p - b.p || a.i - b.i;
+                })
+                .map((x) => x.r);
+            const rows = [...byPrio(regRows, "regular"), ...byPrio(penRows, "pending"), ...byPrio(adhocRows, "adhoc")];
+            const onDrop = (row) => {
+              const from = mngDragKey.current;
+              if (!from || from.scope !== row.scope || from.key === row.key) {
+                mngDragKey.current = null;
+                setMngOverKey(null);
+                return;
+              }
+              const keys = rows.filter((r) => r.scope === row.scope).map((r) => r.key);
+              const fi = keys.indexOf(from.key);
+              const ti = keys.indexOf(row.key);
+              if (fi < 0 || ti < 0) {
+                mngDragKey.current = null;
+                setMngOverKey(null);
+                return;
+              }
+              const moved = keys.splice(fi, 1)[0];
+              keys.splice(ti, 0, moved);
+              keys.forEach((k, idx) => setPriority(row.scope, k, idx + 1));
+              mngDragKey.current = null;
+              setMngOverKey(null);
+            };
+            const kindBadge = { Regular: "mng-b-reg", Pending: "mng-b-pen", "Ad Hoc": "mng-b-adhoc" };
+            return (
+              <div className="card no-pad manage-card">
+                <div className="manage-head">
+                  <span className="manage-title">タスク管理表</span>
+                  <span className="manage-note">数値は自動集計です。優先度・対応者・進捗・並び順はここで管理し、ダッシュボードに反映されます。</span>
+                  {editable &&
+                    (adding ? (
+                      <span className="addbar">
+                        <input className="ed-input" type="text" value={newTask} onChange={(e) => setNewTask(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addAdhoc(); if (e.key === "Escape") { setAdding(false); setAddError(null); } }} placeholder="Ad Hoc タスク名" autoFocus />
+                        <button type="button" className="edit-btn on" onClick={addAdhoc}>追加</button>
+                        <button type="button" className="edit-btn" onClick={() => { setAdding(false); setNewTask(""); setAddError(null); }}>取消</button>
+                        {addError && <span className="add-err">{addError}</span>}
+                      </span>
+                    ) : (
+                      <button type="button" className="edit-btn manage-add" onClick={() => setAdding(true)}>＋ Ad Hoc タスク追加</button>
+                    ))}
+                </div>
+                <div className="tw manage-tw">
+                  <table className="manage-table">
+                    <thead>
+                      <tr>
+                        <th className="mng-grip-th" aria-label="並べ替え" />
+                        <th>区分</th>
+                        <th className="l">タスク</th>
+                        <th>優先</th>
+                        <th className="l">対応者</th>
+                        <th>進捗</th>
+                        <th>件数</th>
+                        <th>完了</th>
+                        <th>進捗率</th>
+                        <th>操作</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((row) => {
+                        const o = ovOf(row.scope, row.key);
+                        const ids = assignOf(row.scope, row.key);
+                        const rk = row.scope + "|" + row.key;
+                        return (
+                          <tr
+                            key={rk}
+                            draggable={editable}
+                            onDragStart={() => { mngDragKey.current = { scope: row.scope, key: row.key }; }}
+                            onDragOver={(e) => { if (!editable || mngDragKey.current?.scope !== row.scope) return; e.preventDefault(); if (mngOverKey !== rk) setMngOverKey(rk); }}
+                            onDragLeave={() => { if (mngOverKey === rk) setMngOverKey(null); }}
+                            onDrop={() => onDrop(row)}
+                            onDragEnd={() => { mngDragKey.current = null; setMngOverKey(null); }}
+                            className={mngOverKey === rk ? "row-dragover" : ""}
+                          >
+                            <td className="mng-grip-td">{editable && (<span className="grip"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="1.7" /><circle cx="15" cy="5" r="1.7" /><circle cx="9" cy="12" r="1.7" /><circle cx="15" cy="12" r="1.7" /><circle cx="9" cy="19" r="1.7" /><circle cx="15" cy="19" r="1.7" /></svg></span>)}</td>
+                            <td><span className={"mng-badge " + kindBadge[row.kind]}>{row.kind}</span></td>
+                            <td className="l">{editable ? (<input className="ed-input" type="text" value={o.name ?? row.key} onChange={(e) => setOvField(row.scope, row.key, "name", e.target.value)} />) : (o.name ?? row.key)}</td>
+                            <td>{editable ? (<input className="prio-input" type="number" value={prioOf(row.scope, row.key, "")} onChange={(e) => setPriority(row.scope, row.key, e.target.value)} />) : (prioOf(row.scope, row.key, "") || "—")}</td>
+                            <td className="l">{editable ? (<AssignCell scope={row.scope} akey={row.key} ids={ids} persons={persons} setAssign={setAssign} />) : (ids.map((id) => persons.find((p) => p.id === id)?.name).filter(Boolean).join("、") || "—")}</td>
+                            <td>{editable ? (<select className="ed-input ed-sel" value={o.status || ""} onChange={(e) => setOvField(row.scope, row.key, "status", e.target.value)}><option value="">—</option>{STATUS_OPTIONS.map((s) => (<option key={s} value={s}>{s}</option>))}</select>) : (<span className={"st-pill " + statusClass(o.status)}>{o.status || "—"}</span>)}</td>
+                            <td className="v-strong">{row.count == null ? "—" : row.count}</td>
+                            <td>{row.done == null ? "—" : row.done}</td>
+                            <td>{row.rate == null ? "—" : row.rate + "%"}</td>
+                            <td>{row.customId ? (<button className="forms-op danger" title="削除" aria-label="削除" onClick={() => removeAdhoc({ id: row.customId, task: row.key })}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg></button>) : (<span className="mng-dim">—</span>)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })()}
+
+          {activeTab === "overview" && !isEdit && (
           <div className="tab-panel overview-row">
             <div className="summary-row overview-tables">
             {summary && renderTypes.length > 0 && (
@@ -1327,7 +1464,7 @@ export default function TaskBoard({ mode = "view" }) {
           </div>
           )}
 
-          {activeTab === "overview" && adhoc && (adhoc.length > 0 || customAdhoc.length > 0) && (() => {
+          {activeTab === "overview" && !isEdit && adhoc && (adhoc.length > 0 || customAdhoc.length > 0) && (() => {
             // シート由来のタスク＋サイトで追加したタスクを結合
             const merged = [
               ...adhoc,
