@@ -3,7 +3,7 @@
   --bg: #f4f7fd; /* 下地。淡い青グレー（薄め） */
   --surface: #ffffff; /* カード */
   --surface-soft: #f4f7fe;
-  --head: #eaf0fb; /* 表ヘッダー行 */
+  --head: #d7e3f5; /* 表ヘッダー行（背景よりはっきり濃い青系） */
   --zebra: #f6f9fe;
   --border: #cfd8e8; /* 罫線（表がはっきり見える濃さ） */
   --border2: #b3c1da;
@@ -639,8 +639,8 @@ h1 {
 .qtable th {
   position: static;
   z-index: auto;
-  background: linear-gradient(180deg, #eef3fc, #e5edf9);
-  color: #46557a;
+  background: linear-gradient(180deg, #dbe6f7, #cfdef2);
+  color: #3c4c70;
   text-align: center;
   font-size: 10.5px;
   font-weight: 700;
@@ -1006,8 +1006,8 @@ table {
 th {
   position: sticky;
   top: 0;
-  background: var(--header-bg);
-  color: var(--header-ink);
+  background: var(--head);
+  color: #3c4c70;
   text-align: center;
   font-size: 11px;
   font-weight: 700;
@@ -1015,7 +1015,7 @@ th {
   white-space: nowrap;
   padding: 6px 10px;
   border-bottom: 2px solid var(--gold);
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  border-right: 1px solid rgba(120, 150, 220, 0.18);
   z-index: 2;
 }
 td {
@@ -1054,10 +1054,10 @@ th.sortable {
 /* ホバー/ソート済みは「少し明るい不透明の濃紺」にする。
    半透明の白だと下地(白)が透けてヘッダーが白くなり、白文字が読めなくなる。 */
 th.sortable:hover {
-  background: #b7b7b7;
+  background: #cbdaf0;
 }
 th.sortable.sorted {
-  background: #bababa;
+  background: #c3d4ee;
 }
 th {
   max-width: 280px;
@@ -1437,8 +1437,8 @@ tbody tr.clickable {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: linear-gradient(180deg, #eef3fc, #e5edf9);
-  color: #46557a;
+  background: linear-gradient(180deg, #dbe6f7, #cfdef2);
+  color: #3c4c70;
   font-weight: 700;
   text-align: center;
   padding: 5px 9px;
@@ -5286,6 +5286,22 @@ tbody tr.clickable {
 .manage-add {
   margin-left: auto;
 }
+.manage-actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.manage-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.manage-edit-btn.on {
+  color: #ffffff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
 /* 区分フィルター */
 .mng-filter {
   display: inline-flex;
@@ -6809,9 +6825,9 @@ td.v-strong,
   font-size: 12.5px;
 }
 .persons-page .persons-table thead th {
-  /* 見出しは淡い青のグラデーションで色付け（本文と区別する） */
-  background: linear-gradient(180deg, #e2e2e2, #e0e0e0);
-  color: #292929;
+  /* 見出しは青系グラデーションで本文とハッキリ区別する */
+  background: linear-gradient(180deg, #dbe6f7, #cfdef2);
+  color: #3c4c70;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.01em;

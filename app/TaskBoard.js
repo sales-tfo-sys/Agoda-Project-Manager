@@ -972,9 +972,11 @@ export default function TaskBoard({ mode = "view" }) {
   }, []);
   const canEditTasks = !!perms?.editTasks; // 取得前は false（編集ボタンを出さない）
   const canViewAccounts = !!perms?.viewAccounts;
-  // このボード上で実際に編集できるか。編集は「プロジェクト管理(mode=edit)」でのみ、
-  // かつタスク編集権限がある場合。ダッシュボード(mode=view)は常に閲覧専用。
-  const editable = isEdit && canEditTasks;
+  // 管理表の編集モード（既定は表示のみ。編集ボタンでON、完了でOFF）
+  const [mngEdit, setMngEdit] = useState(false);
+  // このボード上で実際に編集できるか。編集は「プロジェクト管理(mode=edit)」で
+  // 「編集モードON」かつタスク編集権限がある場合のみ。ダッシュボード(mode=view)は常に閲覧専用。
+  const editable = isEdit && canEditTasks && mngEdit;
 
   // 工数明細の作業内容一覧（紐づけ先の選択肢）
   const [kosuContents, setKosuContents] = useState([]);
@@ -1309,9 +1311,11 @@ export default function TaskBoard({ mode = "view" }) {
             const adhocRows = adhocList.map((a) => {
               const t = a.task;
               const o = ovOf("adhoc", t);
-              const sc = sheetCounts?.[t] || {};
-              const total = o.total ?? a.total ?? sc.total ?? null;
-              const done = o.done ?? a.done ?? sc.done ?? null;
+              // ダッシュボードと同じ優先順位で数値を出す：
+              //   シート連携(sheetCounts) / IHMのKintone集計(kintoneCounts) → 上書き(o) → シート由来(a)
+              const sc = sheetCounts?.[t] || kintoneCounts?.[t] || {};
+              const total = sc.total != null ? sc.total : o.total ?? a.total ?? null;
+              const done = sc.done != null ? sc.done : o.done ?? a.done ?? null;
               const rate =
                 total != null && Number(total) > 0 && done != null
                   ? Math.round((Number(done) / Number(total)) * 100)
@@ -1381,6 +1385,19 @@ export default function TaskBoard({ mode = "view" }) {
               setMngOverKey(null);
             };
             const kindBadge = { Regular: "mng-b-reg", Pending: "mng-b-pen", "Ad Hoc": "mng-b-adhoc" };
+            // 日付は自前表示（曜日の括弧を出さない）＋カレンダーだけ標準ピッカーを開く
+            const dateField = (row, k) => {
+              const iso = toDateInput(row[k]);
+              return (
+                <span className="dt-field">
+                  <input className="dt-native" type="date" value={iso} onChange={(e) => setOvField(row.scope, row.key, k, fromDateInput(e.target.value))} tabIndex={-1} aria-hidden="true" />
+                  <button type="button" className="dt-btn" onClick={(e) => { const inp = e.currentTarget.parentNode.querySelector(".dt-native"); if (inp?.showPicker) inp.showPicker(); else inp?.click(); }} aria-label={`${k === "start" ? "開始日" : "期日"}を選択`}>
+                    <span className={iso ? "" : "dt-ph"}>{iso ? fromDateInput(iso) : "未設定"}</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="17" rx="2" /><line x1="3" y1="9.5" x2="21" y2="9.5" /><line x1="8" y1="2.5" x2="8" y2="6.5" /><line x1="16" y1="2.5" x2="16" y2="6.5" /></svg>
+                  </button>
+                </span>
+              );
+            };
             return (
               <div className="card no-pad manage-card">
                 <div className="manage-head">
@@ -1406,37 +1423,51 @@ export default function TaskBoard({ mode = "view" }) {
                       ))}
                     </div>
                   )}
-                  {editable &&
-                    (adding ? (
-                      <span className="addbar">
-                        <select className="ed-input ed-sel" value={newBoard} onChange={(e) => setNewBoard(e.target.value)} aria-label="区分">
-                          <option value="adhoc">Ad Hoc</option>
-                          <option value="regular">Regular</option>
-                        </select>
-                        <input className="ed-input" type="text" value={newTask} onChange={(e) => setNewTask(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addAdhoc(); if (e.key === "Escape") { setAdding(false); setAddError(null); } }} placeholder="タスク名" autoFocus />
-                        <button type="button" className="edit-btn on" onClick={addAdhoc}>追加</button>
-                        <button type="button" className="edit-btn" onClick={() => { setAdding(false); setNewTask(""); setNewBoard("adhoc"); setAddError(null); }}>取消</button>
-                        {addError && <span className="add-err">{addError}</span>}
-                      </span>
-                    ) : (
-                      <button type="button" className="icon-btn manage-add" onClick={() => setAdding(true)} title="タスク追加" aria-label="タスク追加">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <line x1="12" y1="5" x2="12" y2="19" />
-                          <line x1="5" y1="12" x2="19" y2="12" />
-                        </svg>
+                  {canEditTasks && (
+                    <span className="manage-actions">
+                      <button type="button" className={"edit-btn manage-edit-btn" + (mngEdit ? " on" : "")} onClick={() => { setAdding(false); setMngEdit((v) => !v); }} title={mngEdit ? "編集を終了" : "編集"}>
+                        {mngEdit ? (
+                          "完了"
+                        ) : (
+                          <>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z" /></svg>
+                            編集
+                          </>
+                        )}
                       </button>
-                    ))}
+                      {editable &&
+                        (adding ? (
+                          <span className="addbar">
+                            <select className="ed-input ed-sel" value={newBoard} onChange={(e) => setNewBoard(e.target.value)} aria-label="区分">
+                              <option value="adhoc">Ad Hoc</option>
+                              <option value="regular">Regular</option>
+                            </select>
+                            <input className="ed-input" type="text" value={newTask} onChange={(e) => setNewTask(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addAdhoc(); if (e.key === "Escape") { setAdding(false); setAddError(null); } }} placeholder="タスク名" autoFocus />
+                            <button type="button" className="edit-btn on" onClick={addAdhoc}>追加</button>
+                            <button type="button" className="edit-btn" onClick={() => { setAdding(false); setNewTask(""); setNewBoard("adhoc"); setAddError(null); }}>取消</button>
+                            {addError && <span className="add-err">{addError}</span>}
+                          </span>
+                        ) : (
+                          <button type="button" className="icon-btn" onClick={() => setAdding(true)} title="タスク追加" aria-label="タスク追加">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <line x1="12" y1="5" x2="12" y2="19" />
+                              <line x1="5" y1="12" x2="19" y2="12" />
+                            </svg>
+                          </button>
+                        ))}
+                    </span>
+                  )}
                 </div>
                 <div className="tw manage-tw">
                   <table className="manage-table">
                     <thead>
                       <tr>
                         <th className="mng-grip-th" aria-label="並べ替え" />
+                        <th>優先</th>
                         <th>区分</th>
                         <th className="l">タスク</th>
                         <th>開始</th>
                         <th>期日</th>
-                        <th>優先</th>
                         <th className="l">対応者</th>
                         <th>進捗</th>
                         <th>件数</th>
@@ -1462,11 +1493,11 @@ export default function TaskBoard({ mode = "view" }) {
                             className={mngOverKey === rk ? "row-dragover" : ""}
                           >
                             <td className="mng-grip-td">{editable && (<span className="grip"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="1.7" /><circle cx="15" cy="5" r="1.7" /><circle cx="9" cy="12" r="1.7" /><circle cx="15" cy="12" r="1.7" /><circle cx="9" cy="19" r="1.7" /><circle cx="15" cy="19" r="1.7" /></svg></span>)}</td>
+                            <td>{editable ? (<input className="prio-input" type="number" value={prioOf(row.scope, row.key, "")} onChange={(e) => setPriority(row.scope, row.key, e.target.value)} />) : (prioOf(row.scope, row.key, "") || "—")}</td>
                             <td><span className={"mng-badge " + kindBadge[row.kind]}>{row.kind}</span></td>
                             <td className="l">{editable ? (<input className="ed-input" type="text" value={o.name ?? row.key} onChange={(e) => setOvField(row.scope, row.key, "name", e.target.value)} />) : (o.name ?? row.key)}</td>
-                            <td className="mng-date">{row.kind === "Ad Hoc" ? (editable ? (<input className="ed-input mng-date-in" type="date" value={toDateInput(row.start) || ""} onChange={(e) => setOvField(row.scope, row.key, "start", fromDateInput(e.target.value))} aria-label="開始" />) : (row.start || "—")) : <span className="mng-dim">—</span>}</td>
-                            <td className="mng-date">{row.kind === "Ad Hoc" ? (editable ? (<input className="ed-input mng-date-in" type="date" value={toDateInput(row.end) || ""} onChange={(e) => setOvField(row.scope, row.key, "end", fromDateInput(e.target.value))} aria-label="期日" />) : (row.end || "—")) : <span className="mng-dim">—</span>}</td>
-                            <td>{editable ? (<input className="prio-input" type="number" value={prioOf(row.scope, row.key, "")} onChange={(e) => setPriority(row.scope, row.key, e.target.value)} />) : (prioOf(row.scope, row.key, "") || "—")}</td>
+                            <td className="mng-date">{row.kind === "Ad Hoc" ? (editable ? dateField(row, "start") : (row.start || "—")) : <span className="mng-dim">—</span>}</td>
+                            <td className="mng-date">{row.kind === "Ad Hoc" ? (editable ? dateField(row, "end") : (row.end || "—")) : <span className="mng-dim">—</span>}</td>
                             <td className="l">{editable ? (<AssignCell scope={row.scope} akey={row.key} ids={ids} persons={persons} setAssign={setAssign} />) : (ids.map((id) => persons.find((p) => p.id === id)?.name).filter(Boolean).join("、") || "—")}</td>
                             <td>{editable ? (<select className="ed-input ed-sel" value={row.status || ""} onChange={(e) => setOvField(row.scope, row.key, "status", e.target.value)}><option value="">—</option>{STATUS_OPTIONS.map((s) => (<option key={s} value={s}>{s}</option>))}</select>) : (<span className={"st-pill " + statusClass(row.status)}>{row.status || "—"}</span>)}</td>
                             <td className="v-strong">{row.count == null ? "—" : row.count}</td>
