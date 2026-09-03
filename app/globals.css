@@ -111,7 +111,7 @@ body {
 /* クリックで残るフォーカスでは開かない（キーボード操作時のみ :focus-visible で展開） */
 .sidebar:hover,
 .sidebar:has(:focus-visible) {
-  width: 194px;
+  width: 216px;
   box-shadow: 6px 0 22px rgba(235, 235, 235, 0.28);
 }
 .sidebar-brand {
@@ -157,6 +157,8 @@ body {
 .brand-text {
   min-width: 0;
   white-space: nowrap;
+  font-size: 11.5px;
+  letter-spacing: -0.02em;
 }
 .side-nav {
   display: flex;
