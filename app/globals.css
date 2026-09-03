@@ -5057,16 +5057,16 @@ tbody tr.clickable {
   gap: 14px;
   min-height: 78px;
   padding: 16px 20px 16px 14px;
-  background: #e8e7e5;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 16px;
-  box-shadow: 0 1px 2px rgba(227, 227, 227, 0.04);
+  box-shadow: 0 1px 8px rgba(52, 84, 170, 0.06);
   cursor: pointer;
   transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
 }
 .form-card:hover {
-  border-color: #dcdcdc;
-  box-shadow: 0 8px 22px rgba(175, 175, 175, 0.12);
+  border-color: rgba(120, 160, 240, 0.45);
+  box-shadow: 0 8px 22px rgba(52, 84, 170, 0.12);
   transform: translateY(-1px);
 }
 .form-card:focus-visible {
@@ -5205,7 +5205,7 @@ tbody tr.clickable {
   flex: none;
   border: 1px solid var(--border2);
   border-radius: 7px;
-  background: #e8e7e5;
+  background: #eef4fe;
   color: var(--ink-2);
   cursor: pointer;
 }
@@ -5214,8 +5214,8 @@ tbody tr.clickable {
   color: var(--accent);
 }
 .forms-op.danger:hover {
-  border-color: #838383;
-  color: #292929;
+  border-color: #e5484d;
+  color: #e5484d;
 }
 /* 詳細テーブルはヘッダー直下から画面下端までピッタリ広げる */
 .wrap.page-compact.forms-page .head {
@@ -5224,10 +5224,10 @@ tbody tr.clickable {
 .wrap.forms-page {
   padding-bottom: 8px;
 }
-/* 一覧表示のときだけ、淡いラベンダーのグラデ背景を敷く */
+/* 背景は他ページと共通（body の淡い青）に統一する */
 .wrap.forms-page:has(.forms-listwrap) {
   min-height: 100vh;
-  background: linear-gradient(165deg, #e1e1e1 0%, #e3e3e3 42%, #e5e5e5 100%);
+  background: transparent;
 }
 .forms-tw {
   max-height: calc(100vh - 72px);
@@ -5322,10 +5322,10 @@ th.forms-rownum {
   gap: 10px;
   padding: 14px 18px;
   margin-bottom: 16px;
-  background: #e8e7e5;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 16px;
-  box-shadow: 0 1px 2px rgba(227, 227, 227, 0.04);
+  box-shadow: 0 1px 8px rgba(52, 84, 170, 0.06);
   flex-wrap: wrap;
 }
 .fstat {
@@ -5347,10 +5347,10 @@ th.forms-rownum {
   height: 38px;
   border-radius: 11px;
 }
-.fstat-blue { background: #e2e2e2; color: #898989; }
-.fstat-green { background: #e0e0e0; color: #b1b1b1; }
-.fstat-purple { background: #e2e2e2; color: #848484; }
-.fstat-orange { background: #e1e1e1; color: #969696; }
+.fstat-blue { background: #e8f0fe; color: #2f6be0; }
+.fstat-green { background: rgba(34, 197, 94, 0.14); color: #16a34a; }
+.fstat-purple { background: #efeafe; color: #7c3aed; }
+.fstat-orange { background: #fdefdd; color: #d97706; }
 .fstat-body {
   display: flex;
   flex-direction: column;
