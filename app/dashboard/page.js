@@ -617,9 +617,6 @@ function SummaryTable({
                     )}
                   </td>
                   <td className="c-rate">
-                    <span className="prog">
-                      <i className="prog-fill" style={{ width: Math.min(100, rate) + "%" }} />
-                    </span>
                     <span className="prog-val">{rate}%</span>
                   </td>
                   {/* 対応人数：対応者の選択人数を自動反映 */}
@@ -1213,14 +1210,6 @@ export default function DashboardPage() {
               <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
             </svg>
           </button>
-          {canViewAccounts && (
-            <a className="head-user-btn" href="/kosu/persons" title="アカウント管理" aria-label="アカウント管理">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <circle cx="12" cy="8" r="3.5" />
-                <path d="M5 20a7 7 0 0 1 14 0" />
-              </svg>
-            </a>
-          )}
         </div>
       </div>
 
@@ -1754,17 +1743,7 @@ export default function DashboardPage() {
                             <td className="c-rate">
                               {(() => {
                                 const raw = dispPct != null ? dispPct : t.customId ? calcPct : cell(t.pct);
-                                const n = parseInt(String(raw).replace(/[^0-9.]/g, ""), 10);
-                                return (
-                                  <>
-                                    {Number.isFinite(n) && (
-                                      <span className="prog">
-                                        <i className="prog-fill" style={{ width: Math.min(100, n) + "%" }} />
-                                      </span>
-                                    )}
-                                    <span className="prog-val">{raw}</span>
-                                  </>
-                                );
+                                return <span className="prog-val">{raw}</span>;
                               })()}
                             </td>
                             <td>
