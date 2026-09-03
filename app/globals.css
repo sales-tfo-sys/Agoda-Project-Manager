@@ -245,9 +245,9 @@ h1 {
   letter-spacing: -0.01em;
   line-height: 32px;
 }
+/* ページタイトル左の装飾アイコンは廃止し、代わりに縦のアクセントバーを使う */
 .conn {
-  display: inline-flex;
-  align-items: center;
+  display: none;
 }
 .conn.ok {
   color: var(--ok);
@@ -1522,6 +1522,18 @@ tbody tr.clickable {
   font-weight: 800;
   letter-spacing: -0.01em;
   color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+}
+/* タイトル左の縦アクセントバー（サイトの青） */
+.page-h::before {
+  content: "";
+  flex: none;
+  width: 4px;
+  height: 1.05em;
+  margin-right: 10px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--brand-1), var(--brand-2));
 }
 .save-btn {
   font: inherit;
