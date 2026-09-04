@@ -97,10 +97,18 @@ export default function SystemHealthPage() {
   }, [run]);
 
   const db = data?.db || null;
+  // pg_stat の n_live_tup は ANALYZE 前だと 0 になるため、
+  // PostgREST から取った推定行数を優先して補完する。
+  const estByName = Object.fromEntries((data?.tables || []).map((t) => [t.name, t.rows]));
+  const rowsOf = (t) => {
+    const est = estByName[t.name];
+    if (est != null && est > 0) return est;
+    return t.rows;
+  };
   // 使用状況テーブル：DB統計があればサイズ付き、無ければ推定行数のみ
   const usageRows =
     db?.tables?.length
-      ? db.tables.map((t) => ({ name: t.name, rows: t.rows, size: t.size_bytes }))
+      ? db.tables.map((t) => ({ name: t.name, rows: rowsOf(t), size: t.size_bytes }))
       : (data?.tables || []).map((t) => ({ name: t.name, rows: t.rows, size: null }));
   const totalBasis = usageRows.reduce((s, t) => s + (db ? t.size || 0 : t.rows || 0), 0) || 1;
   const totalRows = (data?.tables || []).reduce((s, t) => s + (t.rows || 0), 0);
@@ -215,10 +223,10 @@ export default function SystemHealthPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {usageRows.map((t) => {
+                    {usageRows.map((t, i) => {
                       const share = ((db ? t.size || 0 : t.rows || 0) / totalBasis) * 100;
                       return (
-                        <tr key={t.name}>
+                        <tr key={t.name + "-" + i}>
                           <td className="l mono">{t.name}</td>
                           <td>{fmtNum(t.rows)}</td>
                           {db && <td>{fmtBytes(t.size)}</td>}
@@ -288,16 +296,16 @@ export default function SystemHealthPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {db.tables.map((t) => {
+                    {db.tables.map((t, i) => {
                       const seqRatio =
                         (t.seq_scan || 0) + (t.idx_scan || 0) > 0
                           ? Math.round((100 * (t.seq_scan || 0)) / ((t.seq_scan || 0) + (t.idx_scan || 0)))
                           : 0;
                       const dr = Number(t.dead_ratio) || 0;
                       return (
-                        <tr key={t.name}>
+                        <tr key={t.name + "-" + i}>
                           <td className="l mono">{t.name}</td>
-                          <td>{fmtNum(t.rows)}</td>
+                          <td>{fmtNum(rowsOf(t))}</td>
                           <td>{fmtNum(t.dead_tuples)}</td>
                           <td>
                             <span className={"hz-tag " + (dr >= 20 ? "down" : dr >= 10 ? "warn" : "ok")}>{dr}%</span>

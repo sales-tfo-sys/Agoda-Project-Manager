@@ -7226,13 +7226,14 @@ td.v-strong,
   font: inherit;
   font-size: 12.5px;
   font-weight: 700;
-  color: #ebebeb;
-  background: #191815;
+  /* テーマ（青）に統一。以前のモノクロ配色の名残で黒だった */
+  color: #ffffff;
+  background: linear-gradient(180deg, #4c86ef, #2f6be0);
   border: 0;
   border-radius: 9px;
   padding: 8px 15px;
   cursor: pointer;
-  box-shadow: 0 2px 10px rgba(190, 190, 190, 0.35);
+  box-shadow: 0 2px 10px rgba(47, 107, 224, 0.28);
   white-space: nowrap;
 }
 .primary-btn:hover {
@@ -7410,8 +7411,8 @@ td.v-strong,
 }
 .persons-page .persons-table thead th {
   /* 見出しは青系グラデーションで本文とハッキリ区別する */
-  background: linear-gradient(180deg, #d6e3f6, #c7d8ef);
-  color: #2f3f5e;
+  background: linear-gradient(180deg, #cadcf5, #b6cdec);
+  color: #2b3c5c;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.01em;
@@ -8010,18 +8011,6 @@ td.v-strong,
 .persons-page .grant-cell {
   white-space: nowrap;
   text-align: center;
-}
-/* 編集権限：上位ヘッダー「編集権限」＋2サブ列「アカウント関連／タスク関連」。
-   2段ヘッダーはグラデを高さ違いで塗ると段差（浮き）が出るので、
-   persons のヘッダーはフラット色で統一して周囲と馴染ませる。 */
-.persons-page .persons-table thead th {
-  background: #e1e1e1;
-}
-/* 表の罫線は全て同じ線（色）に統一する。既定ではヘッダー下線だけ濃色(--border2)で
-   青っぽく浮くため、persons 表は全セルの枠色を --border に揃える。 */
-.persons-page .persons-table thead th,
-.persons-page .persons-table td {
-  border-color: var(--border);
 }
 .persons-page .grant-group-th {
   border-bottom: 1px solid var(--border);

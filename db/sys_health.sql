@@ -44,6 +44,8 @@ as $$
                       coalesce(last_autovacuum, to_timestamp(0))),
              to_timestamp(0))                        as last_vacuum
     from pg_stat_user_tables
+    -- Supabase 内部（auth/storage 等）は除き、アプリのテーブルだけを対象にする
+    where schemaname = 'public'
     order by pg_total_relation_size(relid) desc
   )
   select jsonb_build_object(
