@@ -5300,6 +5300,41 @@ tbody tr.clickable {
   align-items: center;
   gap: 8px;
 }
+/* プロジェクト管理：タスク管理／アカウント管理のタブ切替 */
+.proj-tabbar {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 14px;
+  padding: 3px;
+  background: #eef2fb;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.proj-tab {
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-2);
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  padding: 5px 14px;
+  cursor: pointer;
+}
+.proj-tab.active {
+  color: var(--accent);
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(52, 84, 170, 0.12);
+}
+/* アカウント管理をプロジェクト管理に埋め込むとき（自前のヘッダーは出さない） */
+.persons-embed {
+  display: block;
+}
+.persons-embed-tools {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
 
 /* ── 右上の共通メニュー ── */
 .topmenu {

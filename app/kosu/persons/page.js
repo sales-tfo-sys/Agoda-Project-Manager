@@ -34,7 +34,7 @@ function fmtLogin(v) {
   );
 }
 
-export default function KosuPersonsPage() {
+export default function KosuPersonsPage({ embedded = false } = {}) {
   const [configured, setConfigured] = useState(null);
   const [persons, setPersons] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -336,10 +336,31 @@ export default function KosuPersonsPage() {
     setPage(1);
   }, [q, showRetired]);
 
+  // 担当者を追加ボタン（通常ヘッダー／埋め込みツールバーの両方で使う）
+  const addPersonBtn = canEdit ? (
+    <button
+      className="primary-btn icon-only add-person-btn"
+      onClick={() => {
+        setError(null);
+        setMsg(null);
+        setAddOpen(true);
+      }}
+      title="担当者を追加"
+      aria-label="担当者を追加"
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M15 20v-1.6a3.6 3.6 0 0 0-3.6-3.6H6.6A3.6 3.6 0 0 0 3 18.4V20" />
+        <circle cx="9" cy="7.6" r="3.6" />
+        <line x1="19" y1="8" x2="19" y2="14" />
+        <line x1="22" y1="11" x2="16" y2="11" />
+      </svg>
+    </button>
+  ) : null;
+
   // 権限の確認が終わるまでは何も出さない（一瞬でも中身を見せない）
   if (!permsLoaded) {
     return (
-      <div className="wrap page-compact persons-page">
+      <div className={embedded ? "persons-page persons-embed" : "wrap page-compact persons-page"}>
         <div className="card">
           <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>
         </div>
@@ -350,7 +371,7 @@ export default function KosuPersonsPage() {
   // 閲覧権限が無い＝アクセス拒否画面
   if (!canView) {
     return (
-      <div className="wrap page-compact persons-page">
+      <div className={embedded ? "persons-page persons-embed" : "wrap page-compact persons-page"}>
         <div className="access-deny">
           <span className="deny-badge" aria-hidden="true">
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -372,41 +393,27 @@ export default function KosuPersonsPage() {
   }
 
   return (
-    <div className="wrap page-compact persons-page">
-      <div className="head persons-head">
-        <div className="head-left">
-          <span className="conn ok" title="アカウント管理" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-            </svg>
-          </span>
-          <span className="page-h page-h-gap">アカウント管理</span>
-        </div>
-        <div className="head-right">
-          {canEdit && (
-            <button
-              className="primary-btn icon-only add-person-btn"
-              onClick={() => {
-                setError(null);
-                setMsg(null);
-                setAddOpen(true);
-              }}
-              title="担当者を追加"
-              aria-label="担当者を追加"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M15 20v-1.6a3.6 3.6 0 0 0-3.6-3.6H6.6A3.6 3.6 0 0 0 3 18.4V20" />
-                <circle cx="9" cy="7.6" r="3.6" />
-                <line x1="19" y1="8" x2="19" y2="14" />
-                <line x1="22" y1="11" x2="16" y2="11" />
+    <div className={embedded ? "persons-page persons-embed" : "wrap page-compact persons-page"}>
+      {!embedded && (
+        <div className="head persons-head">
+          <div className="head-left">
+            <span className="conn ok" title="アカウント管理" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
               </svg>
-            </button>
-          )}
+            </span>
+            <span className="page-h page-h-gap">アカウント管理</span>
+          </div>
+          <div className="head-right">{addPersonBtn}</div>
         </div>
-      </div>
+      )}
+
+      {embedded && canEdit && (
+        <div className="persons-embed-tools">{addPersonBtn}</div>
+      )}
 
       {!canEdit && (
         <div className="banner info-banner">
