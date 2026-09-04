@@ -546,22 +546,6 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
         </p>
       </Modal>
 
-      <div className="persons-toolbar">
-        <label className="search-box">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-            <circle cx="11" cy="11" r="7" />
-            <line x1="16.5" y1="16.5" x2="21" y2="21" />
-          </svg>
-          <input
-            type="search"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="担当者を検索..."
-            aria-label="担当者を検索"
-          />
-        </label>
-      </div>
-
       {loading ? (
         <div className="card">
           <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>

@@ -7410,21 +7410,28 @@ td.v-strong,
 }
 .persons-page .persons-table thead th {
   /* 見出しは青系グラデーションで本文とハッキリ区別する */
-  background: linear-gradient(180deg, #dbe6f7, #cfdef2);
-  color: #3c4c70;
+  background: linear-gradient(180deg, #d6e3f6, #c7d8ef);
+  color: #2f3f5e;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.01em;
-  border-right: 0;
+  /* 列の区切りを見せて横方向に追いやすくする */
+  border-right: 1px solid var(--border2);
   border-bottom: 1px solid var(--border2);
   padding: 13px 16px;
   white-space: nowrap;
 }
-.persons-page .persons-table td {
+.persons-page .persons-table thead th:last-child {
   border-right: 0;
-  border-bottom: 1px solid #e2e2e2;
+}
+.persons-page .persons-table td {
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   padding: 11px 16px;
   vertical-align: middle;
+}
+.persons-page .persons-table td:last-child {
+  border-right: 0;
 }
 .persons-page .persons-table tbody tr:last-child td {
   border-bottom: 0;
@@ -7434,7 +7441,7 @@ td.v-strong,
   background: var(--surface);
 }
 .persons-page .persons-table tbody tr:hover {
-  background: #e4e4e4;
+  background: var(--accent-soft);
 }
 .persons-page .persons-table .grip-th,
 .persons-page .persons-table .grip-td {
@@ -7494,8 +7501,8 @@ td.v-strong,
   place-items: center;
   font-size: 13px;
   font-weight: 800;
-  color: #ebebeb;
-  background: #191815;
+  color: #ffffff;
+  background: linear-gradient(180deg, #6aa4ff, #2f6be0);
 }
 .persons-page .retired-tag {
   flex: none;
