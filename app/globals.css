@@ -5785,6 +5785,30 @@ tbody tr.clickable {
 .manage-table td.l {
   text-align: left;
 }
+/* タスク名セル：名前＋工数グルーピングの操作/表示を横並びに */
+.mng-task-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.mng-task-cell .ed-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.mng-task-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* まとめ先が設定されている印 */
+.mng-link-mark {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  color: var(--accent);
+}
 .manage-table tbody td {
   padding: 2px 10px;
   text-align: center;

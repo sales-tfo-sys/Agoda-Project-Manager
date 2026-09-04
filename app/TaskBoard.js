@@ -1521,7 +1521,28 @@ export default function TaskBoard({ mode = "view" }) {
                           >
                             <td>{editable ? (<input className="prio-input" type="number" value={effPrio(row.scope, row.key, row.no) ?? ""} onChange={(e) => setPriority(row.scope, row.key, e.target.value)} />) : (effPrio(row.scope, row.key, row.no) ?? "—")}</td>
                             <td><span className={"mng-badge " + kindBadge[row.kind]}>{row.kind}</span></td>
-                            <td className="l">{editable ? (<input className="ed-input" type="text" value={o.name ?? row.key} onChange={(e) => setOvField(row.scope, row.key, "name", e.target.value)} />) : (o.name ?? row.key)}</td>
+                            <td className="l">
+                              <span className="mng-task-cell">
+                                {editable ? (
+                                  <input className="ed-input" type="text" value={o.name ?? row.key} onChange={(e) => setOvField(row.scope, row.key, "name", e.target.value)} />
+                                ) : (
+                                  <span className="mng-task-name">{o.name ?? row.key}</span>
+                                )}
+                                {/* 工数グルーピング：複数の名前の作業を工数側で1つにまとめる */}
+                                {row.kind === "Ad Hoc" && editable && (
+                                  <KosuLinkCell
+                                    value={o.kosuLink || ""}
+                                    contents={kosuContents}
+                                    onChange={(v) => setOvField(row.scope, row.key, "kosuLink", v)}
+                                  />
+                                )}
+                                {!editable && o.kosuLink && o.kosuLink !== row.key && (
+                                  <span className="mng-link-mark" title={`工数はこの作業にまとめています：\n${o.kosuLink}`} aria-label="工数グルーピングあり">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+                                  </span>
+                                )}
+                              </span>
+                            </td>
                             <td className="mng-date">{row.kind === "Ad Hoc" ? (editable ? dateField(row, "start") : (row.start || "—")) : <span className="mng-dim">—</span>}</td>
                             <td className="mng-date">{row.kind === "Ad Hoc" ? (editable ? dateField(row, "end") : (row.end || "—")) : <span className="mng-dim">—</span>}</td>
                             <td className="l">{editable ? (<AssignCell scope={row.scope} akey={row.key} ids={ids} persons={persons} setAssign={setAssign} />) : (ids.map((id) => persons.find((p) => p.id === id)?.name).filter(Boolean).join("、") || "—")}</td>

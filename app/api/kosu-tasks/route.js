@@ -16,15 +16,39 @@ export async function GET() {
       sb("kosu_task?active=eq.true&order=sort_order,created_at&select=*"),
       sb("task_override?scope=eq.adhoc&select=key,data").catch(() => null),
     ]);
+    const rows = tasks || [];
     const renamed = {};
+    // グルーピング（kosuLink）：ダッシュボードで複数の名前に分かれている作業を
+    // 工数側では「まとめ先」1つに集約する（元の行は工数入力・工数明細に出さない）。
+    const linkTo = {};
     for (const o of ovr || []) {
       const n = o?.data?.name;
       if (n && n !== o.key) renamed[o.key] = n;
+      const g = o?.data?.kosuLink;
+      if (g && g !== o.key) linkTo[o.key] = g;
     }
-    const out = (tasks || []).map((t) =>
+    const out = rows.map((t) =>
       renamed[t.content] ? { ...t, content: renamed[t.content], original_content: t.content } : t
     );
-    return Response.json({ configured: true, tasks: out });
+
+    // まとめ先が実在するものだけを集約対象にする
+    const origNames = new Set(rows.map((t) => t.content));
+    const hide = new Set(
+      Object.keys(linkTo).filter((k) => origNames.has(k) && origNames.has(linkTo[k]))
+    );
+    // すでに工数実績がある作業は、履歴が見えなくなるため集約しない（そのまま残す）
+    if (hide.size) {
+      const ids = rows.filter((t) => hide.has(t.content)).map((t) => t.id);
+      if (ids.length) {
+        const used = await sb(
+          `kosu_entry?task_id=in.(${ids.join(",")})&select=task_id`
+        ).catch(() => null);
+        const usedIds = new Set((used || []).map((e) => e.task_id));
+        for (const t of rows) if (usedIds.has(t.id)) hide.delete(t.content);
+      }
+    }
+    const merged = out.filter((t) => !hide.has(t.original_content ?? t.content));
+    return Response.json({ configured: true, tasks: merged });
   } catch (e) {
     return Response.json({ configured: true, tasks: [], error: String(e?.message || e) });
   }
