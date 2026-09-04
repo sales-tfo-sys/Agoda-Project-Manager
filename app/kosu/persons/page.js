@@ -561,7 +561,7 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                   <th className="l">メール（ログインID）</th>
                   <th>ログイン</th>
                   <th>権限</th>
-                  <th className="grant-sub-th">アカウント関連</th>
+                  <th className="grant-sub-th">権限編集</th>
                   <th className="grant-sub-th">タスク関連</th>
                   <th>ページ権限</th>
                   <th>最終ログイン</th>
@@ -746,7 +746,7 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                         </select>
                       </td>
                       {/* 編集権限：管理者への個別付与だけを扱う。オーナー・メンバーは対象外＝「—」。
-                          「アカウント関連」「タスク関連」の2列（列見出しがラベルを兼ねる） */}
+                          「権限編集」「タスク関連」の2列（列見出しがラベルを兼ねる） */}
                       <td className="grant-cell">
                         {(p.role || "member") === "admin" ? (
                           <span className="login-cell-inner">
