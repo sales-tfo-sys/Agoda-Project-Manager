@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-function fmtNum(n) {
-  return n == null ? "—" : Number(n).toLocaleString("ja-JP");
-}
+/* ── 表示ヘルパー ───────────────────────────────────────── */
+const num = (n) => (n == null ? "—" : Number(n).toLocaleString("ja-JP"));
+
 function fmtBytes(n) {
   if (n == null) return "—";
   const u = ["B", "KB", "MB", "GB", "TB"];
@@ -16,6 +16,8 @@ function fmtBytes(n) {
   }
   return `${v.toFixed(v >= 100 || i === 0 ? 0 : 1)} ${u[i]}`;
 }
+const toMB = (n) => (n == null ? null : n / (1024 * 1024));
+
 function fmtDateTime(iso) {
   if (!iso) return "—";
   const d = new Date(iso);
@@ -30,33 +32,11 @@ function fmtDate(iso) {
   const p = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())}`;
 }
-function agoDays(iso) {
+function daysSince(iso) {
   if (!iso) return null;
   const ms = Date.now() - new Date(iso).getTime();
   if (!Number.isFinite(ms)) return null;
   return Math.floor(ms / 86400000);
-}
-function fmtAgo(iso) {
-  if (!iso) return "—";
-  const ms = Date.now() - new Date(iso).getTime();
-  if (!Number.isFinite(ms)) return "—";
-  const min = Math.floor(ms / 60000);
-  if (min < 1) return "たった今";
-  if (min < 60) return `${min}分前`;
-  const h = Math.floor(min / 60);
-  if (h < 24) return `${h}時間前`;
-  return `${Math.floor(h / 24)}日前`;
-}
-// バイト → MB（整数）。容量カードは MB 表記で揃える
-function toMB(n) {
-  return n == null ? null : n / (1024 * 1024);
-}
-// 上限到達までの目安（日数 → 「約 N 年後」など）
-function fmtEta(days) {
-  if (days == null || !Number.isFinite(days)) return null;
-  if (days > 365 * 2) return `約 ${Math.round(days / 365)} 年後`;
-  if (days > 60) return `約 ${Math.round(days / 30)} か月後`;
-  return `約 ${Math.round(days)} 日後`;
 }
 function fmtUptime(sec) {
   if (sec == null) return "—";
@@ -64,23 +44,38 @@ function fmtUptime(sec) {
   const h = Math.floor((sec % 86400) / 3600);
   return d > 0 ? `${d}日 ${h}時間` : `${h}時間`;
 }
+// 上限到達目安。730日以上は「約N年後」に丸める（桁が大きいと判断できないため）
+function fmtEta(days) {
+  if (days == null || !Number.isFinite(days)) return null;
+  if (days >= 730) return `約 ${Math.round(days / 365).toLocaleString("ja-JP")} 年後`;
+  if (days >= 60) return `約 ${Math.round(days / 30)} か月後`;
+  return `約 ${Math.round(days)} 日後`;
+}
 
-// KPIカード（値＋補足＋良好/注意バッジ＋任意のバー）
-function Kpi({ label, value, sub, note, badge, badgeTone = "ok", barPct, barTone = "ok" }) {
+/* ── 良し悪しの判定 ─────────────────────────────────────── */
+// 高いほど良い指標：>=90 良好 / >=70 注意 / それ未満 警告
+const toneHigh = (v) => (v == null ? "ok" : v >= 90 ? "ok" : v >= 70 ? "warn" : "bad");
+// 低いほど良い指標：<=60 良好 / <=80 注意 / それ超 警告
+const toneLow = (v) => (v == null ? "ok" : v <= 60 ? "ok" : v <= 80 ? "warn" : "bad");
+const TONE_LABEL = { ok: "良好", warn: "注意", bad: "警告" };
+
+/* ── 健全性カード ───────────────────────────────────────── */
+function Kpi({ label, value, sub, note, tone = "ok", gauge }) {
   return (
-    <div className="hz-kpi">
-      <div className="hz-kpi-top">
-        <span className="hz-kpi-label">{label}</span>
-        {badge && <span className={"hz-badge " + badgeTone}>{badge}</span>}
+    <div className="sh-card">
+      <div className="sh-card-top">
+        <span className="sh-card-label">{label}</span>
+        <span className={"sh-badge " + tone}>{TONE_LABEL[tone]}</span>
       </div>
-      <div className="hz-kpi-val">{value}</div>
-      {sub && <div className="hz-kpi-sub">{sub}</div>}
-      {note && <div className="hz-kpi-note">{note}</div>}
-      {barPct != null && (
-        <div className="hz-bar">
-          <span className={"hz-bar-fill " + barTone} style={{ width: Math.max(2, Math.min(100, barPct)) + "%" }} />
-        </div>
-      )}
+      <div className="sh-card-val">{value}</div>
+      {sub && <div className="sh-card-sub">{sub}</div>}
+      {note && <div className="sh-card-note">{note}</div>}
+      <div className="sh-gauge">
+        <span
+          className={"sh-gauge-fill " + tone}
+          style={{ width: Math.min(Math.max(gauge ?? 0, 0), 100) + "%" }}
+        />
+      </div>
     </div>
   );
 }
@@ -108,28 +103,18 @@ export default function SystemHealthPage() {
     run();
   }, [run]);
 
-  const db = data?.db || null;
-  // pg_stat の n_live_tup は ANALYZE 前だと 0 になるため、
-  // PostgREST から取った推定行数を優先して補完する。
-  const estByName = Object.fromEntries((data?.tables || []).map((t) => [t.name, t.rows]));
-  const rowsOf = (t) => {
-    const est = estByName[t.name];
-    if (est != null && est > 0) return est;
-    return t.rows;
-  };
-  // 使用状況テーブル：DB統計があればサイズ付き、無ければ推定行数のみ
-  const usageRows =
-    db?.tables?.length
-      ? db.tables.map((t) => ({ name: t.name, rows: rowsOf(t), size: t.size_bytes }))
-      : (data?.tables || []).map((t) => ({ name: t.name, rows: t.rows, size: null }));
-  const totalBasis = usageRows.reduce((s, t) => s + (db ? t.size || 0 : t.rows || 0), 0) || 1;
-  const totalRows = (data?.tables || []).reduce((s, t) => s + (t.rows || 0), 0);
+  const h = data?.health || null;
+  const cap = data?.capacity || null;
+  const tables = data?.tables || [];
+  const totalBytes = tables.reduce((s, t) => s + (Number(t.bytes) || 0), 0) || 1;
 
-  const kfresh = agoDays(data?.kintone?.fetchedAt);
-  const kTone = kfresh == null ? "down" : kfresh <= 1 ? "ok" : kfresh <= 3 ? "warn" : "down";
+  // 接続数の使用率
+  const connPct = h?.max_conns ? (100 * (h.conns ?? 0)) / h.max_conns : null;
+  // PostgreSQL バージョン（"PostgreSQL 15.8 on ..." → 先頭だけ）
+  const pgVer = h?.version ? String(h.version).split(" on ")[0] : null;
 
   return (
-    <div className="wrap page-compact">
+    <div className="wrap page-compact sys-health">
       <div className="head">
         <div className="head-left">
           <span className="conn ok" title="システムヘルス" aria-hidden="true">
@@ -157,221 +142,196 @@ export default function SystemHealthPage() {
         <div className="page-loading"><span className="loader-ring" role="status" aria-label="チェック中" /></div>
       ) : (
         <>
-          {/* KPI カード */}
-          <div className="hz-kpis">
-            {db ? (
-              <>
-                <Kpi
-                  label="キャッシュヒット率"
-                  value={db.cache_hit_ratio != null ? Number(db.cache_hit_ratio).toFixed(1) + "%" : "—"}
-                  sub="メモリから供給された割合（高いほど高速）"
-                  badge={db.cache_hit_ratio >= 99 ? "良好" : db.cache_hit_ratio >= 95 ? "注意" : "低下"}
-                  badgeTone={db.cache_hit_ratio >= 99 ? "ok" : db.cache_hit_ratio >= 95 ? "warn" : "down"}
-                  barPct={db.cache_hit_ratio}
-                  barTone={db.cache_hit_ratio >= 99 ? "ok" : db.cache_hit_ratio >= 95 ? "warn" : "down"}
-                />
-                {(() => {
-                  const cap = data.capacity;
-                  const usedMB = toMB(db.db_size_bytes);
-                  const limitMB = toMB(cap?.limitBytes);
-                  const pct = cap?.usedPct;
-                  const perDayMB = toMB(cap?.perDayBytes);
-                  const eta = fmtEta(cap?.daysToLimit);
-                  const tone = pct == null ? "ok" : pct < 70 ? "ok" : pct < 90 ? "warn" : "down";
-                  return (
-                    <Kpi
-                      label="DB容量"
-                      value={pct != null ? pct.toFixed(1) + "%" : fmtBytes(db.db_size_bytes)}
-                      sub={
-                        limitMB != null
-                          ? `${Math.round(usedMB).toLocaleString("ja-JP")} / ${Math.round(limitMB).toLocaleString("ja-JP")} MB（${cap.planName}）`
-                          : "データベース全体のサイズ"
-                      }
-                      note={
-                        perDayMB != null
-                          ? `増加 ${perDayMB.toFixed(2)} MB/日${eta ? ` ・ 上限到達目安 ${eta}` : ""}`
-                          : "増加ペースは計測中（翌日以降に表示）"
-                      }
-                      badge={tone === "ok" ? "良好" : tone === "warn" ? "注意" : "逼迫"}
-                      badgeTone={tone}
-                      barPct={pct}
-                      barTone={tone}
-                    />
-                  );
-                })()}
-                <Kpi
-                  label="接続数"
-                  value={`${db.used_conn ?? "—"} / ${db.max_conn ?? "—"}`}
-                  sub="同時接続（プーラ経由）"
-                  badge={db.used_conn / db.max_conn < 0.8 ? "良好" : "逼迫"}
-                  badgeTone={db.used_conn / db.max_conn < 0.8 ? "ok" : "warn"}
-                  barPct={db.max_conn ? (100 * db.used_conn) / db.max_conn : null}
-                  barTone={db.used_conn / db.max_conn < 0.8 ? "ok" : "warn"}
-                />
-                <Kpi
-                  label="コミット成功率"
-                  value={db.commit_ratio != null ? Number(db.commit_ratio).toFixed(1) + "%" : "—"}
-                  sub={db.commits != null ? `累計 ${Number(db.commits).toLocaleString("ja-JP")} 件` : "トランザクションの成功割合"}
-                  badge={db.commit_ratio >= 99 ? "良好" : "注意"}
-                  badgeTone={db.commit_ratio >= 99 ? "ok" : "warn"}
-                  barPct={db.commit_ratio}
-                  barTone={db.commit_ratio >= 99 ? "ok" : "warn"}
-                />
-                <Kpi label="稼働時間" value={fmtUptime(db.uptime_seconds)} sub="DB起動からの経過" badge="良好" barPct={100} />
-              </>
-            ) : (
-              <>
-                <Kpi
-                  label="DB接続"
-                  value={data.reachable ? "正常" : "エラー"}
-                  sub={data.reachable ? "Supabase に接続できています" : "Supabase に接続できません"}
-                  badge={data.reachable ? "良好" : "異常"}
-                  badgeTone={data.reachable ? "ok" : "down"}
-                />
-                <Kpi
-                  label="応答速度"
-                  value={data.latencyMs != null ? data.latencyMs + " ms" : "—"}
-                  sub="1件取得にかかった時間"
-                  badge={data.latencyMs < 400 ? "良好" : data.latencyMs < 1200 ? "注意" : "遅延"}
-                  badgeTone={data.latencyMs < 400 ? "ok" : data.latencyMs < 1200 ? "warn" : "down"}
-                />
-                <Kpi label="テーブル数" value={fmtNum((data.tables || []).length)} sub="このアプリのテーブル" badge="良好" />
-                <Kpi label="総行数（推定）" value={fmtNum(totalRows)} sub="全テーブル合計" badge="良好" />
-                <Kpi
-                  label="Kintone 最終取込"
-                  value={fmtAgo(data.kintone?.fetchedAt)}
-                  sub={fmtDateTime(data.kintone?.fetchedAt)}
-                  badge={kTone === "ok" ? "良好" : kTone === "warn" ? "注意" : "古い"}
-                  badgeTone={kTone}
-                />
-              </>
-            )}
+          {/* ① 健全性カード */}
+          <div className="sh-cards">
+            <Kpi
+              label="キャッシュヒット率"
+              value={h?.cache_hit != null ? Number(h.cache_hit).toFixed(1) + "%" : "—"}
+              sub="メモリから供給された割合（高いほど高速）"
+              tone={toneHigh(h?.cache_hit)}
+              gauge={h?.cache_hit ?? 0}
+            />
+            <Kpi
+              label="DB容量"
+              value={cap?.usedPct != null ? cap.usedPct.toFixed(1) + "%" : "—"}
+              sub={
+                cap
+                  ? `${Math.round(toMB(cap.usedBytes)).toLocaleString("ja-JP")} / ${Math.round(toMB(cap.limitBytes)).toLocaleString("ja-JP")} MB（${cap.planName}）`
+                  : "—"
+              }
+              note={
+                cap?.perDayBytes != null
+                  ? `増加 ${toMB(cap.perDayBytes).toFixed(2)} MB/日${fmtEta(cap.daysToLimit) ? ` ・ 上限到達目安 ${fmtEta(cap.daysToLimit)}` : ""}`
+                  : "増加ペースは算出できませんでした"
+              }
+              tone={toneLow(cap?.usedPct)}
+              gauge={cap?.usedPct ?? 0}
+            />
+            <Kpi
+              label="接続数"
+              value={h ? `${num(h.conns)} / ${num(h.max_conns)}` : "—"}
+              sub="同時接続（プーラ経由）"
+              tone={toneLow(connPct)}
+              gauge={connPct ?? 0}
+            />
+            <Kpi
+              label="コミット成功率"
+              value={h?.commit_pct != null ? Number(h.commit_pct).toFixed(1) + "%" : "—"}
+              sub={`累計 ${num(h?.commits)} 件`}
+              tone={toneHigh(h?.commit_pct)}
+              gauge={h?.commit_pct ?? 0}
+            />
+            <Kpi
+              label="稼働時間"
+              value={fmtUptime(h?.uptime_sec)}
+              sub="DB起動からの経過"
+              tone="ok"
+              gauge={100}
+            />
           </div>
 
-          <div className="hz-cols">
-            {/* テーブル別の使用状況 */}
-            <div className="card no-pad hz-col">
-              <div className="hz-card-h pad">テーブル別の使用状況</div>
-              <div className="hz-tw">
-                <table className="hz-table">
+          {/* ② 2カラム */}
+          <div className="sh-cols">
+            {/* 左：テーブル別の使用状況 */}
+            <section className="sh-panel">
+              <h2 className="sh-h">テーブル別の使用状況</h2>
+              <div className="sh-tw sh-tw-300">
+                <table className="sh-table">
                   <thead>
                     <tr>
                       <th className="l">テーブル</th>
-                      <th>行数</th>
-                      {db && <th>サイズ</th>}
-                      <th>占有率</th>
+                      <th className="r">行数</th>
+                      <th className="r">サイズ</th>
+                      <th className="r">占有率</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {usageRows.map((t, i) => {
-                      const share = ((db ? t.size || 0 : t.rows || 0) / totalBasis) * 100;
+                    {tables.map((t, i) => {
+                      const pct = ((Number(t.bytes) || 0) / totalBytes) * 100;
                       return (
                         <tr key={t.name + "-" + i}>
                           <td className="l mono">{t.name}</td>
-                          <td>{fmtNum(t.rows)}</td>
-                          {db && <td>{fmtBytes(t.size)}</td>}
-                          <td>
-                            <span className="hz-share">
-                              <span className="hz-share-bar"><span style={{ width: Math.max(1, share) + "%" }} /></span>
-                              <span className="hz-share-n">{share.toFixed(1)}%</span>
-                            </span>
+                          <td className="r n">{num(t.live)}</td>
+                          <td className="r n">{fmtBytes(t.bytes)}</td>
+                          <td className="r n sh-share">
+                            <span className="sh-share-bar" style={{ width: Math.min(pct, 100) + "%" }} aria-hidden="true" />
+                            <span className="sh-share-num">{pct.toFixed(1)}%</span>
                           </td>
                         </tr>
                       );
                     })}
+                    {/* 行数が足りないとき、罫線を続けて表が途中で切れて見えないようにする */}
+                    <tr className="sh-filler">
+                      <td colSpan={4} />
+                    </tr>
                   </tbody>
                 </table>
               </div>
-              {data.kintone?.fetchedAt && (
-                <div className="hz-foot">最終同期：{fmtDateTime(data.kintone.fetchedAt)}</div>
-              )}
-            </div>
+            </section>
 
-            {/* データの取り込み状況 */}
-            <div className="card no-pad hz-col">
-              <div className="hz-card-h pad">データの取り込み状況</div>
-              <div className="hz-tw">
-                <table className="hz-table">
+            {/* 右：データの取り込み状況 */}
+            <section className="sh-panel">
+              <h2 className="sh-h">データの取り込み状況</h2>
+              <div className="sh-tw sh-tw-300">
+                <table className="sh-table">
                   <thead>
                     <tr>
                       <th className="l">データ</th>
-                      <th>最新日</th>
-                      <th>経過</th>
-                      <th>件数</th>
+                      <th className="r">最新日</th>
+                      <th className="r">経過</th>
+                      <th className="r">件数</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td className="l">Kintone スナップショット</td>
-                      <td>{fmtDate(data.kintone?.fetchedAt)}</td>
-                      <td>
-                        <span className={"hz-elapsed " + kTone}>
-                          {kfresh == null ? "—" : kfresh === 0 ? "本日" : `${kfresh}日前`}
-                        </span>
-                      </td>
-                      <td>{fmtNum(data.kintone?.count)}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div className="hz-foot">Kintone は毎日 10:00 JST に自動同期</div>
-            </div>
-          </div>
-
-          {/* メンテナンス状況（SQL関数 sys_health 導入時のみ） */}
-          {db?.tables?.length ? (
-            <div className="card no-pad">
-              <div className="hz-card-h pad">メンテナンス状況（肥大化・インデックス）</div>
-              <div className="hz-tw">
-                <table className="hz-table">
-                  <thead>
-                    <tr>
-                      <th className="l">テーブル</th>
-                      <th>行数</th>
-                      <th>不要タプル</th>
-                      <th>不要率</th>
-                      <th>Seqスキャン</th>
-                      <th>Seq比</th>
-                      <th>最終VACUUM</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {db.tables.map((t, i) => {
-                      const seqRatio =
-                        (t.seq_scan || 0) + (t.idx_scan || 0) > 0
-                          ? Math.round((100 * (t.seq_scan || 0)) / ((t.seq_scan || 0) + (t.idx_scan || 0)))
-                          : 0;
-                      const dr = Number(t.dead_ratio) || 0;
+                    {(data.ingest || []).map((r, i) => {
+                      const d = daysSince(r.latest);
+                      const tone = d == null ? "bad" : d <= 3 ? "ok" : d <= 40 ? "warn" : "bad";
                       return (
-                        <tr key={t.name + "-" + i}>
-                          <td className="l mono">{t.name}</td>
-                          <td>{fmtNum(rowsOf(t))}</td>
-                          <td>{fmtNum(t.dead_tuples)}</td>
-                          <td>
-                            <span className={"hz-tag " + (dr >= 20 ? "down" : dr >= 10 ? "warn" : "ok")}>{dr}%</span>
+                        <tr key={r.label + "-" + i}>
+                          <td className="l">{r.label}</td>
+                          <td className="r n">{fmtDate(r.latest)}</td>
+                          <td className="r">
+                            <span className={"sh-chip " + tone}>
+                              {d == null ? "—" : d === 0 ? "本日" : `${d}日前`}
+                            </span>
                           </td>
-                          <td>{fmtNum(t.seq_scan)}</td>
-                          <td>
-                            <span className={"hz-tag " + (seqRatio >= 40 ? "warn" : "ok")}>{seqRatio}%</span>
-                          </td>
-                          <td>{t.last_vacuum ? fmtDate(t.last_vacuum) : "—"}</td>
+                          <td className="r n">{num(r.count)}</td>
                         </tr>
                       );
                     })}
+                    <tr className="sh-filler">
+                      <td colSpan={4} />
+                    </tr>
                   </tbody>
                 </table>
               </div>
+              <p className="sh-foot">
+                最終同期：{fmtDateTime(data.ingest?.[0]?.latest)}（JST）／毎日 10:00 に自動同期
+              </p>
+            </section>
+          </div>
+
+          {/* ③ メンテナンス状況 */}
+          <section className="sh-panel">
+            <h2 className="sh-h">メンテナンス状況（肥大化・インデックス）</h2>
+            <div className="sh-tw sh-tw-360">
+              <table className="sh-table">
+                <thead>
+                  <tr>
+                    <th className="l">テーブル</th>
+                    <th className="r">行数</th>
+                    <th className="r">不要タプル</th>
+                    <th className="r">不要率</th>
+                    <th className="r">Seqスキャン</th>
+                    <th className="r">Seq比</th>
+                    <th className="r">最終VACUUM</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...tables]
+                    .sort((a, b) => (b.dead || 0) - (a.dead || 0) || (b.live || 0) - (a.live || 0))
+                    .map((t, i) => {
+                      const live = Number(t.live) || 0;
+                      const dead = Number(t.dead) || 0;
+                      const deadPct = live + dead > 0 ? (100 * dead) / (live + dead) : 0;
+                      const deadTone = deadPct >= 40 ? "bad" : deadPct >= 20 ? "warn" : "ok";
+                      const seq = Number(t.seq_scan) || 0;
+                      const idx = Number(t.idx_scan) || 0;
+                      const scans = seq + idx;
+                      const seqPct = scans > 0 ? (100 * seq) / scans : null;
+                      // 小さい表は常にSeqスキャンになるため、誤検知を避けて3条件そろった時だけ黄
+                      const seqWarn = seqPct != null && seqPct >= 50 && seq >= 100 && live >= 500;
+                      return (
+                        <tr key={t.name + "-" + i}>
+                          <td className="l mono">{t.name}</td>
+                          <td className="r n">{num(live)}</td>
+                          <td className="r n">{num(dead)}</td>
+                          <td className="r">
+                            <span className={"sh-chip " + deadTone}>{deadPct.toFixed(0)}%</span>
+                          </td>
+                          <td className="r n">{num(seq)}</td>
+                          <td className="r n">
+                            {seqPct == null ? (
+                              "—"
+                            ) : seqWarn ? (
+                              <span className="sh-chip warn">{seqPct.toFixed(0)}%</span>
+                            ) : (
+                              `${seqPct.toFixed(0)}%`
+                            )}
+                          </td>
+                          <td className="r n">{t.last_vac ? fmtDate(t.last_vac) : "—"}</td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
             </div>
-          ) : (
-            <div className="card">
-              <div className="hz-hint">
-                <b>キャッシュヒット率・DB容量・接続数・コミット成功率・稼働時間・肥大化/VACUUM 状況</b> を表示するには、
-                Supabase に SQL 関数 <code>public.sys_health()</code> を1度だけ導入してください
-                （リポジトリの <code>db/sys_health.sql</code> を Supabase の SQL Editor に貼り付けて実行）。
-                導入後にこの画面を再チェックすると自動的に表示されます。
-              </div>
-            </div>
-          )}
+          </section>
+
+          {/* ④ 接続先 */}
+          <p className="sh-conn">
+            ホスト：{data.host || "(不明)"}　／　{pgVer || "(バージョン不明)"}
+          </p>
         </>
       )}
     </div>
