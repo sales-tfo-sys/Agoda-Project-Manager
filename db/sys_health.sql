@@ -61,4 +61,8 @@ as $$
   );
 $$;
 
-grant execute on function public.sys_health() to service_role, authenticated, anon;
+-- Postgres は関数の実行権限を既定で PUBLIC に付与するため、明示的に剥奪する。
+-- このアプリは SUPABASE_SERVICE_ROLE_KEY（Secret key）を使ってサーバー側からのみ
+-- 呼び出すので、公開前提の Publishable key（anon）には実行させない。
+revoke all on function public.sys_health() from public, anon, authenticated;
+grant execute on function public.sys_health() to service_role;
