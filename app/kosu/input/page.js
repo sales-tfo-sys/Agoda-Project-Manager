@@ -232,13 +232,20 @@ export default function KosuInputPage() {
   const selfOnly = !isManager && myId ? myId : null;
 
   // 表示する作業：
-  //  ・Regular task は従来どおり常に固定表示（完了・担当の絞り込みをしない）
-  //  ・Ad Hoc task は完了（Complete）を除外し、対応者が付いているものだけ
-  //    ※ただし、タスクの開始日〜期日（完了日）の範囲内の対象日を選んでいる場合は入力可能にする
-  //  ・管理者以外は、自分が対応者になっている Ad Hoc だけ
+  //  ・Regular task は従来どおり常に固定表示（進捗・担当の絞り込みをしない）
+  //  ・Ad Hoc task は進捗が「On Track / Behind」のものだけ（Onhold・Complete は出さない）
+  //    ※グルーピングでまとめた作業は、まとめ元のどれかが On Track / Behind なら表示する
+  //    ※進捗が未設定のものは判断できないので従来どおり表示する
+  //  ・あわせて、開始日より前の日付では表示しない
   const visibleTasks = useMemo(() => {
     return tasks.filter((t) => {
       if (isRegular(t)) return true;
+
+      // 進捗による絞り込み（Ad Hoc のみ）
+      const stList = (link.statusByContent[t.content] || []).filter(Boolean);
+      if (stList.length > 0 && !stList.some((s) => s === "On Track" || s === "Behind")) {
+        return false;
+      }
 
       let isCompleted = false;
       let compDate = null;
