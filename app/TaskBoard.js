@@ -1240,8 +1240,8 @@ export default function TaskBoard({ mode = "view" }) {
         </div>
       ) : (
         <>
+          {!isEdit && (
           <div className="tabbar-row">
-            {!isEdit && (
             <div className="segbar" role="tablist" aria-label="表示切替">
             <span
               className="segbar-thumb"
@@ -1267,7 +1267,6 @@ export default function TaskBoard({ mode = "view" }) {
               案件詳細
             </button>
             </div>
-            )}
             {years.length > 0 && (
               <label className="head-year">
                 対象年
@@ -1282,6 +1281,7 @@ export default function TaskBoard({ mode = "view" }) {
             )}
             {/* アカウント管理はサイドバーのメニューに移設 */}
           </div>
+          )}
 
           {isEdit && (() => {
             // 管理表の行データ（区分ごと）。数値は自動集計、設定（優先/対応者/進捗/名前/並び）を編集する。
@@ -1411,14 +1411,18 @@ export default function TaskBoard({ mode = "view" }) {
             return (
               <div className="card no-pad manage-card">
                 <div className="manage-head">
-                  <span className="manage-title">
-                    <svg className="manage-title-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <rect x="3" y="3" width="18" height="18" rx="2" />
-                      <line x1="9" y1="3" x2="9" y2="21" />
-                      <line x1="15" y1="3" x2="15" y2="21" />
-                    </svg>
-                    タスク管理表
-                  </span>
+                  {years.length > 0 && (
+                    <label className="head-year mng-year">
+                      対象年
+                      <select value={year ?? ""} onChange={(e) => setYear(Number(e.target.value))}>
+                        {years.map((y) => (
+                          <option key={y} value={y}>
+                            {y} 年
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
                   <div className="mng-filter" role="group" aria-label="区分で絞り込み">
                     <button type="button" className={"mng-filter-btn" + (mngFilter === "all" ? " active" : "")} onClick={() => setMngFilter("all")}>すべて<span className="mng-fcount">{cnt.all}</span></button>
                     <button type="button" className={"mng-filter-btn" + (mngFilter === "regular" ? " active" : "")} onClick={() => setMngFilter("regular")}>Regular<span className="mng-fcount">{cnt.regular}</span></button>
