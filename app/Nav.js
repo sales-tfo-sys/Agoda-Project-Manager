@@ -191,14 +191,62 @@ function ClockIcon() {
   );
 }
 
-const TABS = [
+function BoardIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <line x1="9" y1="3" x2="9" y2="21" />
+      <line x1="15" y1="3" x2="15" y2="21" />
+    </svg>
+  );
+}
+
+function InputIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z" />
+    </svg>
+  );
+}
+
+function SpecIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="16" y1="13" x2="8" y2="13" />
+      <line x1="16" y1="17" x2="8" y2="17" />
+    </svg>
+  );
+}
+
+function HealthIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+    </svg>
+  );
+}
+
+// ユーザー用（全員に表示）
+const USER_TABS = [
   { href: "/dashboard", label: "ダッシュボード", Icon: GridIcon },
+  { href: "/project", label: "プロジェクト管理", Icon: BoardIcon },
   { href: "/", label: "施設一覧", Icon: ListIcon },
   // グラフページは一旦削除（app/graphs を除去）
   { href: "/kosu", label: "工数管理", Icon: ClockIcon },
+  { href: "/kosu/input", label: "工数入力", Icon: InputIcon },
   { href: "/hid-requests", label: "HID新規発行依頼", Icon: HidIcon },
   { href: "/work-requests", label: "新規作業依頼", Icon: WorkReqIcon },
   { href: "/forms", label: "フォーム回答", Icon: FormIcon },
+];
+
+// 管理者用（閲覧権限のある人＝オーナー・管理者のみ表示）
+const ADMIN_TABS = [
+  { href: "/design-spec", label: "設計仕様書", Icon: SpecIcon },
+  { href: "/system-health", label: "システムヘルス", Icon: HealthIcon },
+  { href: "/kosu/persons", label: "アカウント管理", Icon: PersonIcon },
 ];
 
 export default function Sidebar() {
@@ -217,10 +265,24 @@ export default function Sidebar() {
       .catch(() => {});
   }, [pathname]);
 
-  // アカウント管理は閲覧権限のある人（オーナー・管理者）だけメニューに出す
-  const tabs = me?.perms?.viewAccounts
-    ? [...TABS, { href: "/kosu/persons", label: "アカウント管理", Icon: PersonIcon }]
-    : TABS;
+  // 管理者グループ（設計仕様書・システムヘルス・アカウント管理）は
+  // 閲覧権限のある人（オーナー・管理者）だけに表示する
+  const showAdmin = !!me?.perms?.viewAccounts;
+
+  const renderTab = ({ href, label, Icon }) => (
+    <Link
+      key={href}
+      href={href}
+      className={"side-tab" + (pathname === href ? " active" : "")}
+      onClick={() => {
+        // 同じページなら遷移しないのでスピナーは出さない
+        if (pathname !== href) start();
+      }}
+    >
+      <Icon />
+      <span>{label}</span>
+    </Link>
+  );
 
   const logout = async () => {
     setBusy(true);
@@ -272,20 +334,13 @@ export default function Sidebar() {
         </span>
       </div>
       <nav className="side-nav">
-        {tabs.map(({ href, label, Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className={"side-tab" + (pathname === href ? " active" : "")}
-            onClick={() => {
-              // 同じページなら遷移しないのでスピナーは出さない
-              if (pathname !== href) start();
-            }}
-          >
-            <Icon />
-            <span>{label}</span>
-          </Link>
-        ))}
+        {USER_TABS.map(renderTab)}
+        {showAdmin && (
+          <>
+            <div className="side-div" role="separator" aria-label="管理者メニュー" />
+            {ADMIN_TABS.map(renderTab)}
+          </>
+        )}
       </nav>
 
       <div className="side-foot">

@@ -174,6 +174,12 @@ body {
   flex-direction: column;
   gap: 4px;
 }
+/* ユーザー用と管理者用を区切る線 */
+.side-div {
+  height: 1px;
+  margin: 9px 11px;
+  background: var(--border, #e2e8f2);
+}
 .side-tab {
   display: flex;
   align-items: center;
@@ -227,8 +233,7 @@ body {
      下端の白線がロゴ帯の下線と一直線になるようにしている */
   box-sizing: border-box;
   min-height: 58px;
-  /* 右端は共通メニュー(TopMenu)ぶんの余白を確保する */
-  padding: 0 56px 0 18px;
+  padding: 0 18px;
   margin: 0 -16px 10px;
   /* sticky なので不透明にする必要がある。
      メニューバー（サイドバー）と同じ濃紺の系統で、ひと段だけ明るくして
@@ -2542,8 +2547,7 @@ tbody tr.clickable {
    以前ここだけ padding-left が 2px でアイコン位置が 16px ずれていた */
 .wrap.page-compact .head {
   min-height: 50px;
-  /* 右上の固定メニュー（⋮）と最終更新ピル等が重ならないよう右側を確保 */
-  padding: 0 56px 0 18px;
+  padding: 0 18px;
   margin-bottom: 10px;
 }
 .wrap.page-compact .ghost-btn {
