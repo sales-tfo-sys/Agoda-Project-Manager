@@ -232,7 +232,6 @@ function HealthIcon() {
 // ユーザー用（全員に表示）
 const USER_TABS = [
   { href: "/dashboard", label: "ダッシュボード", Icon: GridIcon },
-  { href: "/project", label: "プロジェクト管理", Icon: BoardIcon },
   { href: "/", label: "施設一覧", Icon: ListIcon },
   // グラフページは一旦削除（app/graphs を除去）
   { href: "/kosu", label: "工数管理", Icon: ClockIcon },
@@ -247,6 +246,7 @@ const ADMIN_TABS = [
   { href: "/design-spec", label: "設計仕様書", Icon: SpecIcon },
   { href: "/system-health", label: "システムヘルス", Icon: HealthIcon },
   { href: "/kosu/persons", label: "アカウント管理", Icon: PersonIcon },
+  { href: "/project", label: "プロジェクト管理", Icon: BoardIcon },
 ];
 
 export default function Sidebar() {
@@ -268,9 +268,6 @@ export default function Sidebar() {
   // 管理者グループ（設計仕様書・システムヘルス・アカウント管理）は
   // 閲覧権限のある人（オーナー・管理者）だけに表示する
   const showAdmin = !!me?.perms?.viewAccounts;
-
-  // プロジェクト管理はメンバーには見せない（オーナー・管理者のみ）
-  const userTabs = showAdmin ? USER_TABS : USER_TABS.filter((t) => t.href !== "/project");
 
   const renderTab = ({ href, label, Icon }) => (
     <Link
@@ -337,7 +334,7 @@ export default function Sidebar() {
         </span>
       </div>
       <nav className="side-nav">
-        {userTabs.map(renderTab)}
+        {USER_TABS.map(renderTab)}
         {showAdmin && (
           <>
             <div className="side-div" role="separator" aria-label="管理者メニュー" />

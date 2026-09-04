@@ -5820,7 +5820,7 @@ tbody tr.clickable {
 }
 /* 対象年プルダウン（フィルターの高さに合わせる） */
 .mng-year-select {
-  height: 30px;
+  height: 28px;
   box-sizing: border-box;
   align-self: center;
   font: inherit;
