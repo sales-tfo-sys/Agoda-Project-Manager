@@ -269,6 +269,9 @@ export default function Sidebar() {
   // 閲覧権限のある人（オーナー・管理者）だけに表示する
   const showAdmin = !!me?.perms?.viewAccounts;
 
+  // プロジェクト管理はメンバーには見せない（オーナー・管理者のみ）
+  const userTabs = showAdmin ? USER_TABS : USER_TABS.filter((t) => t.href !== "/project");
+
   const renderTab = ({ href, label, Icon }) => (
     <Link
       key={href}
@@ -334,7 +337,7 @@ export default function Sidebar() {
         </span>
       </div>
       <nav className="side-nav">
-        {USER_TABS.map(renderTab)}
+        {userTabs.map(renderTab)}
         {showAdmin && (
           <>
             <div className="side-div" role="separator" aria-label="管理者メニュー" />

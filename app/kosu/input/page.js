@@ -224,14 +224,6 @@ export default function KosuInputPage() {
     }));
   };
 
-  // 作業ごとの担当者ID。アサインが1件も無いとき（未設定・テーブル未作成）は
-  // 画面が空になってしまうので、その場合だけ従来どおり全員を対象にする。
-  const noAssign = Object.keys(link.idsByContent).length === 0;
-  const assigneesOf = useCallback(
-    (t) => link.idsByContent[t.content] || [],
-    [link]
-  );
-
   // ログイン中がオーナー／管理者か（保護オフ＝未ログインも管理扱い）。
   // 管理者・オーナーは「メンバー全員」の入力欄を編集できる。
   const isManager = !me?.user || ["owner", "admin"].includes(me.user.role);
@@ -306,12 +298,11 @@ export default function KosuInputPage() {
         // 現状は上の期間チェックを抜ければ表示されます。
       }
 
-      if (noAssign) return true;
-      const ids = link.idsByContent[t.content] || [];
-      if (ids.length === 0) return false;
-      return selfOnly ? ids.includes(selfOnly) : true;
+      // Ad Hoc も全メンバーが入力できるようにするため、担当の有無や
+      // 本人が担当かどうかでは絞らない（期間内・未完了ならすべて表示）。
+      return true;
     });
-  }, [tasks, link, noAssign, selfOnly, date]);
+  }, [tasks, link, date]);
 
   // 表示する担当者：オーナー・管理者は入力対象に含めない（メンバーのみ）。
   // メンバー本人がログイン中は自分の列だけ。
@@ -320,18 +311,14 @@ export default function KosuInputPage() {
     const members = persons.filter(
       (p) => !["owner", "admin"].includes(p.role || "member")
     );
+    // メンバー本人は自分の列だけ。オーナー・管理者は全メンバーの列を編集できる。
+    // Ad Hoc も含め、全メンバーが入力対象（担当者に限定しない）。
     if (selfOnly) return members.filter((p) => p.id === selfOnly);
-    if (noAssign) return members;
-    if (visibleTasks.some(isRegular)) return members;
-    const used = new Set();
-    for (const t of visibleTasks) for (const id of link.idsByContent[t.content] || []) used.add(id);
-    return members.filter((p) => used.has(p.id));
-  }, [persons, visibleTasks, link, noAssign, selfOnly]);
+    return members;
+  }, [persons, selfOnly]);
 
-  const isAssigned = useCallback(
-    (t, personId) => isRegular(t) || noAssign || assigneesOf(t).includes(personId),
-    [assigneesOf, noAssign]
-  );
+  // 全メンバーが入力できるよう、表示されている作業は全員が入力可。
+  const isAssigned = useCallback(() => true, []);
 
   const grouped = useMemo(() => {
     const order = [];
