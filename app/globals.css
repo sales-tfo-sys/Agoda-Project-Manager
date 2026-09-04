@@ -7888,6 +7888,18 @@ td.v-strong,
   color: var(--ink);
 }
 .pp-page {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.pp-page-ico {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  color: var(--ink-3);
+}
+.pp-page-label {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PAGE_GROUPS } from "../../../lib/pages";
+import PageIcon from "../../PageIcons";
 
 // 各ユーザーの「閲覧できるページ／編集できるページ」を設定するモーダル。
 // チェックを付け外した時点で自動保存する（保存ボタンなし）。
@@ -144,7 +145,10 @@ export default function PagePermModal({ person, onClose }) {
                   const v = pages[pg.key] || { view: false, edit: false };
                   return (
                     <div key={pg.key} className="pp-row">
-                      <span className="pp-page">{pg.label}</span>
+                      <span className="pp-page">
+                        <span className="pp-page-ico" aria-hidden="true"><PageIcon pageKey={pg.key} /></span>
+                        <span className="pp-page-label">{pg.label}</span>
+                      </span>
                       <label className="pp-chk">
                         <input type="checkbox" checked={!!v.view} onChange={() => toggle(pg.key, "view")} aria-label={`${pg.label} 閲覧`} />
                       </label>
