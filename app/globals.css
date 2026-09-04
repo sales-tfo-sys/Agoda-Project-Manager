@@ -7188,8 +7188,8 @@ td.v-strong,
 
 /* ── 担当者管理：ログイン列・編集権限列のトグルスイッチ ── */
 .persons-page .switch {
-  --sw-w: 40px;
-  --sw-h: 22px;
+  --sw-w: 44px;
+  --sw-h: 24px;
   position: relative;
   display: inline-block;
   width: var(--sw-w);
@@ -7198,31 +7198,32 @@ td.v-strong,
   padding: 0;
   border: none;
   border-radius: 999px;
-  background: #d9d9d9;
+  background: #f0c1c6;
   cursor: pointer;
   vertical-align: middle;
   transition: background 0.16s ease;
 }
 .persons-page .switch .switch-knob {
   position: absolute;
-  top: 2px;
-  left: 2px;
-  width: calc(var(--sw-h) - 4px);
-  height: calc(var(--sw-h) - 4px);
+  top: 3px;
+  left: 3px;
+  width: calc(var(--sw-h) - 6px);
+  height: calc(var(--sw-h) - 6px);
   border-radius: 50%;
-  background: #0f0e0c;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
   transition: transform 0.16s ease;
 }
 .persons-page .switch.on .switch-knob {
   transform: translateX(calc(var(--sw-w) - var(--sw-h)));
 }
-/* モノクロ：オン＝明るいグレー地、オフ＝暗いグレー地。ノブ位置＋濃淡で区別 */
+/* オン＝緑地、オフ＝ピンク地。白ノブの位置＋色で区別 */
 .persons-page .switch.on {
-  background: #2f6be0;
+  background: #4c9e6c;
 }
+.persons-page .switch.off,
 .persons-page .login-switch.off {
-  background: #cccac5;
+  background: #f0c1c6;
 }
 .persons-page .switch:focus-visible {
   outline: 2px solid var(--accent);
@@ -7243,10 +7244,10 @@ td.v-strong,
   font-weight: 800;
 }
 .persons-page .login-state.on {
-  color: #0f0e0c;
+  color: #3f9160;
 }
 .persons-page .login-state.off {
-  color: #7c7971;
+  color: #d3868c;
 }
 /* 編集権限：ラベル＋スイッチを横一列（1行） */
 .persons-page .grant-switches {
