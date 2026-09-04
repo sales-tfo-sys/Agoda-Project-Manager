@@ -5360,8 +5360,12 @@ tbody tr.clickable {
   white-space: nowrap;
   padding: 8px 10px;
   border-bottom: 1px solid var(--border2);
+  border-right: 1px solid var(--border2);
 }
-.manage-table th.l,
+.manage-table thead th:last-child {
+  border-right: 0;
+}
+/* ヘッダーは全てセンター（本文の l セルは左寄せのまま） */
 .manage-table td.l {
   text-align: left;
 }
