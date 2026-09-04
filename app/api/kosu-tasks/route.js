@@ -9,10 +9,22 @@ export async function GET() {
     return Response.json({ configured: false, tasks: [] });
   }
   try {
-    const tasks = await sb(
-      "kosu_task?active=eq.true&order=sort_order,created_at&select=*"
+    // プロジェクト管理で改名したタスクは task_override(scope=adhoc) の name に入る。
+    // kosu_task.content は作成時の名前のままなので、ここで表示名を差し替えて
+    // 工数入力・工数明細でもダッシュボードと同じ名前が出るようにする。
+    const [tasks, ovr] = await Promise.all([
+      sb("kosu_task?active=eq.true&order=sort_order,created_at&select=*"),
+      sb("task_override?scope=eq.adhoc&select=key,data").catch(() => null),
+    ]);
+    const renamed = {};
+    for (const o of ovr || []) {
+      const n = o?.data?.name;
+      if (n && n !== o.key) renamed[o.key] = n;
+    }
+    const out = (tasks || []).map((t) =>
+      renamed[t.content] ? { ...t, content: renamed[t.content], original_content: t.content } : t
     );
-    return Response.json({ configured: true, tasks: tasks || [] });
+    return Response.json({ configured: true, tasks: out });
   } catch (e) {
     return Response.json({ configured: true, tasks: [], error: String(e?.message || e) });
   }
