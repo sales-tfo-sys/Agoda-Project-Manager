@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Sidebar from "./Nav";
+import TopMenu from "./TopMenu";
 import { NavLoadingProvider } from "./NavLoading";
 import { UiProvider } from "./Ui";
 
@@ -27,6 +28,7 @@ export default function Shell({ children }) {
         <div className="app">
           <Sidebar />
           <main className="main">{children}</main>
+          <TopMenu />
         </div>
       </NavLoadingProvider>
     </UiProvider>

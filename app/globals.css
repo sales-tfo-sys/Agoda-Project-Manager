@@ -227,7 +227,8 @@ body {
      下端の白線がロゴ帯の下線と一直線になるようにしている */
   box-sizing: border-box;
   min-height: 58px;
-  padding: 0 18px;
+  /* 右端は共通メニュー(TopMenu)ぶんの余白を確保する */
+  padding: 0 56px 0 18px;
   margin: 0 -16px 10px;
   /* sticky なので不透明にする必要がある。
      メニューバー（サイドバー）と同じ濃紺の系統で、ひと段だけ明るくして
@@ -5293,6 +5294,72 @@ tbody tr.clickable {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+}
+
+/* ── 右上の共通メニュー ── */
+.topmenu {
+  position: fixed;
+  top: 14px;
+  right: 16px;
+  z-index: 55;
+}
+.topmenu-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: var(--ink-2);
+  background: #ffffff;
+  border: 1px solid rgba(120, 160, 240, 0.28);
+  border-radius: 9px;
+  box-shadow: 0 2px 8px rgba(52, 84, 170, 0.1);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.topmenu-btn:hover {
+  color: var(--accent);
+  border-color: rgba(120, 160, 240, 0.5);
+}
+.topmenu-btn.on {
+  color: #ffffff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.topmenu-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 200px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 14px 34px rgba(52, 84, 170, 0.18);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.topmenu-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.topmenu-item:hover {
+  background: #eef4fe;
+  color: var(--accent);
+}
+.topmenu-ico {
+  display: inline-grid;
+  place-items: center;
+  color: var(--accent);
 }
 .manage-edit-btn.on {
   color: #ffffff;
