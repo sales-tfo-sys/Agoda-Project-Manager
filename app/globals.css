@@ -6267,6 +6267,44 @@ th.hid-opcol {
     transform: translate(-50%, 0);
   }
 }
+/* 画面中央の緑チェック付きメッセージ（保存完了の合図） */
+.flash-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 5300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.flash-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 90vw;
+  padding: 13px 22px;
+  border-radius: 12px;
+  background: #2f9e57;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 12px 34px rgba(28, 110, 60, 0.34);
+  animation: flash-pop 0.2s ease both;
+}
+.flash-ok-ico {
+  display: inline-grid;
+  place-items: center;
+}
+@keyframes flash-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
 
 /* メニュー遷移中：画面中央のスピナーオーバーレイ */
 .nav-loading {
@@ -7235,8 +7273,8 @@ td.v-strong,
 
 /* ── 担当者管理：ログイン列・編集権限列のトグルスイッチ ── */
 .persons-page .switch {
-  --sw-w: 44px;
-  --sw-h: 24px;
+  --sw-w: 38px;
+  --sw-h: 20px;
   position: relative;
   display: inline-block;
   width: var(--sw-w);

@@ -41,7 +41,7 @@ export default function KosuPersonsPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [msg, setMsg] = useState(null);
-  const { showToast, flashDone } = useUi();
+  const { showToast, flashDone, flashOk } = useUi();
   const [addOpen, setAddOpen] = useState(false);
 
   const [name, setName] = useState("");
@@ -216,12 +216,15 @@ export default function KosuPersonsPage() {
     }
   };
 
-  const patch = async (id, body) => {
+  // 楽観的更新：クリックした瞬間に画面へ反映（トグルがその場でアニメーション）し、
+  // 全体リロードはしない。保存できたら画面中央に完了メッセージ（okMsg）を出す。
+  const patch = async (id, body, okMsg) => {
     if (!configured) {
       showToast("デモモードのため保存されません", "warn");
       return;
     }
-    setBusy(true);
+    const prev = persons;
+    setPersons((list) => list.map((p) => (p.id === id ? { ...p, ...body } : p)));
     setError(null);
     try {
       const res = await fetch("/api/kosu-persons", {
@@ -229,12 +232,19 @@ export default function KosuPersonsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, ...body }),
       }).then((r) => r.json());
-      if (res.error) setError(res.error);
-      else await load();
+      if (res.error) {
+        setPersons(prev); // 失敗したら元に戻す
+        setError(res.error);
+      } else {
+        // サーバーが確定した値で上書き（表示のズレ防止）
+        if (res.person) {
+          setPersons((list) => list.map((p) => (p.id === id ? { ...p, ...res.person } : p)));
+        }
+        if (okMsg) flashOk(okMsg);
+      }
     } catch (e) {
+      setPersons(prev);
       setError(String(e?.message || e));
-    } finally {
-      setBusy(false);
     }
   };
 
@@ -709,7 +719,7 @@ export default function KosuPersonsPage() {
                                 setError("ログインを許可するには先にメールアドレスを登録してください");
                                 return;
                               }
-                              patch(p.id, { can_login: !p.can_login });
+                              patch(p.id, { can_login: !p.can_login }, "ログインの許可設定を変更しました。");
                             }}
                             disabled={busy || !canEdit}
                             title={
@@ -731,7 +741,7 @@ export default function KosuPersonsPage() {
                         <select
                           className={"mini-select role-select role-" + (p.role || "member")}
                           value={p.role || "member"}
-                          onChange={(e) => patch(p.id, { role: e.target.value })}
+                          onChange={(e) => patch(p.id, { role: e.target.value }, "権限を変更しました。")}
                           disabled={busy || !canGrant}
                           title={canGrant ? undefined : "役割を変更できるのはオーナーだけです"}
                         >
@@ -750,7 +760,7 @@ export default function KosuPersonsPage() {
                               role="switch"
                               aria-checked={p.can_edit_accounts}
                               aria-label="アカウント管理の編集を許可"
-                              onClick={() => patch(p.id, { can_edit_accounts: !p.can_edit_accounts })}
+                              onClick={() => patch(p.id, { can_edit_accounts: !p.can_edit_accounts }, "アカウント管理の編集権限を変更しました。")}
                               disabled={busy || !canGrant}
                               title="アカウント管理を編集できる"
                             >
@@ -772,7 +782,7 @@ export default function KosuPersonsPage() {
                               role="switch"
                               aria-checked={p.can_edit_tasks}
                               aria-label="タスクの編集を許可"
-                              onClick={() => patch(p.id, { can_edit_tasks: !p.can_edit_tasks })}
+                              onClick={() => patch(p.id, { can_edit_tasks: !p.can_edit_tasks }, "タスクの編集権限を変更しました。")}
                               disabled={busy || !canGrant}
                               title="ダッシュボードのタスクを編集できる"
                             >

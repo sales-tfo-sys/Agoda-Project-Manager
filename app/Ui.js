@@ -13,6 +13,7 @@ const Ctx = createContext(null);
 export function UiProvider({ children }) {
   const [overlay, setOverlay] = useState(null); // { kind:"busy"|"done", text }
   const [toast, setToast] = useState(null); // { msg, type }
+  const [flash, setFlash] = useState(null); // 画面中央の緑チェック付きメッセージ
 
   const setBusy = useCallback((text) => {
     setOverlay(text == null ? null : { kind: "busy", text: typeof text === "string" ? text : "" });
@@ -23,6 +24,11 @@ export function UiProvider({ children }) {
   const showToast = useCallback((msg, type = "ok") => {
     if (!msg) return;
     setToast({ msg, type });
+  }, []);
+  // 画面中央に緑のチェック付きメッセージを一瞬だけ出す（保存完了の合図・リロードしない用途）
+  const flashOk = useCallback((msg) => {
+    if (!msg) return;
+    setFlash({ msg, id: Date.now() });
   }, []);
 
   // 完了オーバーレイは一瞬で自動的に消す
@@ -39,10 +45,17 @@ export function UiProvider({ children }) {
     return () => clearTimeout(t);
   }, [toast]);
 
+  // 中央メッセージは1.8秒で自動的に消す
+  useEffect(() => {
+    if (!flash) return;
+    const t = setTimeout(() => setFlash(null), 1800);
+    return () => clearTimeout(t);
+  }, [flash]);
+
   const busy = overlay != null;
 
   return (
-    <Ctx.Provider value={{ setBusy, flashDone, showToast, busy }}>
+    <Ctx.Provider value={{ setBusy, flashDone, showToast, flashOk, busy }}>
       {children}
       {overlay &&
         typeof document !== "undefined" &&
@@ -69,10 +82,25 @@ export function UiProvider({ children }) {
           </div>,
           document.body
         )}
+      {flash &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div className="flash-wrap" aria-hidden="true">
+            <div className="flash-ok" role="status" aria-live="polite">
+              <span className="flash-ok-ico" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
+              {flash.msg}
+            </div>
+          </div>,
+          document.body
+        )}
     </Ctx.Provider>
   );
 }
 
 export function useUi() {
-  return useContext(Ctx) || { setBusy() {}, flashDone() {}, showToast() {}, busy: false };
+  return useContext(Ctx) || { setBusy() {}, flashDone() {}, showToast() {}, flashOk() {}, busy: false };
 }
