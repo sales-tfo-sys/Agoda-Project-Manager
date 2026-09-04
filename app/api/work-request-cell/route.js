@@ -1,12 +1,12 @@
 import { sb, supabaseConfigured } from "../../../lib/supabase";
-import { denyUnlessPerm } from "../../../lib/auth";
+import { denyUnlessPageEdit } from "../../../lib/auth";
 
 export const dynamic = "force-dynamic";
 
 // 作業依頼シートの1行に対する手動入力（レコード作成/レコードNo/作業完了日）を保存する。
 //   scope=workreqcell, key=`<sheetId>::<rowKey>`, data={ created, recordNo, doneDate }
 export async function POST(req) {
-  const denied = await denyUnlessPerm(req, "editTasks");
+  const denied = await denyUnlessPageEdit(req, "workReq");
   if (denied) return denied;
   if (!supabaseConfigured()) return Response.json({ error: "Supabase 未設定です" }, { status: 200 });
   try {

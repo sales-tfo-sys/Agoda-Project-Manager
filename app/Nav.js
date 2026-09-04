@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useNavLoading } from "./NavLoading";
+import { pageKeyForPath } from "../lib/pages";
 
 function LogoutIcon() {
   return (
@@ -265,9 +266,16 @@ export default function Sidebar() {
       .catch(() => {});
   }, [pathname]);
 
-  // 管理者グループ（設計仕様書・システムヘルス・アカウント管理）は
-  // 閲覧権限のある人（オーナー・管理者）だけに表示する
-  const showAdmin = !!me?.perms?.viewAccounts;
+  // ページ単位の閲覧権限でメニューを出し分ける。
+  // 取得前(null)はユーザー用は表示・管理者用は非表示にして、ちらつきを抑える。
+  const pages = me?.perms?.pages || null;
+  const canView = (href) => {
+    if (!pages) return null;
+    const key = pageKeyForPath(href);
+    return key ? !!pages[key]?.view : true;
+  };
+  const userTabs = USER_TABS.filter((t) => canView(t.href) !== false);
+  const adminTabs = ADMIN_TABS.filter((t) => canView(t.href) === true);
 
   const renderTab = ({ href, label, Icon }) => (
     <Link
@@ -334,11 +342,11 @@ export default function Sidebar() {
         </span>
       </div>
       <nav className="side-nav">
-        {USER_TABS.map(renderTab)}
-        {showAdmin && (
+        {userTabs.map(renderTab)}
+        {adminTabs.length > 0 && (
           <>
             <div className="side-div" role="separator" aria-label="管理者メニュー" />
-            {ADMIN_TABS.map(renderTab)}
+            {adminTabs.map(renderTab)}
           </>
         )}
       </nav>

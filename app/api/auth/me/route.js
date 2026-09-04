@@ -21,6 +21,7 @@ export async function GET(req) {
         role: session.role,
         can_edit_accounts: session.canEditAccounts,
         can_edit_tasks: session.canEditTasks,
+        pagePerms: session.pagePerms,
       })
     : null;
   return Response.json({

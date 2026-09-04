@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Modal from "../../Modal";
+import PagePermModal from "./PagePermModal";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useUi } from "../../Ui";
 
@@ -37,6 +38,8 @@ function fmtLogin(v) {
 export default function KosuPersonsPage({ embedded = false } = {}) {
   const [configured, setConfigured] = useState(null);
   const [persons, setPersons] = useState([]);
+  // ページ権限モーダルの対象ユーザー
+  const [ppTarget, setPpTarget] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -454,6 +457,9 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
           工数の実績が登録されている場合は削除できません。その場合は「退職」をご利用ください（実績は残ります）。
         </p>
       </Modal>
+
+      <PagePermModal person={ppTarget} onClose={() => setPpTarget(null)} />
+
       {error && <div className="banner err-banner">エラー：{error}</div>}
 
       <Modal
@@ -572,6 +578,7 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                   <th rowSpan={2}>ログイン</th>
                   <th rowSpan={2}>権限</th>
                   <th colSpan={2} className="grant-group-th">編集権限</th>
+                  <th rowSpan={2}>ページ権限</th>
                   <th rowSpan={2}>最終ログイン</th>
                   <th rowSpan={2}>操作</th>
                 </tr>
@@ -801,6 +808,25 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                           </span>
                         ) : (
                           <span className="perm-note">—</span>
+                        )}
+                      </td>
+                      <td>
+                        {(p.role || "member") === "owner" ? (
+                          <span className="perm-note" title="オーナーは常に全ページ閲覧・編集できます">—</span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="mini-btn pageperm-btn"
+                            onClick={() => setPpTarget(p)}
+                            disabled={!canEdit}
+                            title={canEdit ? "閲覧・編集できるページを設定" : "編集する権限がありません"}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <circle cx="11" cy="11" r="7" />
+                              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                            </svg>
+                            ページ権限
+                          </button>
                         )}
                       </td>
                       <td>

@@ -45,7 +45,7 @@ export default function WorkRequestsPage() {
   useEffect(() => {
     fetch("/api/auth/me", { cache: "no-store" })
       .then((r) => r.json())
-      .then((d) => setCanEdit(!!d?.perms?.editTasks))
+      .then((d) => setCanEdit(!!d?.perms?.pages?.workReq?.edit))
       .catch(() => {});
   }, []);
 

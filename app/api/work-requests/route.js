@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { sb, supabaseConfigured } from "../../../lib/supabase";
-import { denyUnlessPerm } from "../../../lib/auth";
+import { denyUnlessPageEdit } from "../../../lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +25,7 @@ export async function GET() {
 }
 
 export async function POST(req) {
-  const denied = await denyUnlessPerm(req, "editTasks");
+  const denied = await denyUnlessPageEdit(req, "workReq");
   if (denied) return denied;
   if (!supabaseConfigured()) return Response.json({ error: "Supabase 未設定です" }, { status: 200 });
   try {
@@ -48,7 +48,7 @@ export async function POST(req) {
 }
 
 export async function PATCH(req) {
-  const denied = await denyUnlessPerm(req, "editTasks");
+  const denied = await denyUnlessPageEdit(req, "workReq");
   if (denied) return denied;
   if (!supabaseConfigured()) return Response.json({ error: "Supabase 未設定です" }, { status: 200 });
   try {
@@ -75,7 +75,7 @@ export async function PATCH(req) {
 }
 
 export async function DELETE(req) {
-  const denied = await denyUnlessPerm(req, "editTasks");
+  const denied = await denyUnlessPageEdit(req, "workReq");
   if (denied) return denied;
   if (!supabaseConfigured()) return Response.json({ error: "Supabase 未設定です" }, { status: 200 });
   try {

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { computePages, pageKeyForPath, PAGES } from "./lib/pages";
 
 const SESSION_COOKIE = "agoda_sid";
 
@@ -79,30 +80,56 @@ async function authEnabled() {
 }
 
 // セッション検証結果を短時間キャッシュ（同一Cookieの連続アクセスで毎回問い合わせない）
-const sessionCache = new Map(); // sid -> { ok, at }
+const sessionCache = new Map(); // sid -> { val, at }
 const SESSION_TTL = 60000;
 
-async function validSession(sid) {
-  if (!sid || !/^[0-9a-f-]{36}$/i.test(sid)) return false;
+// セッション＋本人の役割/個別付与を返す（ページ閲覧権限の判定に使う）
+async function getAccess(sid) {
+  if (!sid || !/^[0-9a-f-]{36}$/i.test(sid)) return { ok: false };
   const hit = sessionCache.get(sid);
-  if (hit && Date.now() - hit.at < SESSION_TTL) return hit.ok;
+  if (hit && Date.now() - hit.at < SESSION_TTL) return hit.val;
   try {
     const rows = await sbGet(
       `app_session?id=eq.${encodeURIComponent(sid)}` +
-        `&select=expires_at,kosu_person!inner(active,can_login)`
+        `&select=expires_at,kosu_person!inner(id,role,active,can_login,can_edit_accounts,can_edit_tasks)`
     );
     const s = rows?.[0];
-    if (!s || new Date(s.expires_at).getTime() < Date.now()) {
-      sessionCache.set(sid, { ok: false, at: Date.now() });
-      return false;
+    let val = { ok: false };
+    if (s && new Date(s.expires_at).getTime() >= Date.now()) {
+      const p = s.kosu_person;
+      if (p?.active === true && p?.can_login === true) {
+        val = {
+          ok: true,
+          personId: p.id,
+          role: p.role,
+          cea: !!p.can_edit_accounts,
+          cet: !!p.can_edit_tasks,
+        };
+      }
     }
-    const p = s.kosu_person;
-    const ok = p?.active === true && p?.can_login === true;
-    sessionCache.set(sid, { ok, at: Date.now() });
+    sessionCache.set(sid, { val, at: Date.now() });
     if (sessionCache.size > 200) sessionCache.clear();
-    return ok;
+    return val;
   } catch {
-    return false;
+    return { ok: false };
+  }
+}
+
+// 本人のページ権限（保存済みの上書き）を短時間キャッシュ
+const ppCache = new Map(); // personId -> { data, at }
+async function pagePermsOf(personId) {
+  const hit = ppCache.get(personId);
+  if (hit && Date.now() - hit.at < SESSION_TTL) return hit.data;
+  try {
+    const rows = await sbGet(
+      `task_override?scope=eq.pageperm&key=eq.${encodeURIComponent(personId)}&select=data`
+    );
+    const data = rows?.[0]?.data || null;
+    ppCache.set(personId, { data, at: Date.now() });
+    if (ppCache.size > 300) ppCache.clear();
+    return data;
+  } catch {
+    return null;
   }
 }
 
@@ -114,17 +141,40 @@ export async function middleware(req) {
   if (!(await authEnabled())) return NextResponse.next();
 
   const sid = req.cookies.get(SESSION_COOKIE)?.value;
-  if (await validSession(sid)) return NextResponse.next();
+  const access = await getAccess(sid);
 
-  if (pathname.startsWith("/api/")) {
-    return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
+  if (!access.ok) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
+    }
+    const url = req.nextUrl.clone();
+    url.pathname = "/login";
+    url.search = pathname !== "/" ? `?next=${encodeURIComponent(pathname + search)}` : "";
+    const res = NextResponse.redirect(url);
+    if (sid) res.cookies.delete(SESSION_COOKIE);
+    return res;
   }
-  const url = req.nextUrl.clone();
-  url.pathname = "/login";
-  url.search = pathname !== "/" ? `?next=${encodeURIComponent(pathname + search)}` : "";
-  const res = NextResponse.redirect(url);
-  if (sid) res.cookies.delete(SESSION_COOKIE);
-  return res;
+
+  // ページ閲覧権限のチェック（画面のみ。API は各ルートの権限チェックに任せる）。
+  // オーナーは常に全ページ閲覧可。閲覧不可なら、見れる先頭ページへ寄せる。
+  if (!pathname.startsWith("/api/") && access.role !== "owner") {
+    const key = pageKeyForPath(pathname);
+    if (key) {
+      const stored = await pagePermsOf(access.personId);
+      const pages = computePages(access.role, access.cea, access.cet, stored);
+      if (!pages[key]?.view) {
+        const first = PAGES.find((pg) => pages[pg.key]?.view);
+        const dest = first ? first.path : "/dashboard";
+        if (dest !== pathname) {
+          const url = req.nextUrl.clone();
+          url.pathname = dest;
+          url.search = "";
+          return NextResponse.redirect(url);
+        }
+      }
+    }
+  }
+  return NextResponse.next();
 }
 
 // 画像・静的ファイル・_next 配下は認証チェック不要（Supabaseへの問い合わせを減らす）

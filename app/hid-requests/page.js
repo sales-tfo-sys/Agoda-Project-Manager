@@ -35,7 +35,7 @@ export default function HidRequestsPage() {
   useEffect(() => {
     fetch("/api/auth/me", { cache: "no-store" })
       .then((r) => r.json())
-      .then((d) => setCanEdit(!!d?.perms?.editTasks))
+      .then((d) => setCanEdit(!!d?.perms?.pages?.hid?.edit))
       .catch(() => {});
   }, []);
 
