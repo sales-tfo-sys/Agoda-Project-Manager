@@ -271,6 +271,31 @@ export default function DetailTable({ title, compact = false }) {
               extra.push(mkRow(info.type, content, nm, "count", vals));
             }
           }
+
+          // Regular task と「トータル作業時間」はメンバー全員が対象なので、
+          // シートに行が無い在籍メンバー（後から追加した人）の行を足す。
+          // これが無いと、新しく追加したメンバーは工数明細に出ず、
+          // 工数入力した値も表示されない。
+          const commonOf = {}; // 作業内容 → { type, unit, 既にある担当名 }
+          for (const r of json.rows || []) {
+            if (/ad\s*hoc/i.test(r.type || "")) continue; // Ad Hoc は上のブロックで処理済み
+            if (!commonOf[r.detail]) {
+              commonOf[r.detail] = { type: r.type, unit: r.unit, names: new Set() };
+            }
+            if (r.tanto) commonOf[r.detail].names.add(r.tanto);
+          }
+          for (const [content, info] of Object.entries(commonOf)) {
+            const tid = taskIdOf.get(content);
+            const isTotal = /トータル作業時間/.test(content);
+            for (const p of asg?.persons || []) {
+              if (!isWorker(p) || info.names.has(p.name)) continue;
+              info.names.add(p.name);
+              const vals = isTotal
+                ? totalByPid.get(p.id) || {}
+                : (tid && byTask.get(tid)?.get(p.id)) || {};
+              extra.push(mkRow(info.type, content, p.name, info.unit || "count", vals));
+            }
+          }
         }
         setExtraRows(extra);
 
@@ -610,28 +635,7 @@ export default function DetailTable({ title, compact = false }) {
         </div>
         </div>
 
-        {/* 工数入力は明細表の右上に置く */}
-        <Link
-          href="/kosu/input"
-          className="menu-btn detail-input-btn"
-          title="工数入力"
-          aria-label="工数入力"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.9"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M12 20h9" />
-            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-          </svg>
-        </Link>
+        {/* 工数入力へはサイドメニューから移動する（ここのボタンは廃止） */}
       </div>
 
       <div className="card no-pad">

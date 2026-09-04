@@ -239,6 +239,10 @@ export default function KosuInputPage() {
   //  ・あわせて、開始日より前の日付では表示しない
   const visibleTasks = useMemo(() => {
     return tasks.filter((t) => {
+      // 「トータル作業時間」は入力する作業ではなく、工数明細で自動計算する集計行。
+      // 入力画面には出さない。
+      if (/トータル作業時間/.test(t.content || "")) return false;
+
       if (isRegular(t)) return true;
 
       // 進捗による絞り込み（Ad Hoc のみ）
@@ -423,11 +427,6 @@ export default function KosuInputPage() {
     <div className="wrap">
       <div className="head">
         <div className="head-left">
-          <Link href="/kosu" className="back-link" title="工数管理へ戻る" aria-label="工数管理へ戻る">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </Link>
           <span className="page-h page-h-gap">工数入力</span>
         </div>
         <div className="head-right">
