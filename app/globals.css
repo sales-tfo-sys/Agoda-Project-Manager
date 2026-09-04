@@ -4814,7 +4814,9 @@ tbody tr.clickable {
 
 /* ── ログイン拒否／エラー画面 ── */
 .deny-shell {
-  position: relative;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
   min-height: 100vh;
   display: flex;
   align-items: center;

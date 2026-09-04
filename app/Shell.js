@@ -5,8 +5,10 @@ import Sidebar from "./Nav";
 import { NavLoadingProvider } from "./NavLoading";
 import { UiProvider } from "./Ui";
 
-// 認証系の画面ではサイドメニューを出さない（未ログイン時にメニューを見せない）
-const BARE_PATHS = ["/login", "/auth/callback"];
+// 未ログインのログイン画面だけメニューを出さない。
+// 認証コールバックはログイン直後にシェル（サイドバー）を保ったまま
+// ダッシュボードへ遷移させ、メニューの出現・スピナー位置のズレを防ぐ。
+const BARE_PATHS = ["/login"];
 
 export default function Shell({ children }) {
   const pathname = usePathname();

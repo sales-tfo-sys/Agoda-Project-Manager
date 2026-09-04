@@ -120,10 +120,16 @@ export default function AuthCallbackPage() {
     );
   }
 
-  // 読み込み中はアニメーションだけを中央に置く
+  // 読み込み中はダッシュボードと同じレイアウト（ヘッダー枠＋中央スピナー）にして、
+  // ログイン直後にメニューの出現やスピナー位置のズレが起きないようにする。
   return (
-    <div className="auth-loading">
-      <span className="loader-ring" role="status" aria-label="読み込み中" />
+    <div className="wrap">
+      <div className="head" aria-hidden="true" />
+      <div className="card">
+        <div className="page-loading">
+          <span className="loader-ring" role="status" aria-label="読み込み中" />
+        </div>
+      </div>
     </div>
   );
 }
