@@ -59,6 +59,9 @@ as $$
     'commit_ratio',    (select case when (coalesce(commits,0)+coalesce(rollbacks,0)) > 0
                                      then round(100.0 * commits / (commits + rollbacks), 2)
                                      else null end from stat),
+    -- 累計トランザクション数（カードの補足表示に使う）
+    'commits',         (select coalesce(commits, 0) from stat),
+    'rollbacks',       (select coalesce(rollbacks, 0) from stat),
     'tables',          (select coalesce(jsonb_agg(to_jsonb(t)), '[]'::jsonb) from tbls t)
   );
 $$;

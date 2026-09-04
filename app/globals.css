@@ -5674,6 +5674,15 @@ tbody tr.clickable {
   color: var(--ink-3);
   line-height: 1.4;
 }
+/* 補足行（増加ペース・上限到達目安など） */
+.hz-kpi-note {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border);
+  font-size: 10.5px;
+  color: var(--ink-2);
+  line-height: 1.4;
+}
 .hz-badge {
   flex: none;
   font-size: 10.5px;

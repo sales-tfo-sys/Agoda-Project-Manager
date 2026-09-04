@@ -22,6 +22,42 @@ const SB_URL = process.env.SUPABASE_URL;
 const SB_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 
+// DB容量の上限（プラン依存）。現在は無料プラン＝500MB。
+// 有料プランへ移行したら環境変数 SUPABASE_DB_LIMIT_MB / SUPABASE_PLAN_NAME で変更する
+// （例：Pro なら 8192 と「Proプラン」）。
+const DB_LIMIT_MB = Number(process.env.SUPABASE_DB_LIMIT_MB || 500);
+const DB_PLAN_NAME = process.env.SUPABASE_PLAN_NAME || "無料プラン";
+
+// DB容量の推移を1日1件だけ記録し、増加ペース／上限到達目安を出せるようにする。
+// （task_override を流用。scope=dbsize / key=YYYY-MM-DD）
+async function trackDbSize(bytes) {
+  if (bytes == null) return null;
+  const today = new Date().toISOString().slice(0, 10);
+  try {
+    await sb("task_override?on_conflict=scope,key", {
+      method: "POST",
+      body: [{ scope: "dbsize", key: today, data: { bytes }, updated_at: new Date().toISOString() }],
+      prefer: "resolution=merge-duplicates,return=minimal",
+    });
+  } catch {}
+  try {
+    const rows = await sb("task_override?scope=eq.dbsize&select=key,data&order=key.asc");
+    const pts = (rows || [])
+      .map((r) => ({ day: r.key, bytes: Number(r.data?.bytes) }))
+      .filter((p) => Number.isFinite(p.bytes));
+    if (pts.length < 2) return { days: pts.length, perDayBytes: null };
+    const first = pts[0];
+    const last = pts[pts.length - 1];
+    const spanDays = Math.max(
+      1,
+      Math.round((new Date(last.day) - new Date(first.day)) / 86400000)
+    );
+    return { days: pts.length, perDayBytes: (last.bytes - first.bytes) / spanDays };
+  } catch {
+    return null;
+  }
+}
+
 // PostgREST の推定件数（Content-Range ヘッダ）を読む。大きなテーブルでも速い。
 async function estCount(table) {
   try {
@@ -94,5 +130,23 @@ export async function GET(req) {
     db = null; // 関数未導入 or 権限なし
   }
 
-  return Response.json({ ok: true, configured: true, checkedAt, reachable, latencyMs, tables, kintone, db });
+  // DB容量の上限・増加ペース（プラン上限に対する使用率を出すため）
+  let capacity = null;
+  if (db?.db_size_bytes != null) {
+    const growth = await trackDbSize(db.db_size_bytes);
+    const limitBytes = DB_LIMIT_MB * 1024 * 1024;
+    const perDay = growth?.perDayBytes ?? null;
+    const remain = limitBytes - db.db_size_bytes;
+    capacity = {
+      limitBytes,
+      planName: DB_PLAN_NAME,
+      usedPct: limitBytes > 0 ? (100 * db.db_size_bytes) / limitBytes : null,
+      perDayBytes: perDay,
+      // 上限到達までの日数（増加が無い/減っている場合は null）
+      daysToLimit: perDay && perDay > 0 ? remain / perDay : null,
+      samples: growth?.days ?? 0,
+    };
+  }
+
+  return Response.json({ ok: true, configured: true, checkedAt, reachable, latencyMs, tables, kintone, db, capacity });
 }

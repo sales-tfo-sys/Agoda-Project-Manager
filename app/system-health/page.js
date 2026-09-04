@@ -47,6 +47,17 @@ function fmtAgo(iso) {
   if (h < 24) return `${h}時間前`;
   return `${Math.floor(h / 24)}日前`;
 }
+// バイト → MB（整数）。容量カードは MB 表記で揃える
+function toMB(n) {
+  return n == null ? null : n / (1024 * 1024);
+}
+// 上限到達までの目安（日数 → 「約 N 年後」など）
+function fmtEta(days) {
+  if (days == null || !Number.isFinite(days)) return null;
+  if (days > 365 * 2) return `約 ${Math.round(days / 365)} 年後`;
+  if (days > 60) return `約 ${Math.round(days / 30)} か月後`;
+  return `約 ${Math.round(days)} 日後`;
+}
 function fmtUptime(sec) {
   if (sec == null) return "—";
   const d = Math.floor(sec / 86400);
@@ -55,7 +66,7 @@ function fmtUptime(sec) {
 }
 
 // KPIカード（値＋補足＋良好/注意バッジ＋任意のバー）
-function Kpi({ label, value, sub, badge, badgeTone = "ok", barPct, barTone = "ok" }) {
+function Kpi({ label, value, sub, note, badge, badgeTone = "ok", barPct, barTone = "ok" }) {
   return (
     <div className="hz-kpi">
       <div className="hz-kpi-top">
@@ -64,6 +75,7 @@ function Kpi({ label, value, sub, badge, badgeTone = "ok", barPct, barTone = "ok
       </div>
       <div className="hz-kpi-val">{value}</div>
       {sub && <div className="hz-kpi-sub">{sub}</div>}
+      {note && <div className="hz-kpi-note">{note}</div>}
       {barPct != null && (
         <div className="hz-bar">
           <span className={"hz-bar-fill " + barTone} style={{ width: Math.max(2, Math.min(100, barPct)) + "%" }} />
@@ -151,18 +163,46 @@ export default function SystemHealthPage() {
               <>
                 <Kpi
                   label="キャッシュヒット率"
-                  value={db.cache_hit_ratio != null ? db.cache_hit_ratio + "%" : "—"}
+                  value={db.cache_hit_ratio != null ? Number(db.cache_hit_ratio).toFixed(1) + "%" : "—"}
                   sub="メモリから供給された割合（高いほど高速）"
                   badge={db.cache_hit_ratio >= 99 ? "良好" : db.cache_hit_ratio >= 95 ? "注意" : "低下"}
                   badgeTone={db.cache_hit_ratio >= 99 ? "ok" : db.cache_hit_ratio >= 95 ? "warn" : "down"}
                   barPct={db.cache_hit_ratio}
                   barTone={db.cache_hit_ratio >= 99 ? "ok" : db.cache_hit_ratio >= 95 ? "warn" : "down"}
                 />
-                <Kpi label="DB容量" value={fmtBytes(db.db_size_bytes)} sub="データベース全体のサイズ" badge="良好" />
+                {(() => {
+                  const cap = data.capacity;
+                  const usedMB = toMB(db.db_size_bytes);
+                  const limitMB = toMB(cap?.limitBytes);
+                  const pct = cap?.usedPct;
+                  const perDayMB = toMB(cap?.perDayBytes);
+                  const eta = fmtEta(cap?.daysToLimit);
+                  const tone = pct == null ? "ok" : pct < 70 ? "ok" : pct < 90 ? "warn" : "down";
+                  return (
+                    <Kpi
+                      label="DB容量"
+                      value={pct != null ? pct.toFixed(1) + "%" : fmtBytes(db.db_size_bytes)}
+                      sub={
+                        limitMB != null
+                          ? `${Math.round(usedMB).toLocaleString("ja-JP")} / ${Math.round(limitMB).toLocaleString("ja-JP")} MB（${cap.planName}）`
+                          : "データベース全体のサイズ"
+                      }
+                      note={
+                        perDayMB != null
+                          ? `増加 ${perDayMB.toFixed(2)} MB/日${eta ? ` ・ 上限到達目安 ${eta}` : ""}`
+                          : "増加ペースは計測中（翌日以降に表示）"
+                      }
+                      badge={tone === "ok" ? "良好" : tone === "warn" ? "注意" : "逼迫"}
+                      badgeTone={tone}
+                      barPct={pct}
+                      barTone={tone}
+                    />
+                  );
+                })()}
                 <Kpi
                   label="接続数"
                   value={`${db.used_conn ?? "—"} / ${db.max_conn ?? "—"}`}
-                  sub="同時接続数"
+                  sub="同時接続（プーラ経由）"
                   badge={db.used_conn / db.max_conn < 0.8 ? "良好" : "逼迫"}
                   badgeTone={db.used_conn / db.max_conn < 0.8 ? "ok" : "warn"}
                   barPct={db.max_conn ? (100 * db.used_conn) / db.max_conn : null}
@@ -170,14 +210,14 @@ export default function SystemHealthPage() {
                 />
                 <Kpi
                   label="コミット成功率"
-                  value={db.commit_ratio != null ? db.commit_ratio + "%" : "—"}
-                  sub="トランザクションの成功割合"
+                  value={db.commit_ratio != null ? Number(db.commit_ratio).toFixed(1) + "%" : "—"}
+                  sub={db.commits != null ? `累計 ${Number(db.commits).toLocaleString("ja-JP")} 件` : "トランザクションの成功割合"}
                   badge={db.commit_ratio >= 99 ? "良好" : "注意"}
                   badgeTone={db.commit_ratio >= 99 ? "ok" : "warn"}
                   barPct={db.commit_ratio}
                   barTone={db.commit_ratio >= 99 ? "ok" : "warn"}
                 />
-                <Kpi label="稼働時間" value={fmtUptime(db.uptime_seconds)} sub="DB起動からの経過" badge="良好" />
+                <Kpi label="稼働時間" value={fmtUptime(db.uptime_seconds)} sub="DB起動からの経過" badge="良好" barPct={100} />
               </>
             ) : (
               <>
