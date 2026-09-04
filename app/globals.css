@@ -7422,7 +7422,7 @@ td.v-strong,
   /* 見出しは青系グラデーションで本文とハッキリ区別する */
   background: linear-gradient(180deg, #cadcf5, #b6cdec);
   color: #2b3c5c;
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 800;
   letter-spacing: 0.01em;
   /* 列の区切りを見せて横方向に追いやすくする */
@@ -7641,6 +7641,8 @@ td.v-strong,
 /* コンパクト表示の詰めた padding が勝ってしまうため、詳細度を合わせて上書きする */
 .wrap.persons-page .persons-table thead th {
   padding: 9px 16px;
+  /* page-compact の 10.5px 指定より後・同等の詳細度で上書きして見出しを読みやすく */
+  font-size: 12.5px;
 }
 /* 行の高さを詰める。アバター 34px が入るので上下 7px なら潰れない */
 .wrap.persons-page .persons-table td {
