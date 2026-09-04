@@ -6,9 +6,13 @@ import { holidaysForYear } from "../lib/holidays";
 const DOW = ["日", "月", "火", "水", "木", "金", "土"];
 
 // ダッシュボード用の月間カレンダー。日本の祝日（振替休日・国民の休日含む）を表示する。
-export default function Calendar() {
+// offset: 表示を何ヶ月ずらすか（0=当月 / 1=翌月）。「今月」ボタンもこの基準に戻す。
+export default function Calendar({ offset = 0 }) {
   const today = new Date();
-  const [ym, setYm] = useState({ y: today.getFullYear(), m: today.getMonth() + 1 });
+  // offset ぶんずらした基準の年月（月の繰り上がりは Date に任せる）
+  const base = new Date(today.getFullYear(), today.getMonth() + offset, 1);
+  const baseYm = { y: base.getFullYear(), m: base.getMonth() + 1 };
+  const [ym, setYm] = useState(baseYm);
   const holidays = useMemo(() => holidaysForYear(ym.y), [ym.y]);
 
   const cells = useMemo(() => {
@@ -23,7 +27,7 @@ export default function Calendar() {
 
   const prev = () => setYm(({ y, m }) => (m === 1 ? { y: y - 1, m: 12 } : { y, m: m - 1 }));
   const next = () => setYm(({ y, m }) => (m === 12 ? { y: y + 1, m: 1 } : { y, m: m + 1 }));
-  const toToday = () => setYm({ y: today.getFullYear(), m: today.getMonth() + 1 });
+  const toToday = () => setYm(baseYm);
 
   const isToday = (d) =>
     d &&

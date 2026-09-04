@@ -671,7 +671,8 @@ h1 {
   color: var(--ink-2);
 }
 .qtable td {
-  padding: 6px 5px;
+  /* 案件詳細の一覧は行を詰めて見やすくする */
+  padding: 3px 5px;
   text-align: right;
   border-bottom: 1px solid var(--border);
   border-right: 1px solid var(--border);
@@ -3236,9 +3237,12 @@ tbody tr.clickable {
   border-radius: 7px;
   background: linear-gradient(135deg, #3f7dff, #2f6be0);
   box-shadow: 0 2px 10px rgba(47, 107, 224, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.18);
-  transition: transform 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+  /* タブ幅が不揃いなので left/width を実寸で動かす（transform も従来どおり効く） */
+  transition: transform 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+    left 0.24s cubic-bezier(0.4, 0, 0.2, 1), width 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.15s ease;
   z-index: -1;
-  will-change: transform;
+  will-change: transform, left, width;
 }
 .segbar-btn {
   font: inherit;
@@ -6274,6 +6278,13 @@ th.hid-opcol {
   .overview-row > .cal-slot {
     justify-content: flex-start;
   }
+}
+/* スケジュールタブ：当月・翌月のカレンダーを横並び（狭い画面では縦積み） */
+.sched-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 14px;
 }
 .cal-card {
   width: 460px;

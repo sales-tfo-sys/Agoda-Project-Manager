@@ -1067,12 +1067,12 @@ export default function TaskBoard({ mode = "view" }) {
     };
   }, [menuOpen]);
 
-  // 表示タブ（全体 / 案件詳細）
+  // 表示タブ（スケジュール / 全体 / 案件詳細）
   const [tab, setTab] = useState("overview");
   useEffect(() => {
     try {
       const v = localStorage.getItem("agoda-dash-tab");
-      if (v === "overview" || v === "cases") setTab(v);
+      if (v === "schedule" || v === "overview" || v === "cases") setTab(v);
     } catch {}
   }, []);
   const switchTab = (v) => {
@@ -1081,6 +1081,18 @@ export default function TaskBoard({ mode = "view" }) {
       localStorage.setItem("agoda-dash-tab", v);
     } catch {}
   };
+  // タブが3つになり幅も不揃いなので、選択中ボタンの実寸からスライダーを合わせる
+  const segRef = useRef(null);
+  const [segThumb, setSegThumb] = useState(null);
+  useEffect(() => {
+    const fit = () => {
+      const el = segRef.current?.querySelector(`.segbar-btn[data-tab="${tab}"]`);
+      if (el) setSegThumb({ left: el.offsetLeft, width: el.offsetWidth });
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, [tab]);
 
   // 表示制御：0件ステータスを隠す／カードの折りたたみ
   const [hideZero, setHideZero] = useState(false);
@@ -1241,15 +1253,26 @@ export default function TaskBoard({ mode = "view" }) {
         <>
           {!isEdit && (
           <div className="tabbar-row">
-            <div className="segbar" role="tablist" aria-label="表示切替">
+            <div className="segbar" role="tablist" aria-label="表示切替" ref={segRef}>
             <span
               className="segbar-thumb"
-              style={{ transform: `translateX(${tab === "cases" ? "100%" : "0%"})` }}
+              style={segThumb ? { left: segThumb.left, width: segThumb.width, transform: "none" } : { opacity: 0 }}
               aria-hidden="true"
             />
             <button
               type="button"
               role="tab"
+              data-tab="schedule"
+              aria-selected={tab === "schedule"}
+              className={"segbar-btn" + (tab === "schedule" ? " active" : "")}
+              onClick={() => switchTab("schedule")}
+            >
+              スケジュール
+            </button>
+            <button
+              type="button"
+              role="tab"
+              data-tab="overview"
               aria-selected={tab === "overview"}
               className={"segbar-btn" + (tab === "overview" ? " active" : "")}
               onClick={() => switchTab("overview")}
@@ -1259,6 +1282,7 @@ export default function TaskBoard({ mode = "view" }) {
             <button
               type="button"
               role="tab"
+              data-tab="cases"
               aria-selected={tab === "cases"}
               className={"segbar-btn" + (tab === "cases" ? " active" : "")}
               onClick={() => switchTab("cases")}
@@ -1503,6 +1527,12 @@ export default function TaskBoard({ mode = "view" }) {
                             <td>{row.rate == null ? "—" : row.rate + "%"}</td>
                             <td className="mng-ops">{row.kind === "Ad Hoc" ? (
                               <span className="mng-ops-wrap">
+                                {/* 連携済みならスプレッドシートを直接開けるようにする（閲覧時も表示） */}
+                                {o.sheetUrl && (
+                                  <a className="forms-op on" href={o.sheetUrl} target="_blank" rel="noreferrer" title={"スプレッドシートを開く\n" + o.sheetUrl} aria-label="スプレッドシートを開く">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+                                  </a>
+                                )}
                                 {editable && (
                                   <button type="button" className={"forms-op" + (o.sheetUrl ? " on" : "")} title="スプレッドシート連携（受注数・完了数を自動取得）" aria-label="シート連携" onClick={() => setCfgTask(row.key)}>
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="9" x2="9" y2="21" /></svg>
@@ -1570,12 +1600,15 @@ export default function TaskBoard({ mode = "view" }) {
                 ) : null;
               })()}
             </div>
-            {!isEdit && (
-              <div className="cal-slot">
-                <Calendar />
-              </div>
-            )}
           </div>
+          )}
+
+          {/* スケジュール：当月と翌月のカレンダーを並べて表示 */}
+          {activeTab === "schedule" && !isEdit && (
+            <div className="tab-panel sched-row">
+              <Calendar />
+              <Calendar offset={1} />
+            </div>
           )}
 
           {activeTab === "overview" && !isEdit && adhoc && (adhoc.length > 0 || customAdhoc.length > 0) && (() => {
