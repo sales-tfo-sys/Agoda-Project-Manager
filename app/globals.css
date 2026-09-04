@@ -3245,6 +3245,11 @@ tbody tr.clickable {
   will-change: transform, left, width;
 }
 .segbar-btn {
+  /* ラベルと件数バッジを縦中央で揃える（バッジが上に寄るのを防ぐ） */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   font: inherit;
   font-size: 12.5px;
   font-weight: 700;
@@ -3303,7 +3308,8 @@ tbody tr.clickable {
   vertical-align: middle;
   min-width: 15px;
   height: 15px;
-  margin-left: 5px;
+  /* 余白は .segbar-btn の gap で取るのでここでは付けない */
+  margin-left: 0;
   padding: 0 4px;
   font-size: 9.5px;
   font-weight: 700;

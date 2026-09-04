@@ -425,6 +425,19 @@ export default function DetailTable({ title, compact = false }) {
 
   const months = data?.months || [];
 
+  // 対象月は「YYYY/MM」で表示する。日付列からその月の実日付を引いて年を取る
+  const monthLabel = (i) => {
+    const mIdx = data?.dateMonthIdx || [];
+    const iso = data?.isoDates || [];
+    const di = mIdx.findIndex((v) => v === i);
+    const d = di >= 0 ? iso[di] : null;
+    if (d) {
+      const [y, m] = String(d).split("-");
+      if (y && m) return `${y}/${m}`;
+    }
+    return months[i];
+  };
+
   // 既定は「当月」。当月のデータが無ければ「実績がある最後の月」。
   useEffect(() => {
     if (!data || monthIdx != null || !data.months?.length) return;
@@ -601,12 +614,11 @@ export default function DetailTable({ title, compact = false }) {
         {title && <div className="sec-head">{title}</div>}
         <div className="detail-tools">
         {months.length > 0 && (
-          <label className="head-year">
-            対象月
+          <label className="head-year" aria-label="対象月">
             <select value={monthIdx ?? 0} onChange={(e) => setMonthIdx(Number(e.target.value))}>
               {months.map((m, i) => (
                 <option key={m + i} value={i}>
-                  {m}
+                  {monthLabel(i)}
                 </option>
               ))}
             </select>
