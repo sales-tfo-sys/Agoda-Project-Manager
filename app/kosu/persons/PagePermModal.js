@@ -1,28 +1,66 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { PAGE_GROUPS } from "../../../lib/pages";
-import { useUi } from "../../Ui";
 
 // 各ユーザーの「閲覧できるページ／編集できるページ」を設定するモーダル。
+// チェックを付け外した時点で自動保存する（保存ボタンなし）。
 export default function PagePermModal({ person, onClose }) {
   const [pages, setPages] = useState(null);
-  const [saving, setSaving] = useState(false);
+  const [initial, setInitial] = useState(null); // 開いた時の状態（リセット用）
+  const [status, setStatus] = useState(null); // "saving" | "saved"
   const [err, setErr] = useState(null);
-  const { flashOk } = useUi();
+  const timer = useRef(null);
 
   useEffect(() => {
     if (!person) return;
     setPages(null);
+    setInitial(null);
     setErr(null);
+    setStatus(null);
     fetch(`/api/page-perms?personId=${encodeURIComponent(person.id)}`, { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => {
         if (d.error) setErr(d.error);
-        else setPages(d.pages || {});
+        else {
+          setPages(d.pages || {});
+          setInitial(d.pages || {});
+        }
       })
       .catch((e) => setErr(String(e?.message || e)));
   }, [person]);
+
+  // 変更のたびに自動保存（連打をまとめるため少し待つ）
+  const persist = useCallback(
+    (next) => {
+      if (!person) return;
+      if (timer.current) clearTimeout(timer.current);
+      setStatus("saving");
+      timer.current = setTimeout(async () => {
+        try {
+          const r = await fetch("/api/page-perms", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ personId: person.id, pages: next }),
+          }).then((res) => res.json());
+          if (r.error) {
+            setErr(r.error);
+            setStatus(null);
+          } else {
+            setErr(null);
+            setStatus("saved");
+            setTimeout(() => setStatus((s) => (s === "saved" ? null : s)), 1600);
+          }
+        } catch (e) {
+          setErr(String(e?.message || e));
+          setStatus(null);
+        }
+      }, 350);
+    },
+    [person]
+  );
+
+  useEffect(() => () => timer.current && clearTimeout(timer.current), []);
 
   // Escで閉じる
   useEffect(() => {
@@ -39,35 +77,23 @@ export default function PagePermModal({ person, onClose }) {
   const toggle = (key, field) =>
     setPages((prev) => {
       const cur = prev[key] || { view: false, edit: false };
-      const next = { ...cur, [field]: !cur[field] };
+      const nextCell = { ...cur, [field]: !cur[field] };
       // 編集ONなら閲覧も自動ON。閲覧OFFなら編集もOFF。
-      if (field === "edit" && next.edit) next.view = true;
-      if (field === "view" && !next.view) next.edit = false;
-      return { ...prev, [key]: next };
+      if (field === "edit" && nextCell.edit) nextCell.view = true;
+      if (field === "view" && !nextCell.view) nextCell.edit = false;
+      const next = { ...prev, [key]: nextCell };
+      persist(next); // その場で保存
+      return next;
     });
 
-  const save = async () => {
-    setSaving(true);
-    setErr(null);
-    try {
-      const r = await fetch("/api/page-perms", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ personId: person.id, pages }),
-      }).then((res) => res.json());
-      if (r.error) setErr(r.error);
-      else {
-        flashOk("ページ権限を保存しました。");
-        onClose(true);
-      }
-    } catch (e) {
-      setErr(String(e?.message || e));
-    } finally {
-      setSaving(false);
-    }
+  // 開いた時の状態に戻す（自動保存されているため保存もやり直す）
+  const reset = () => {
+    if (!initial) return;
+    setPages(initial);
+    persist(initial);
   };
 
-  const initial = (person.login_name || person.name || "?").slice(0, 1);
+  const avatarInitial = (person.login_name || person.name || "?").slice(0, 1);
 
   return (
     <div
@@ -95,7 +121,7 @@ export default function PagePermModal({ person, onClose }) {
           {person.avatar_url ? (
             <img className="pp-avatar" src={person.avatar_url} alt="" referrerPolicy="no-referrer" />
           ) : (
-            <span className="pp-avatar pp-avatar-fallback" aria-hidden="true">{initial}</span>
+            <span className="pp-avatar pp-avatar-fallback" aria-hidden="true">{avatarInitial}</span>
           )}
           <b className="pp-target-name">{person.login_name || person.name}</b>
           {person.email && <span className="pp-target-mail">（{person.email}）</span>}
@@ -138,8 +164,18 @@ export default function PagePermModal({ person, onClose }) {
         )}
 
         <div className="pp-foot">
-          <button type="button" className="mini-btn" onClick={() => onClose(false)} disabled={saving}>キャンセル</button>
-          <button type="button" className="save-btn" onClick={save} disabled={saving || pages === null}>保存</button>
+          <span className={"pp-status" + (status ? " on" : "")}>
+            {status === "saving" ? "保存中…" : status === "saved" ? "✓ 保存しました" : "変更すると自動で保存されます"}
+          </span>
+          <button
+            type="button"
+            className="mini-btn"
+            onClick={reset}
+            disabled={pages === null || initial === null}
+            title="開いた時の状態に戻す"
+          >
+            リセット
+          </button>
         </div>
       </div>
     </div>

@@ -6,7 +6,6 @@ import PagePermModal from "./PagePermModal";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useUi } from "../../Ui";
 
-const PAGE_SIZE = 10;
 
 // 氏名の下に出すローマ字。メールのローカル部から作る（hori@… → Hori）
 function romaji(email) {
@@ -76,7 +75,6 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
   const [q, setQ] = useState("");
   const [showRetired, setShowRetired] = useState(true); // 退職者も既定で表示する（隠さない）
   const [filterOpen, setFilterOpen] = useState(false);
-  const [page, setPage] = useState(1);
   const filterRef = useRef(null);
 
   // 絞り込みポップオーバーは外side クリックで閉じる
@@ -325,19 +323,12 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [persons, q, showRetired]);
 
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const curPage = Math.min(page, pageCount);
-  const pageRows = filtered.slice((curPage - 1) * PAGE_SIZE, curPage * PAGE_SIZE);
-  const rangeFrom = filtered.length === 0 ? 0 : (curPage - 1) * PAGE_SIZE + 1;
-  const rangeTo = Math.min(curPage * PAGE_SIZE, filtered.length);
+  // 人数が少ないためページ分割はせず全件表示する
+  const pageRows = filtered;
   // 並べ替えは絞り込みが無いときだけ（表示順と実データの順が一致しているため）
   // 退職者は常時表示だが末尾に固定。現役行だけドラッグ可（現役の表示順＝現役リストの
   // インデックスなので reorder の前提が保たれる）。
-  const canDrag = !q.trim() && curPage === 1;
-
-  useEffect(() => {
-    setPage(1);
-  }, [q, showRetired]);
+  const canDrag = !q.trim();
 
   // 担当者を追加ボタン（通常ヘッダー／埋め込みツールバーの両方で使う）
   const addPersonBtn = canEdit ? (
@@ -866,43 +857,6 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
             </table>
           </div>
 
-          <div className="table-foot">
-            <span className="foot-count">
-              全 {filtered.length} 件中 {rangeFrom} 〜 {rangeTo} 件を表示
-            </span>
-            <div className="pager">
-              <button
-                className="pager-btn"
-                onClick={() => setPage(curPage - 1)}
-                disabled={curPage <= 1}
-                aria-label="前のページ"
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <polyline points="15 18 9 12 15 6" />
-                </svg>
-              </button>
-              {Array.from({ length: pageCount }, (_, n) => n + 1).map((n) => (
-                <button
-                  key={n}
-                  className={"pager-btn num" + (n === curPage ? " active" : "")}
-                  onClick={() => setPage(n)}
-                  aria-current={n === curPage ? "page" : undefined}
-                >
-                  {n}
-                </button>
-              ))}
-              <button
-                className="pager-btn"
-                onClick={() => setPage(curPage + 1)}
-                disabled={curPage >= pageCount}
-                aria-label="次のページ"
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </button>
-            </div>
-          </div>
         </div>
       )}
     </div>

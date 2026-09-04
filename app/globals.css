@@ -7425,8 +7425,9 @@ td.v-strong,
   border-right: 0;
 }
 .persons-page .persons-table td {
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
+  /* 行・列の区切りをはっきり見せる */
+  border-right: 1px solid var(--border2);
+  border-bottom: 1px solid var(--border2);
   padding: 11px 16px;
   vertical-align: middle;
 }
@@ -7654,7 +7655,7 @@ td.v-strong,
 /* ── 担当者管理の表：縦線を付ける。担当者・メールは左揃え、他は中央 ── */
 .wrap.persons-page .persons-table thead th,
 .wrap.persons-page .persons-table td {
-  border-right: 1px solid var(--border);
+  border-right: 1px solid var(--border2);
 }
 .wrap.persons-page .persons-table thead th:last-child,
 .wrap.persons-page .persons-table td:last-child {
@@ -7664,11 +7665,11 @@ td.v-strong,
    編集権限の2サブ列（見出し・セル）は常に右罫線を引いて縦線を通す。 */
 .wrap.persons-page .persons-table thead th.grant-sub-th,
 .wrap.persons-page .persons-table td.grant-cell {
-  border-right: 1px solid var(--border);
+  border-right: 1px solid var(--border2);
 }
 /* 見出しの下線・行区切りも縦線と同じ濃さに揃える */
 .wrap.persons-page .persons-table td {
-  border-bottom-color: var(--border);
+  border-bottom-color: var(--border2);
 }
 /* 担当者・メール列は左揃え（データセル） */
 .wrap.persons-page .persons-table td.l {
@@ -7909,11 +7910,21 @@ td.v-strong,
 }
 .pp-foot {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
   padding: 12px 18px;
   border-top: 1px solid var(--border);
   background: #f8fafd;
+}
+/* 自動保存の状態表示 */
+.pp-status {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+.pp-status.on {
+  color: #2f7d4c;
 }
 
 /* 編集権限：ラベル＋スイッチを横一列（1行） */
