@@ -24,6 +24,9 @@ export async function POST(req) {
   try {
     const b = await req.json();
     const task = String(b?.task || "").trim();
+    // プロジェクト管理で選んだ区分を工数側にも引き継ぐ。
+    // Regular は「常時表示の作業」として工数入力に固定表示させる。
+    const isRegular = String(b?.board || "") === "regular";
     if (!task) return Response.json({ error: "タスク名を入力してください" }, { status: 200 });
     if (task.length > 200) {
       return Response.json({ error: "タスク名が長すぎます" }, { status: 200 });
@@ -47,7 +50,7 @@ export async function POST(req) {
       await sb("kosu_task", {
         method: "POST",
         body: {
-          task_type: "Ad hoc task",
+          task_type: isRegular ? "Regular task" : "Ad hoc task",
           content: task,
           unit: "count",
           sort_order: order,

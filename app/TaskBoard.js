@@ -1005,7 +1005,8 @@ export default function TaskBoard({ mode = "view" }) {
     const j = await fetch("/api/adhoc-tasks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ task: name }),
+      // 区分も渡して、工数側の作業種別（Regular / Ad hoc）に引き継ぐ
+      body: JSON.stringify({ task: name, board: newBoard }),
     })
       .then((r) => r.json())
       .catch((e) => ({ error: String(e?.message || e) }));
@@ -1081,18 +1082,21 @@ export default function TaskBoard({ mode = "view" }) {
       localStorage.setItem("agoda-dash-tab", v);
     } catch {}
   };
-  // タブが3つになり幅も不揃いなので、選択中ボタンの実寸からスライダーを合わせる
-  const segRef = useRef(null);
+  // タブが3つになり幅も不揃いなので、選択中ボタンの実寸からスライダーを合わせる。
+  // タブバーは読み込み完了後に描画されるため、ref はコールバックで受け取り
+  // 「実際にDOMに出た時点」で計測する（useRef だと初回に間に合わず選択が見えなくなる）。
+  const [segEl, setSegEl] = useState(null);
   const [segThumb, setSegThumb] = useState(null);
   useEffect(() => {
+    if (!segEl) return;
     const fit = () => {
-      const el = segRef.current?.querySelector(`.segbar-btn[data-tab="${tab}"]`);
+      const el = segEl.querySelector(`.segbar-btn[data-tab="${tab}"]`);
       if (el) setSegThumb({ left: el.offsetLeft, width: el.offsetWidth });
     };
     fit();
     window.addEventListener("resize", fit);
     return () => window.removeEventListener("resize", fit);
-  }, [tab]);
+  }, [segEl, tab]);
 
   // 表示制御：0件ステータスを隠す／カードの折りたたみ
   const [hideZero, setHideZero] = useState(false);
@@ -1253,7 +1257,7 @@ export default function TaskBoard({ mode = "view" }) {
         <>
           {!isEdit && (
           <div className="tabbar-row">
-            <div className="segbar" role="tablist" aria-label="表示切替" ref={segRef}>
+            <div className="segbar" role="tablist" aria-label="表示切替" ref={setSegEl}>
             <span
               className="segbar-thumb"
               style={segThumb ? { left: segThumb.left, width: segThumb.width, transform: "none" } : { opacity: 0 }}
