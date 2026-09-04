@@ -556,19 +556,16 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
             <table className="dtable persons-table">
               <thead>
                 <tr>
-                  <th className="grip-th" rowSpan={2} aria-label="並べ替え" />
-                  <th className="l" rowSpan={2}>担当者</th>
-                  <th className="l" rowSpan={2}>メール（ログインID）</th>
-                  <th rowSpan={2}>ログイン</th>
-                  <th rowSpan={2}>権限</th>
-                  <th colSpan={2} className="grant-group-th">編集権限</th>
-                  <th rowSpan={2}>ページ権限</th>
-                  <th rowSpan={2}>最終ログイン</th>
-                  <th rowSpan={2}>操作</th>
-                </tr>
-                <tr>
+                  <th className="grip-th" aria-label="並べ替え" />
+                  <th className="l">担当者</th>
+                  <th className="l">メール（ログインID）</th>
+                  <th>ログイン</th>
+                  <th>権限</th>
                   <th className="grant-sub-th">アカウント関連</th>
                   <th className="grant-sub-th">タスク関連</th>
+                  <th>ページ権限</th>
+                  <th>最終ログイン</th>
+                  <th>操作</th>
                 </tr>
               </thead>
               <tbody>

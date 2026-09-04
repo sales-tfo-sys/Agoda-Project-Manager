@@ -8017,10 +8017,6 @@ td.v-strong,
   padding-left: 6px;
   padding-right: 6px;
 }
-/* 2段ヘッダー：2段目（サブ見出し）は1段目の高さぶん下げて sticky させる */
-.persons-page .persons-table thead tr:nth-child(2) th {
-  top: 27px;
-}
 .persons-page .grant-check-row {
   display: flex;
   flex-direction: column;
