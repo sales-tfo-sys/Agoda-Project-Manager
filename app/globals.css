@@ -2542,7 +2542,8 @@ tbody tr.clickable {
    以前ここだけ padding-left が 2px でアイコン位置が 16px ずれていた */
 .wrap.page-compact .head {
   min-height: 50px;
-  padding: 0 18px;
+  /* 右上の固定メニュー（⋮）と最終更新ピル等が重ならないよう右側を確保 */
+  padding: 0 56px 0 18px;
   margin-bottom: 10px;
 }
 .wrap.page-compact .ghost-btn {
@@ -5360,6 +5361,52 @@ tbody tr.clickable {
   display: inline-grid;
   place-items: center;
   color: var(--accent);
+}
+/* メニュー内の区切り線とセクション見出し（ユーザー用／管理者用） */
+.topmenu-div {
+  height: 1px;
+  margin: 6px 8px;
+  background: var(--border);
+}
+.topmenu-sec {
+  padding: 4px 12px 3px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+/* 準備中プレースホルダー（システムヘルス／設計仕様書） */
+.soon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 6px;
+  padding: 56px 24px;
+}
+.soon-ico {
+  display: inline-grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  background: #eef4fe;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.soon-h {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.soon-msg {
+  margin: 0;
+  max-width: 380px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ink-2);
 }
 .manage-edit-btn.on {
   color: #ffffff;

@@ -40,7 +40,8 @@ export default function TopMenu() {
     };
   }, [open]);
 
-  const items = [
+  // ユーザー用メニュー（全員）
+  const userItems = [
     {
       href: "/project",
       label: "プロジェクト管理",
@@ -52,23 +53,6 @@ export default function TopMenu() {
         </svg>
       ),
     },
-    // アカウント管理は閲覧権限がある人だけ
-    ...(me?.perms?.viewAccounts
-      ? [
-          {
-            href: "/kosu/persons",
-            label: "アカウント管理",
-            icon: (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-            ),
-          },
-        ]
-      : []),
     {
       href: "/kosu/input",
       label: "工数入力",
@@ -80,6 +64,57 @@ export default function TopMenu() {
       ),
     },
   ];
+
+  // 管理者用メニュー（閲覧権限がある人だけ）
+  const adminItems = [
+    {
+      href: "/design-spec",
+      label: "設計仕様書",
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+        </svg>
+      ),
+    },
+    {
+      href: "/system-health",
+      label: "システムヘルス",
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+        </svg>
+      ),
+    },
+    {
+      href: "/kosu/persons",
+      label: "アカウント管理",
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+      ),
+    },
+  ];
+  const showAdmin = !!me?.perms?.viewAccounts;
+
+  const renderItem = (it) => (
+    <Link
+      key={it.href}
+      href={it.href}
+      className="topmenu-item"
+      role="menuitem"
+      onClick={() => setOpen(false)}
+    >
+      <span className="topmenu-ico">{it.icon}</span>
+      <span>{it.label}</span>
+    </Link>
+  );
 
   return (
     <div className="topmenu" ref={ref}>
@@ -100,18 +135,15 @@ export default function TopMenu() {
       </button>
       {open && (
         <div className="topmenu-pop" role="menu">
-          {items.map((it) => (
-            <Link
-              key={it.href}
-              href={it.href}
-              className="topmenu-item"
-              role="menuitem"
-              onClick={() => setOpen(false)}
-            >
-              <span className="topmenu-ico">{it.icon}</span>
-              <span>{it.label}</span>
-            </Link>
-          ))}
+          <div className="topmenu-sec">ユーザー</div>
+          {userItems.map(renderItem)}
+          {showAdmin && (
+            <>
+              <div className="topmenu-div" role="separator" />
+              <div className="topmenu-sec">管理者</div>
+              {adminItems.map(renderItem)}
+            </>
+          )}
         </div>
       )}
     </div>
