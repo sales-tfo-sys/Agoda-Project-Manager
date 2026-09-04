@@ -110,6 +110,12 @@ export default function DetailTable({ title, compact = false }) {
         const first = iso.find(Boolean);
         const last = [...iso].reverse().find(Boolean);
         const inSheet = new Set((json.rows || []).map((r) => r.detail));
+        // グルーピングでまとめた作業は、シート側にも元の名前の行が残っている。
+        // そのままだと「まとめ先」と「まとめ元」が二重に並ぶので、まとめ元は出さない。
+        const groupedAway = new Set(
+          Object.keys(linkedTo).filter((k) => linkedTo[k] && linkedTo[k] !== k)
+        );
+        const sheetRows = (json.rows || []).filter((r) => !groupedAway.has(r.detail));
         const extraTasks = (tk?.tasks || []).filter(
           (t) => !inSheet.has(t.content) && !linkedTo[t.content]
         );
@@ -221,7 +227,7 @@ export default function DetailTable({ title, compact = false }) {
           const nameToId = new Map();
           for (const [pid, nm] of nameOfPerson) nameToId.set(nm, pid);
           const isTotalRow = (r) => /トータル作業時間/.test(r.detail || "");
-          const overlaidRows = (json.rows || []).map((r) => {
+          const overlaidRows = sheetRows.map((r) => {
             const pid = nameToId.get(r.tanto);
             // トータル作業時間は入力値ではなく、担当者×日付の合計時間を自動表示する
             let perDates;
@@ -256,7 +262,7 @@ export default function DetailTable({ title, compact = false }) {
           setData({ ...json, rows: overlaidRows });
 
           const sheetOf = {}; // 作業内容 → { type, 既にある担当名 }
-          for (const r of json.rows || []) {
+          for (const r of sheetRows) {
             if (/regular/i.test(r.type || "")) continue; // Regular は連動対象外
             if (!sheetOf[r.detail]) sheetOf[r.detail] = { type: r.type, names: new Set() };
             if (r.tanto) sheetOf[r.detail].names.add(r.tanto);
@@ -277,7 +283,7 @@ export default function DetailTable({ title, compact = false }) {
           // これが無いと、新しく追加したメンバーは工数明細に出ず、
           // 工数入力した値も表示されない。
           const commonOf = {}; // 作業内容 → { type, unit, 既にある担当名 }
-          for (const r of json.rows || []) {
+          for (const r of sheetRows) {
             if (/ad\s*hoc/i.test(r.type || "")) continue; // Ad Hoc は上のブロックで処理済み
             if (!commonOf[r.detail]) {
               commonOf[r.detail] = { type: r.type, unit: r.unit, names: new Set() };
