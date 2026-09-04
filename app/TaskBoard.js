@@ -981,6 +981,15 @@ export default function TaskBoard({ mode = "view" }) {
   // 「編集モードON」かつタスク編集権限がある場合のみ。ダッシュボード(mode=view)は常に閲覧専用。
   const editable = isEdit && canEditTasks && mngEdit;
 
+  // タスク管理／アカウント管理の切替タブ（対象年・フィルターの左に置く）
+  const projTabBar =
+    isEdit && canViewAccounts ? (
+      <div className="proj-tabbar" role="tablist" aria-label="プロジェクト管理の切替">
+        <button type="button" role="tab" aria-selected={projTab === "tasks"} className={"proj-tab" + (projTab === "tasks" ? " active" : "")} onClick={() => setProjTab("tasks")}>タスク管理</button>
+        <button type="button" role="tab" aria-selected={projTab === "accounts"} className={"proj-tab" + (projTab === "accounts" ? " active" : "")} onClick={() => setProjTab("accounts")}>アカウント管理</button>
+      </div>
+    ) : null;
+
   // 工数明細の作業内容一覧（紐づけ先の選択肢）
   const [kosuContents, setKosuContents] = useState([]);
   useEffect(() => {
@@ -1196,12 +1205,6 @@ export default function TaskBoard({ mode = "view" }) {
             </svg>
           </span>
           <span className="page-h page-h-gap">{isEdit ? "プロジェクト管理" : "ダッシュボード"}</span>
-          {isEdit && canViewAccounts && (
-            <div className="proj-tabbar" role="tablist" aria-label="プロジェクト管理の切替">
-              <button type="button" role="tab" aria-selected={projTab === "tasks"} className={"proj-tab" + (projTab === "tasks" ? " active" : "")} onClick={() => setProjTab("tasks")}>タスク管理</button>
-              <button type="button" role="tab" aria-selected={projTab === "accounts"} className={"proj-tab" + (projTab === "accounts" ? " active" : "")} onClick={() => setProjTab("accounts")}>アカウント管理</button>
-            </div>
-          )}
         </div>
         <div className="head-right">
           {projTab !== "accounts" && updatedAt && (
@@ -1292,7 +1295,12 @@ export default function TaskBoard({ mode = "view" }) {
           </div>
           )}
 
-          {isEdit && projTab === "accounts" && <PersonsManager embedded />}
+          {isEdit && projTab === "accounts" && (
+            <>
+              {projTabBar && <div className="proj-accounts-bar">{projTabBar}</div>}
+              <PersonsManager embedded />
+            </>
+          )}
 
           {isEdit && projTab === "tasks" && (() => {
             // 管理表の行データ（区分ごと）。数値は自動集計、設定（優先/対応者/進捗/名前/並び）を編集する。
@@ -1422,6 +1430,7 @@ export default function TaskBoard({ mode = "view" }) {
             return (
               <div className="card no-pad manage-card">
                 <div className="manage-head">
+                  {projTabBar}
                   {years.length > 0 && (
                     <select className="mng-year-select" value={year ?? ""} onChange={(e) => setYear(Number(e.target.value))} aria-label="対象年">
                       {years.map((y) => (

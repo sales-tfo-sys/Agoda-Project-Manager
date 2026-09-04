@@ -5304,11 +5304,13 @@ tbody tr.clickable {
 .proj-tabbar {
   display: inline-flex;
   gap: 4px;
-  margin-left: 14px;
   padding: 3px;
   background: #eef2fb;
   border: 1px solid var(--border);
   border-radius: 10px;
+}
+.proj-accounts-bar {
+  margin-bottom: 10px;
 }
 .proj-tab {
   font: inherit;
