@@ -5706,12 +5706,35 @@ tbody tr.clickable {
 }
 /* 区分フィルター */
 .mng-filter {
+  position: relative;
+  isolation: isolate;
   display: inline-flex;
   gap: 4px;
   padding: 2px;
   background: #eef2fb;
   border: 1px solid var(--border);
   border-radius: 9px;
+}
+/* 選択中の枠。選んだボタンの位置・幅へ滑らかに移動する */
+.mng-filter-thumb {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 0;
+  /* 位置・幅は親（.mng-filter）に渡した CSS 変数で決める */
+  width: var(--thumb-w, 0px);
+  transform: translateX(var(--thumb-x, 0px));
+  border-radius: 7px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(52, 84, 170, 0.12);
+  opacity: 0;
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    width 0.22s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.15s ease;
+  z-index: -1;
+  will-change: transform, width;
+}
+.mng-filter-thumb.on {
+  opacity: 1;
 }
 /* 対象年プルダウン（フィルターの高さに合わせる） */
 .mng-year-select {
@@ -5743,9 +5766,10 @@ tbody tr.clickable {
   cursor: pointer;
 }
 .mng-filter-btn.active {
+  /* 背景は .mng-filter-thumb が担当する（移動アニメーションのため） */
   color: var(--accent);
-  background: #ffffff;
-  box-shadow: 0 1px 3px rgba(52, 84, 170, 0.12);
+  background: transparent;
+  box-shadow: none;
 }
 .mng-fcount {
   font-size: 10.5px;

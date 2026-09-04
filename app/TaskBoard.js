@@ -1098,6 +1098,42 @@ export default function TaskBoard({ mode = "view" }) {
     return () => window.removeEventListener("resize", fit);
   }, [segEl, tab]);
 
+  // 管理表のフィルター（区分／進捗）も、選択中の枠が滑らかに移動するようにする
+  const [fltEl, setFltEl] = useState(null);
+  const [fltThumb, setFltThumb] = useState(null);
+  const [subEl, setSubEl] = useState(null);
+  const [subThumb, setSubThumb] = useState(null);
+  // 枠の位置は「親のパディング箱」からの距離で測る（offsetLeft だと枠線ぶんずれる）
+  const measureThumb = (box) => {
+    const el = box?.querySelector(".mng-filter-btn.active");
+    if (!el) return null;
+    const br = box.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    if (!r.width) return null; // 非表示中は測らない
+    const origin = br.left + (parseFloat(getComputedStyle(box).borderLeftWidth) || 0);
+    return { left: Math.round(r.left - origin), width: Math.round(r.width) };
+  };
+  useEffect(() => {
+    if (!fltEl) return;
+    const fit = () => {
+      const m = measureThumb(fltEl);
+      if (m) setFltThumb(m);
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, [fltEl, mngFilter]);
+  useEffect(() => {
+    if (!subEl) return;
+    const fit = () => {
+      const m = measureThumb(subEl);
+      if (m) setSubThumb(m);
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, [subEl, mngStatus, mngFilter]);
+
   // 表示制御：0件ステータスを隠す／カードの折りたたみ
   const [hideZero, setHideZero] = useState(false);
   const [collapsed, setCollapsed] = useState({});
@@ -1364,14 +1400,26 @@ export default function TaskBoard({ mode = "view" }) {
               const n = Number(v);
               return Number.isFinite(n) && n > 0 ? n : null;
             };
+            // 開始日を比較用の数値（YYYYMMDD）に。未設定は最後に回す
+            const startNum = (r) => {
+              const m = r.start && String(r.start).match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+              return m ? Number(m[1]) * 10000 + Number(m[2]) * 100 + Number(m[3]) : -Infinity;
+            };
             const byPrio = (arr, scope) =>
               [...arr]
                 .map((r, i) => ({ r, i, p: effPrio(scope, r.key, r.no) }))
                 .sort((a, b) => {
-                  if (a.p == null && b.p == null) return a.i - b.i;
-                  if (a.p == null) return 1;
-                  if (b.p == null) return -1;
-                  return a.p - b.p || a.i - b.i;
+                  // 優先が入っているものが先（小さい番号ほど上）
+                  if (a.p != null && b.p != null) return a.p - b.p || a.i - b.i;
+                  if (a.p != null) return -1;
+                  if (b.p != null) return 1;
+                  // ここから「優先が未設定」同士。
+                  // Complete は開始日の新しい順で、優先なしグループの先頭に並べる。
+                  const ca = (a.r.status || "") === "Complete";
+                  const cb = (b.r.status || "") === "Complete";
+                  if (ca !== cb) return ca ? -1 : 1;
+                  if (ca && cb) return startNum(b.r) - startNum(a.r) || a.i - b.i;
+                  return a.i - b.i;
                 })
                 .map((x) => x.r);
             const rows = [
@@ -1447,14 +1495,28 @@ export default function TaskBoard({ mode = "view" }) {
                       ))}
                     </select>
                   )}
-                  <div className="mng-filter" role="group" aria-label="区分で絞り込み">
+                  <div
+                    className="mng-filter"
+                    role="group"
+                    aria-label="区分で絞り込み"
+                    ref={setFltEl}
+                    style={fltThumb ? { "--thumb-x": fltThumb.left + "px", "--thumb-w": fltThumb.width + "px" } : undefined}
+                  >
+                    <span className={"mng-filter-thumb" + (fltThumb ? " on" : "")} aria-hidden="true" />
                     <button type="button" className={"mng-filter-btn" + (mngFilter === "all" ? " active" : "")} onClick={() => setMngFilter("all")}>すべて<span className="mng-fcount">{cnt.all}</span></button>
                     <button type="button" className={"mng-filter-btn" + (mngFilter === "regular" ? " active" : "")} onClick={() => setMngFilter("regular")}>Regular<span className="mng-fcount">{cnt.regular}</span></button>
                     <button type="button" className={"mng-filter-btn" + (mngFilter === "pending" ? " active" : "")} onClick={() => setMngFilter("pending")}>Pending<span className="mng-fcount">{cnt.pending}</span></button>
                     <button type="button" className={"mng-filter-btn" + (mngFilter === "adhoc" ? " active" : "")} onClick={() => setMngFilter("adhoc")}>Ad Hoc<span className="mng-fcount">{cnt.adhoc}</span></button>
                   </div>
                   {mngFilter === "adhoc" && (
-                    <div className="mng-filter mng-filter-sub" role="group" aria-label="進捗で絞り込み">
+                    <div
+                      className="mng-filter mng-filter-sub"
+                      role="group"
+                      aria-label="進捗で絞り込み"
+                      ref={setSubEl}
+                      style={subThumb ? { "--thumb-x": subThumb.left + "px", "--thumb-w": subThumb.width + "px" } : undefined}
+                    >
+                      <span className={"mng-filter-thumb" + (subThumb ? " on" : "")} aria-hidden="true" />
                       <button type="button" className={"mng-filter-btn" + (mngStatus === "all" ? " active" : "")} onClick={() => setMngStatus("all")}>すべて<span className="mng-fcount">{statusCnt.all}</span></button>
                       {STATUS_FILTERS.map((s) => (
                         <button key={s} type="button" className={"mng-filter-btn" + (mngStatus === s ? " active" : "")} onClick={() => setMngStatus(s)}>{s}<span className="mng-fcount">{statusCnt[s]}</span></button>
