@@ -1412,16 +1412,13 @@ export default function TaskBoard({ mode = "view" }) {
               <div className="card no-pad manage-card">
                 <div className="manage-head">
                   {years.length > 0 && (
-                    <label className="head-year mng-year">
-                      対象年
-                      <select value={year ?? ""} onChange={(e) => setYear(Number(e.target.value))}>
-                        {years.map((y) => (
-                          <option key={y} value={y}>
-                            {y} 年
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                    <select className="mng-year-select" value={year ?? ""} onChange={(e) => setYear(Number(e.target.value))} aria-label="対象年">
+                      {years.map((y) => (
+                        <option key={y} value={y}>
+                          {y} 年
+                        </option>
+                      ))}
+                    </select>
                   )}
                   <div className="mng-filter" role="group" aria-label="区分で絞り込み">
                     <button type="button" className={"mng-filter-btn" + (mngFilter === "all" ? " active" : "")} onClick={() => setMngFilter("all")}>すべて<span className="mng-fcount">{cnt.all}</span></button>

@@ -5781,6 +5781,21 @@ tbody tr.clickable {
   border: 1px solid var(--border);
   border-radius: 9px;
 }
+/* 対象年プルダウン（フィルターの高さに合わせる） */
+.mng-year-select {
+  height: 30px;
+  box-sizing: border-box;
+  align-self: center;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 9px;
+  padding: 0 9px;
+  cursor: pointer;
+}
 .mng-filter-btn {
   display: inline-flex;
   align-items: center;
@@ -5845,7 +5860,7 @@ tbody tr.clickable {
   text-align: left;
 }
 .manage-table tbody td {
-  padding: 7px 10px;
+  padding: 2px 10px;
   text-align: center;
   border-bottom: 1px solid var(--border);
   color: var(--ink);
