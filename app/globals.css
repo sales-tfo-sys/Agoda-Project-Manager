@@ -5959,9 +5959,10 @@ tbody tr.clickable {
 .manage-table td:nth-child(10) {
   width: 60px;
 }
+/* 操作：詳細／Excelダウンロード／シートを開く の3つが横に並ぶ幅 */
 .manage-table th:nth-child(11),
 .manage-table td:nth-child(11) {
-  width: 76px;
+  width: 112px;
 }
 
 .mng-ops-wrap {
@@ -9704,4 +9705,49 @@ button.drive-link:disabled {
   font-weight: 600;
   line-height: 1.6;
   color: #b02a37;
+}
+
+/* ─────────────────────────────────────────────────────────
+   一覧は丸角のカードで囲わない。
+   枠・影・角丸をなくし、左右も本文の余白ぶん外へ広げて、
+   ページと地続きの一枚の面として見せる。
+   （表そのものは白地のまま。背景のグレーが行の下から透けると読みづらいため）
+   ───────────────────────────────────────────────────────── */
+.card.no-pad,
+.wrap.page-fill > .card {
+  margin-left: -16px;
+  margin-right: -16px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--surface);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* プロジェクト管理の一覧：1行の高さをもう少し詰める。
+   バッジ・進捗ピル・操作ボタンが行の高さを決めているので、そこも合わせて詰める
+   （操作のある行だけ背が高くならないように） */
+.manage-table tbody td {
+  padding: 1px 7px;
+  line-height: 1.25;
+}
+.manage-table .mng-badge {
+  padding: 1px 8px;
+}
+.manage-table .st-pill {
+  padding: 1px 9px;
+}
+.manage-table .forms-op {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+}
+.manage-table .forms-op svg {
+  width: 11px;
+  height: 11px;
+}
+.manage-table .klink-btn {
+  width: 17px;
+  height: 17px;
 }
