@@ -10841,3 +10841,10 @@ button.drive-link:disabled {
 .kosu-table td.c-content.has-done.has-link .link-dot {
   right: 84px;
 }
+
+/* 工数明細の Complete バッジは、プロジェクト管理の進捗ピルと同じ青にする */
+.kosu-table td.c-content .done-badge {
+  color: #2f6be0;
+  background: rgba(47, 107, 224, 0.12);
+  border-color: rgba(47, 107, 224, 0.3);
+}

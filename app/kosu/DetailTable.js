@@ -44,12 +44,12 @@ export default function DetailTable({ title, compact = false }) {
   const [leftOnByName, setLeftOnByName] = useState({});
 
   // ダッシュボードで編集した「作業内容（名称）」と「対応者」を反映するための対応表
-  const [link, setLink] = useState({ rename: {}, tanto: {}, tasks: {}, done: new Set(), doneNorm: new Set(), compDateByKey: {}, compDateByLink: {}, compDateByNorm: {} });
+  const [link, setLink] = useState({ rename: {}, tanto: {}, tasks: {}, done: new Set(), doneNorm: new Set(), compDateByKey: {}, compDateByLink: {}, compDateByNorm: {}, order: {} });
 
   const load = useCallback(async () => {
     setError(null);
     try {
-      const [json, tk, asg, ovr, adh, cus] = await Promise.all([
+      const [json, tk, asg, ovr, adh, cus, pri] = await Promise.all([
         fetch("/api/kosu", { cache: "no-store" }).then((r) => r.json()),
         fetch("/api/kosu-tasks", { cache: "no-store" })
           .then((r) => r.json())
@@ -64,6 +64,10 @@ export default function DetailTable({ title, compact = false }) {
           .then((r) => r.json())
           .catch(() => null),
         fetch("/api/adhoc-tasks", { cache: "no-store" })
+          .then((r) => r.json())
+          .catch(() => null),
+        // プロジェクト管理と同じ並びにするため、優先順もそのまま使う
+        fetch("/api/priority", { cache: "no-store" })
           .then((r) => r.json())
           .catch(() => null),
       ]);
@@ -419,6 +423,43 @@ export default function DetailTable({ title, compact = false }) {
             }
           }
         }
+        // プロジェクト管理と同じ並び順にするための材料を、作業内容ごとに集める。
+        //   優先順 … task_priority（scope=adhoc）
+        //   開始日 … 上書き（画面で入れた値）→ シートの順
+        // プロジェクト管理は「優先順あり → 優先順なしのComplete（開始日の新しい順）」で並ぶ。
+        const prioOfKey = {};
+        for (const it of pri?.items || []) {
+          if (it.scope === "adhoc" && it.priority != null) prioOfKey[it.key] = Number(it.priority);
+        }
+        const ovStart = {};
+        for (const it of ovr?.items || []) {
+          if (it.scope === "adhoc" && it?.data?.start) ovStart[it.key] = it.data.start;
+        }
+        const sheetStart = {};
+        for (const t of adh?.tasks || []) if (t.start) sheetStart[t.task] = t.start;
+        const startNumOf = (v) => {
+          const m = String(v || "").match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+          return m ? Number(m[1]) * 10000 + Number(m[2]) * 100 + Number(m[3]) : null;
+        };
+        // 作業内容 → { prio, startNum }。まとめている場合は「小さい優先順・新しい開始日」を代表にする
+        const orderOf = {};
+        const addOrder = (content, key) => {
+          if (!content) return;
+          const cur = orderOf[content] || { prio: null, startNum: null };
+          const p = prioOfKey[key];
+          if (p != null && (cur.prio == null || p < cur.prio)) cur.prio = p;
+          const sn = startNumOf(ovStart[key] ?? sheetStart[key]);
+          if (sn != null && (cur.startNum == null || sn > cur.startNum)) cur.startNum = sn;
+          orderOf[content] = cur;
+        };
+        for (const key of allTasks) {
+          if (linkedTo[key]) addOrder(linkedTo[key], key);
+          else {
+            if (details.has(key)) addOrder(key, key);
+            if (renamed[key] && details.has(renamed[key])) addOrder(renamed[key], key);
+          }
+        }
+
         setLink({
           rename: renamed,
           tanto: tantoStr,
@@ -428,6 +469,7 @@ export default function DetailTable({ title, compact = false }) {
           compDateByKey: tkCompletedOn,
           compDateByLink,
           compDateByNorm,
+          order: orderOf,
         });
       }
     } catch (e) {
@@ -579,7 +621,11 @@ export default function DetailTable({ title, compact = false }) {
       }
       byType[r.type].push(r);
     }
-    // 同じ作業内容の担当者行が隣り合うようにまとめる（後から足した行が離れないように）
+    // 同じ作業内容の担当者行が隣り合うようにまとめる（後から足した行が離れないように）。
+    // 並び順はプロジェクト管理に合わせる：
+    //   優先順が入っているものが先（小さい番号ほど上）→ 残りは開始日の新しい順。
+    // 紐づいていない作業（Regular など）は今までどおりシートの順のまま。
+    const ord = link.order || {};
     return order.map((t) => {
       const dOrder = [];
       const byDetail = {};
@@ -590,9 +636,26 @@ export default function DetailTable({ title, compact = false }) {
         }
         byDetail[r.detail].push(r);
       }
-      return { type: t, rows: dOrder.flatMap((d) => byDetail[d]) };
+      const idx = new Map(dOrder.map((d, i) => [d, i]));
+      const sorted = [...dOrder].sort((da, db) => {
+        const a = ord[da] || {};
+        const b = ord[db] || {};
+        const ia = idx.get(da);
+        const ib = idx.get(db);
+        if (a.prio != null && b.prio != null) return a.prio - b.prio || ia - ib;
+        if (a.prio != null) return -1;
+        if (b.prio != null) return 1;
+        // 優先順なし同士は開始日の新しい順（プロジェクト管理の Complete と同じ）
+        const sa = a.startNum ?? null;
+        const sb = b.startNum ?? null;
+        if (sa != null && sb != null) return sb - sa || ia - ib;
+        if (sa != null) return -1;
+        if (sb != null) return 1;
+        return ia - ib;
+      });
+      return { type: t, rows: sorted.flatMap((d) => byDetail[d]) };
     });
-  }, [data, allRows, tab, isDone]);
+  }, [data, allRows, tab, isDone, link]);
 
   const counts = useMemo(() => {
     if (!allRows.length) return { active: 0, done: 0 };
