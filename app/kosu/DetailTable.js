@@ -302,8 +302,11 @@ export default function DetailTable({ title, compact = false }) {
             const tid = taskIdOf.get(content);
             const isTotal = /トータル作業時間/.test(content);
             for (const p of asg?.persons || []) {
-              // 退職者は空行を増やさない（過去の実績がある行は上で作られる）
-              if (!isWorker(p) || p.active === false || info.names.has(p.name)) continue;
+              // 除外したメンバーも行は作る（除外日より前の月には出したいため）。
+              // 実際に出すかどうかは表示中の月で判定する（allRows）。
+              // 除外日が分からない人だけは、判定できないので行を作らない。
+              const goneNoDate = p.active === false && !p.left_on;
+              if (!isWorker(p) || goneNoDate || info.names.has(p.name)) continue;
               info.names.add(p.name);
               const vals = isTotal
                 ? totalByPid.get(p.id) || {}
