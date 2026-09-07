@@ -72,13 +72,15 @@ const DRIVE_FOLDERS = [
   },
 ];
 
-// Google ドライブのフォルダへのショートカット
-function DriveLinks({ note }) {
+// 作業シート保管先（Google ドライブ）へのショートカット。
+// only を渡すとそのフォルダだけ出す（追加時は「アップ先」しか使わないため）
+function DriveLinks({ note, only }) {
+  const folders = only ? DRIVE_FOLDERS.filter((f) => only.includes(f.key)) : DRIVE_FOLDERS;
   return (
     <div className="fld">
-      Google ドライブのフォルダ
+      作業シート保管先
       <span className="drive-links">
-        {DRIVE_FOLDERS.map((f) => (
+        {folders.map((f) => (
           <a
             key={f.key}
             className={"drive-link drive-" + f.key}
@@ -1190,7 +1192,6 @@ export default function TaskBoard({ mode = "view" }) {
     end: "",
     prio: "",
     assign: [],
-    kosuLink: "",
     sheetUrl: "",
     orderCell: "",
     doneCell: "",
@@ -1290,7 +1291,6 @@ export default function TaskBoard({ mode = "view" }) {
     }
     if (addForm.start) setOvField("adhoc", name, "start", fromDateInput(addForm.start));
     if (addForm.end) setOvField("adhoc", name, "end", fromDateInput(addForm.end));
-    if (addForm.kosuLink) setOvField("adhoc", name, "kosuLink", addForm.kosuLink);
     if (addForm.sheetUrl) setOvField("adhoc", name, "sheetUrl", addForm.sheetUrl.trim());
     if (addForm.orderCell) setOvField("adhoc", name, "orderCell", addForm.orderCell.trim());
     if (addForm.doneCell) setOvField("adhoc", name, "doneCell", addForm.doneCell.trim());
@@ -2952,18 +2952,6 @@ ${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めません�
             </div>
           </div>
 
-          <label className="fld">
-            工数グルーピング（工数明細のどの作業にまとめるか）
-            <select value={addForm.kosuLink} onChange={(e) => setAF("kosuLink", e.target.value)}>
-              <option value="">紐づけない</option>
-              {kosuContents.map((c) => (
-                <option key={c.type + "|" + c.detail} value={c.detail}>
-                  {c.detail}
-                </option>
-              ))}
-            </select>
-          </label>
-
           {driveCfg?.configured ? (
             <div className="fld">
               Agoda から届いた Excel をアップロード
@@ -2984,9 +2972,9 @@ ${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めません�
               {upErr && <span className="up-err">{upErr}</span>}
             </div>
           ) : null}
-          <DriveLinks note="Agoda から届いた Excel は「アップ先」に置いてスプレッドシートに変換し、そのURLを下に貼ってください。" />
+          <DriveLinks only={["new"]} />
           <label className="fld">
-            スプレッドシートURL（受注数・完了数の自動取得。対象のタブを開いた状態でコピー）
+            スプレッドシートURL（※取得したい受注数・完了数の記載されたページのURL）
             <input
               type="text"
               value={addForm.sheetUrl}
