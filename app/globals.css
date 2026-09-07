@@ -10337,3 +10337,35 @@ button.drive-link:disabled {
 .persons-page .row-retired .name-sub {
   color: #5b6472;
 }
+
+/* ══════════════ システムヘルス：罫線を「表の中だけ」に ══════════════ */
+/* 行が足りないぶんの空白へ罫線を描き足していた（.sh-filler）のをやめる。
+   代わりに表そのものは外枠まで閉じて、1行ずつ・1列ずつきちんと線を引く */
+.sys-health .sh-filler {
+  display: none;
+}
+.sys-health .sh-table {
+  border: 1px solid var(--border);
+  border-top: 0; /* 上端はヘッダーの青地で見えるので重ねない */
+}
+.sys-health .sh-table thead th,
+.sys-health .sh-table tbody td {
+  border-right: 1px solid var(--border);
+}
+.sys-health .sh-table thead th {
+  border-right-color: rgba(255, 255, 255, 0.22);
+}
+.sys-health .sh-table thead th:last-child,
+.sys-health .sh-table tbody td:last-child {
+  border-right: 0;
+}
+.sys-health .sh-table tbody td {
+  border-bottom: 1px solid var(--border);
+}
+.sys-health .sh-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+/* 表は中身ぶんの高さで終わらせ、下の空白には何も描かない */
+.sys-health .sh-tw-300 .sh-table {
+  height: auto;
+}

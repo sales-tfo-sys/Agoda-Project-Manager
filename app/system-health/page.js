@@ -83,10 +83,9 @@ function Kpi({ label, value, sub, note, tone = "ok", gauge }) {
 export default function SystemHealthPage() {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
-  const [running, setRunning] = useState(false);
 
+  // 再チェックボタンは廃止したので、実行するのはページを開いたときの1回だけ
   const run = useCallback(async () => {
-    setRunning(true);
     setErr(null);
     try {
       const j = await fetch("/api/system-health", { cache: "no-store" }).then((r) => r.json());
@@ -94,8 +93,6 @@ export default function SystemHealthPage() {
       setData(j);
     } catch (e) {
       setErr(String(e?.message || e));
-    } finally {
-      setRunning(false);
     }
   }, []);
 
@@ -126,13 +123,6 @@ export default function SystemHealthPage() {
         </div>
         <div className="head-right">
           {data?.checkedAt && <span className="updated">最終チェック：{fmtDateTime(data.checkedAt)}</span>}
-          <button className="icon-btn" onClick={run} disabled={running} title="再チェック" aria-label="再チェック">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={running ? "spin" : undefined}>
-              <polyline points="23 4 23 10 17 10" />
-              <polyline points="1 20 1 14 7 14" />
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-            </svg>
-          </button>
         </div>
       </div>
 
@@ -220,10 +210,6 @@ export default function SystemHealthPage() {
                         </tr>
                       );
                     })}
-                    {/* 行数が足りないとき、罫線を続けて表が途中で切れて見えないようにする */}
-                    <tr className="sh-filler">
-                      <td colSpan={4} />
-                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -259,9 +245,6 @@ export default function SystemHealthPage() {
                         </tr>
                       );
                     })}
-                    <tr className="sh-filler">
-                      <td colSpan={4} />
-                    </tr>
                   </tbody>
                 </table>
               </div>
