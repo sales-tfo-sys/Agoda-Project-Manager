@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Modal from "../../Modal";
 import PagePermModal from "./PagePermModal";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useUi } from "../../Ui";
 
@@ -73,9 +73,6 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
   const canGrant = !!perms?.grantPerms; // 役割・権限フラグを変更できる（オーナー）
 
   // 絞り込み：在籍タブ・キーワード・権限
-  const [q, setQ] = useState("");
-  const [tab, setTab] = useState("all"); // all / active / retired
-  const [roleFilter, setRoleFilter] = useState("all");
   // 操作列の「…」メニュー（表がスクロールするので body 直下に固定配置で出す）
   const [menu, setMenu] = useState(null); // { id, top, left }
   useEffect(() => {
@@ -320,36 +317,11 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
 
   const activeList = persons.filter((p) => p.active);
 
-  // タブ（すべて／在籍中／退職済み）の件数
-  const tabCounts = useMemo(
-    () => ({
-      all: persons.length,
-      active: persons.filter((p) => p.active).length,
-      retired: persons.filter((p) => !p.active).length,
-    }),
-    [persons]
-  );
-
-  // タブ＋キーワード＋権限で絞り込む
-  const filtered = useMemo(() => {
-    const key = q.trim().toLowerCase();
-    return persons.filter((p) => {
-      if (tab === "active" && !p.active) return false;
-      if (tab === "retired" && p.active) return false;
-      if (roleFilter !== "all" && (p.role || "member") !== roleFilter) return false;
-      if (!key) return true;
-      return [p.name, p.login_name, p.email, romaji(p.email)]
-        .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(key));
-    });
-  }, [persons, q, tab, roleFilter]);
-
-  // 人数が少ないためページ分割はせず全件表示する
-  const pageRows = filtered;
-  // 並べ替えは絞り込みが無いときだけ（表示順と実データの順が一致しているため）
-  // 退職者は常時表示だが末尾に固定。現役行だけドラッグ可（現役の表示順＝現役リストの
+  // 絞り込みは置かない（人数が少なく、退職者も末尾に並ぶだけで探せるため）
+  const pageRows = persons;
+  // 退職者は末尾に固定。現役行だけドラッグ可（現役の表示順＝現役リストの
   // インデックスなので reorder の前提が保たれる）。
-  const canDrag = !q.trim() && tab === "all" && roleFilter === "all";
+  const canDrag = true;
 
   // 担当者を追加ボタン（通常ヘッダー／埋め込みツールバーの両方で使う）
   const addPersonBtn = canEdit ? (
@@ -564,51 +536,6 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
         </div>
       ) : (
         <>
-        {/* 絞り込み：在籍タブ／キーワード検索／権限 */}
-        <div className="pf-bar">
-          <div className="pf-tabs" role="tablist" aria-label="在籍で絞り込み">
-            {[
-              ["all", "すべて"],
-              ["active", "在籍中"],
-              ["retired", "退職済み"],
-            ].map(([k, label]) => (
-              <button
-                key={k}
-                type="button"
-                role="tab"
-                aria-selected={tab === k}
-                className={"pf-tab" + (tab === k ? " active" : "")}
-                onClick={() => setTab(k)}
-              >
-                {label}
-                <span className="pf-count">{tabCounts[k]}</span>
-              </button>
-            ))}
-          </div>
-          <label className="pf-search" aria-label="名前・メールで検索">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" />
-              <line x1="16.5" y1="16.5" x2="21" y2="21" />
-            </svg>
-            <input
-              type="search"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="名前・メールで検索"
-            />
-          </label>
-          <select
-            className="pf-role"
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            aria-label="権限で絞り込み"
-          >
-            <option value="all">すべての権限</option>
-            <option value="owner">オーナー</option>
-            <option value="admin">管理者</option>
-            <option value="member">メンバー</option>
-          </select>
-        </div>
         <div className="card no-pad persons-card">
           <div className="dtw">
             <table className="dtable persons-table">
@@ -630,7 +557,7 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                 {pageRows.length === 0 && (
                   <tr>
                     <td className="l no-hit" colSpan={8}>
-                      該当する担当者がいません。
+                      担当者がまだいません。
                     </td>
                   </tr>
                 )}
@@ -915,11 +842,6 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
           </div>
 
         </div>
-        <p className="pf-foot">
-          {filtered.length > 0
-            ? `${persons.length}件中 1–${filtered.length}件を表示`
-            : `${persons.length}件中 0件を表示`}
-        </p>
         </>
       )}
 

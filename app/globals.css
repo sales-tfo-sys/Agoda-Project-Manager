@@ -10126,110 +10126,7 @@ button.drive-link:disabled {
   font-weight: 700;
 }
 
-/* ══════════════ アカウント管理：絞り込みバー・操作メニュー ══════════════ */
-/* 在籍タブ／キーワード検索／権限セレクトを表の上に一列で置く。
-   一覧は全幅（.card.no-pad）なので、バーも同じ幅に合わせて左右の余白を取らない */
-.persons-page .pf-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  padding: 8px 16px;
-  /* 一覧と同じく全幅で置く（本文の左右余白ぶん外へ広げる） */
-  margin: 0 -16px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-}
-.persons-page .pf-tabs {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-right: auto;
-}
-.persons-page .pf-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 12px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--ink-2);
-  font-size: 13px;
-  font-weight: 700;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.persons-page .pf-tab:hover {
-  background: var(--surface-soft, #f1f3f6);
-}
-.persons-page .pf-tab.active {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-/* 件数バッジ。選択中だけ濃くして現在地を分かりやすくする */
-.persons-page .pf-count {
-  min-width: 20px;
-  padding: 0 6px;
-  border-radius: 999px;
-  background: #e3e6eb;
-  color: var(--ink-2);
-  font-size: 11.5px;
-  font-weight: 800;
-  line-height: 18px;
-  text-align: center;
-}
-.persons-page .pf-tab.active .pf-count {
-  background: var(--accent);
-  color: #fff;
-}
-.persons-page .pf-search {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 10px;
-  border: 1px solid var(--border2);
-  border-radius: 8px;
-  background: #fff;
-  color: var(--ink-3);
-}
-.persons-page .pf-search:focus-within {
-  border-color: var(--accent);
-}
-.persons-page .pf-search input {
-  width: 190px;
-  border: none;
-  outline: none;
-  background: transparent;
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 700;
-}
-.persons-page .pf-role {
-  height: 30px;
-  padding: 0 8px;
-  border: 1px solid var(--border2);
-  border-radius: 8px;
-  background: #fff;
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-}
-/* 表の下の件数表示 */
-.persons-page .pf-foot {
-  margin: 0 -16px;
-  padding: 8px 16px;
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-  color: var(--ink-3);
-  font-size: 12px;
-  font-weight: 700;
-}
-
+/* ══════════════ アカウント管理：操作メニュー ══════════════ */
 /* 操作列：「…」ボタンとメニュー */
 .persons-page .pf-ops {
   display: inline-flex;
@@ -10316,9 +10213,8 @@ button.drive-link:disabled {
   color: #c9434e;
 }
 
-/* アカウント管理はヘッダーと一覧のあいだに絞り込みバーが入るので、
-   :has(+ .card.no-pad) では拾えない（間にモーダルの要素も挟まる）。
-   このページはヘッダー直下の余白を無条件で 0 にする */
+/* アカウント管理はヘッダーと一覧のあいだにモーダルの要素が挟まるため
+   :has(+ .card.no-pad) では拾えない。余白を無条件で 0 にする */
 .persons-page .head.persons-head {
   margin-bottom: 0;
 }
@@ -10326,10 +10222,6 @@ button.drive-link:disabled {
 .persons-page .banner {
   margin-top: 10px;
 }
-.wrap:has(.pf-foot) {
-  padding-bottom: 0;
-}
-
 /* 退職行の背景を濃くしたぶん、氏名が沈んで読めなくなっていたので濃色に戻す */
 .persons-page .row-retired .name-main {
   color: #333a45;
@@ -10368,4 +10260,15 @@ button.drive-link:disabled {
 /* 表は中身ぶんの高さで終わらせ、下の空白には何も描かない */
 .sys-health .sh-tw-300 .sh-table {
   height: auto;
+}
+
+/* 退職行は背景を濃くしてあるので、罫線が同化して見えなくなる。
+   行の中だけ線を濃くして、他の行と同じように区切りが見えるようにする */
+.persons-page .persons-table tbody tr.row-retired td {
+  border-bottom-color: #a3abb9;
+  border-right-color: #a3abb9;
+}
+.persons-page .persons-table tbody tr.row-retired + tr td,
+.persons-page .persons-table tbody tr:has(+ tr.row-retired) td {
+  border-bottom-color: #a3abb9;
 }
