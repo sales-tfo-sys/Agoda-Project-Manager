@@ -437,7 +437,7 @@ export default function DetailTable({ title, compact = false }) {
 
   const months = data?.months || [];
 
-  // 対象月は「YYYY/MM」で表示する。日付列からその月の実日付を引いて年を取る
+  // 対象月は「2026年9月」で表示する。日付列からその月の実日付を引いて年を取る
   const monthLabel = (i) => {
     const mIdx = data?.dateMonthIdx || [];
     const iso = data?.isoDates || [];
@@ -445,7 +445,7 @@ export default function DetailTable({ title, compact = false }) {
     const d = di >= 0 ? iso[di] : null;
     if (d) {
       const [y, m] = String(d).split("-");
-      if (y && m) return `${y}/${m}`;
+      if (y && m) return `${y}年${Number(m)}月`;
     }
     return months[i];
   };

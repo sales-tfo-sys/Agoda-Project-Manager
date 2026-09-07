@@ -122,7 +122,7 @@ const API_GROUPS = [
       ["POST", "/api/kosu-tasks", "editTasks", "作業内容の追加。"],
       ["PATCH", "/api/kosu-tasks", "editTasks", "作業内容の更新（並べ替え・単位・active・completed）。completed 切替時に completed_on も更新。"],
       ["GET", "/api/kosu-entries", "ログイン", "?date= で1日ぶん、?from=&to= で期間ぶん（1000件超は offset で全件取得）。"],
-      ["POST", "/api/kosu-entries", "ログイン（自分ぶん）", "(entry_date, task_id, person_id) で upsert。value と done_count が両方空なら削除。オーナー・管理者以外は自分の person_id 以外を含むと拒否。"],
+      ["POST", "/api/kosu-entries", "ログイン（自分ぶん）", "(entry_date, task_id, person_id) で upsert。value と done_count が両方空なら削除（ただし工数入力画面は未入力を 0 として送るので、通常この削除は起きない）。オーナー・管理者以外は自分の person_id 以外を含むと拒否。"],
       ["POST", "/api/kosu-import", "editTasks", "作業工数管理シートの過去データを kosu_entry に取り込む（移行用）。不足する kosu_task を作成し、Ad Hoc は実績者を task_assign に登録。"],
       ["GET", "/api/kosu-status", "ログイン", "Supabase 接続状態と担当者一覧（id / name / role / active）。退職者も active=false 付きで返す（工数入力で過去の記録がある日だけ列を出すため）。"],
       ["GET", "/api/resource", "ログイン", "週次リソース。① kosu_entry から集計 ② 実績が無ければ作業リソースシートを読む（移行前の互換）。"],

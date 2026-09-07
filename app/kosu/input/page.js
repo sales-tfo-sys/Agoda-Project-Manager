@@ -22,7 +22,6 @@ export default function KosuInputPage() {
   const [tasks, setTasks] = useState([]);
   const [values, setValues] = useState({}); // { taskId: { personId: value } }（Ad Hoc は稼働時間）
   const [counts, setCounts] = useState({}); // { taskId: { personId: 完了数 } }（Ad Hoc のみ）
-  const [initial, setInitial] = useState({}); // 読み込み時の値（削除判定用）
   const [dayEntries, setDayEntries] = useState([]); // その日の実績（参照表示に使う）
   const [allTasks, setAllTasks] = useState([]); // 無効化・集約した作業も含む名前辞書
   const [date, setDate] = useState(todayStr());
@@ -186,7 +185,6 @@ export default function KosuInputPage() {
     if (!configured) {
       setValues({});
       setCounts({});
-      setInitial({});
       setDayEntries([]);
       return;
     }
@@ -206,11 +204,9 @@ export default function KosuInputPage() {
       setValues(v);
       setCounts(c);
       // 削除判定は value / count の両方を基準にする
-      setInitial({ values: JSON.parse(JSON.stringify(v)), counts: JSON.parse(JSON.stringify(c)) });
     } catch {
       setValues({});
       setCounts({});
-      setInitial({});
       setDayEntries([]);
     }
   }, [configured, date]);
@@ -386,10 +382,15 @@ export default function KosuInputPage() {
     return order.map((type) => ({ type, rows: by[type] }));
   }, [visibleTasks]);
 
+  // 合計は「時間」だけを足す。
+  // Regular は単位が件数の作業（新規HID発行など）があり、それを混ぜると
+  // 件数まで時間として合算されてしまうので単位で判定する。
+  // Ad Hoc は左の欄が時間なのでそのまま足す（右の完了数は counts 側で別管理）。
   const dayTotal = (personId) => {
     let s = 0;
     for (const t of visibleTasks) {
       if (!isAssigned(t, personId)) continue;
+      if (isRegular(t) && t.unit !== "time") continue; // 件数の作業は合計に入れない
       const v = Number(values[t.id]?.[personId]);
       if (!Number.isNaN(v)) s += v;
     }
@@ -407,9 +408,8 @@ export default function KosuInputPage() {
     try {
       const entries = [];
       const blank = (x) => x === "" || x == null;
-      const iv = initial.values || {};
-      const ic = initial.counts || {};
-      // 画面に出ている作業・担当者ぶんだけを送る（他人の実績には触れない）
+      // 画面に出ている作業・担当者ぶんだけを送る（他人の実績には触れない）。
+      // 未入力の欄は 0 として保存する（空欄のままでも「実績0」を残す）。
       for (const t of visibleTasks) {
         const adhoc = !isRegular(t);
         const vrow = values[t.id] || {};
@@ -418,25 +418,11 @@ export default function KosuInputPage() {
           if (!isAssigned(t, p.id)) continue;
           const rawV = vrow[p.id];
           const rawC = adhoc ? crow[p.id] : undefined; // Ad Hoc のみ完了数
-          const emptyV = blank(rawV);
-          const emptyC = blank(rawC);
-          if (emptyV && emptyC) {
-            // 両方空。元々値があった場合だけ削除を送る
-            const hadV = iv[t.id]?.[p.id];
-            const hadC = ic[t.id]?.[p.id];
-            if (
-              (hadV !== undefined && hadV !== null) ||
-              (hadC !== undefined && hadC !== null)
-            ) {
-              entries.push({ task_id: t.id, person_id: p.id, value: null, done_count: null });
-            }
-            continue;
-          }
-          const numV = emptyV ? 0 : Number(rawV);
+          const numV = blank(rawV) ? 0 : Number(rawV);
           if (Number.isNaN(numV)) continue;
           const entry = { task_id: t.id, person_id: p.id, value: numV };
-          if (adhoc && !emptyC) {
-            const numC = Number(rawC);
+          if (adhoc) {
+            const numC = blank(rawC) ? 0 : Number(rawC);
             if (!Number.isNaN(numC)) entry.done_count = numC;
           }
           entries.push(entry);

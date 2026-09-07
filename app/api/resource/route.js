@@ -56,13 +56,18 @@ async function computeFromEntries() {
     if (!maxM || m > maxM) maxM = m;
   }
   const weeks = [];
+  // 画面で「2026/09/07 ～ 2026/09/13」と出せるように、年ありの日付も返す
+  const weekRanges = [];
   const weekIndex = new Map(); // 月曜キー → 週インデックス
+  const isoOf = (d) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   for (let d = new Date(minM); d <= maxM; d.setDate(d.getDate() + 7)) {
     const end = new Date(d);
     end.setDate(end.getDate() + 6);
     const label = `${d.getMonth() + 1}/${d.getDate()}〜${end.getMonth() + 1}/${end.getDate()}`;
     weekIndex.set(dkey(d), weeks.length);
     weeks.push(label);
+    weekRanges.push({ start: isoOf(d), end: isoOf(end) });
   }
 
   const mk = () =>
@@ -97,7 +102,7 @@ async function computeFromEntries() {
     // 全週ゼロの作業は出さない
     .filter((d) => personNames.some((n) => (d.per[n] || []).some((x) => x > 0)));
 
-  return { weeks, persons: personNames, regular, adhoc, adhocDetail, source: "supabase" };
+  return { weeks, weekRanges, persons: personNames, regular, adhoc, adhocDetail, source: "supabase" };
 }
 
 // ─────────────────────────────────────────────

@@ -158,7 +158,14 @@ export default function KosuPage() {
   }, [resource, wi]);
 
   const persons = resource?.persons || [];
-  const week = resource && wi != null ? resource.weeks[wi] : "";
+  // 週の表示は「2026/09/07 ～ 2026/09/13」。
+  // シート取り込み側など weekRanges が無い場合は元のラベルをそのまま出す。
+  const weekLabel = (i) => {
+    const r = resource?.weekRanges?.[i];
+    if (!r) return resource?.weeks?.[i] ?? "";
+    const f = (v) => String(v).replace(/-/g, "/");
+    return `${f(r.start)} ～ ${f(r.end)}`;
+  };
 
   const mainSeries = useMemo(
     () => [
@@ -211,7 +218,7 @@ export default function KosuPage() {
   }, [resource, wi, persons]);
 
   return (
-    <div className="wrap page-compact">
+    <div className="wrap page-compact kosu-page">
       <div className="head">
         <div className="head-left">
           <span className="conn ok" title="工数管理" aria-hidden="true">
@@ -238,10 +245,9 @@ export default function KosuPage() {
       ) : (
         <>
           <div className="sec-row">
-            <div className="sec-head">作業リソース詳細（{week}）</div>
+            <div className="sec-head">作業リソース詳細</div>
             <div className="detail-tools">
-              <label className="head-year">
-                対象週
+              <label className="head-year head-year-bare" aria-label="対象週">
                 <select
                   className="slim-select"
                   value={wi}
@@ -249,7 +255,7 @@ export default function KosuPage() {
                 >
                   {resource.weeks.map((w, i) => (
                     <option key={w + i} value={i}>
-                      {w}
+                      {weekLabel(i)}
                     </option>
                   ))}
                 </select>

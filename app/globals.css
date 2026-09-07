@@ -10767,3 +10767,22 @@ button.drive-link:disabled {
   color: #234a33;
   text-shadow: none;
 }
+
+/* ══════════════ 工数管理：見出しと絞り込み ══════════════ */
+/* 「作業リソース詳細」「工数明細」の見出しをもう少し大きく */
+.wrap.kosu-page .sec-head,
+.kosu-page .sec-head {
+  font-size: 15px;
+  padding-left: 9px;
+  border-left-width: 4px;
+}
+/* 件数バッジが上に寄って見えるので、行の中央に揃える。
+   幾何的には中央だが、隣の日本語は文字の重心が少し下にあるため
+   0.5px だけ下げて見た目を合わせる */
+.segbar-btn .seg-count,
+.segbar-sm .segbar-btn .seg-count {
+  align-self: center;
+  position: relative;
+  top: 0.5px;
+  vertical-align: middle;
+}
