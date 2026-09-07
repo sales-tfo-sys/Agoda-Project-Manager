@@ -23,6 +23,8 @@ export default function KosuInputPage() {
   const [values, setValues] = useState({}); // { taskId: { personId: value } }（Ad Hoc は稼働時間）
   const [counts, setCounts] = useState({}); // { taskId: { personId: 完了数 } }（Ad Hoc のみ）
   const [initial, setInitial] = useState({}); // 読み込み時の値（削除判定用）
+  const [dayEntries, setDayEntries] = useState([]); // その日の実績（参照表示に使う）
+  const [allTasks, setAllTasks] = useState([]); // 無効化・集約した作業も含む名前辞書
   const [date, setDate] = useState(todayStr());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -66,12 +68,15 @@ export default function KosuInputPage() {
       setConfigured(st.configured);
       setPersons(st.persons || []);
       if (st.configured) {
-        const [t, asg, ovr, adh] = await Promise.all([
+        const [t, asg, ovr, adh, tAll] = await Promise.all([
           fetch("/api/kosu-tasks", { cache: "no-store" }).then((r) => r.json()),
           fetch("/api/assign", { cache: "no-store" }).then((r) => r.json()).catch(() => null),
           fetch("/api/override", { cache: "no-store" }).then((r) => r.json()).catch(() => null),
           fetch("/api/adhoc", { cache: "no-store" }).then((r) => r.json()).catch(() => null),
+          // 参照表示のための名前辞書（無効化・集約した作業も含む）
+          fetch("/api/kosu-tasks?all=1", { cache: "no-store" }).then((r) => r.json()).catch(() => null),
         ]);
+        setAllTasks(tAll?.tasks || []);
         setTasks(
           (t.tasks || []).map((x) => ({
             id: x.id,
@@ -182,10 +187,12 @@ export default function KosuInputPage() {
       setValues({});
       setCounts({});
       setInitial({});
+      setDayEntries([]);
       return;
     }
     try {
       const j = await fetch(`/api/kosu-entries?date=${date}`, { cache: "no-store" }).then((r) => r.json());
+      setDayEntries(j.entries || []);
       const v = {};
       const c = {};
       for (const e of j.entries || []) {
@@ -204,6 +211,7 @@ export default function KosuInputPage() {
       setValues({});
       setCounts({});
       setInitial({});
+      setDayEntries([]);
     }
   }, [configured, date]);
 
@@ -320,13 +328,49 @@ export default function KosuInputPage() {
   // Regular task は全員が入力するため、1件でも表示されていれば全員を出す。
   const visiblePersons = useMemo(() => {
     const members = persons.filter(
-      (p) => !["owner", "admin"].includes(p.role || "member")
+      (p) => !["owner", "admin"].includes(p.role || "member") && p.active !== false
     );
     // メンバー本人は自分の列だけ。オーナー・管理者は全メンバーの列を編集できる。
     // Ad Hoc も含め、全メンバーが入力対象（担当者に限定しない）。
+    // 退職者は入力対象外（過去の実績は下の「この日の他の記録」で参照する）。
     if (selfOnly) return members.filter((p) => p.id === selfOnly);
     return members;
   }, [persons, selfOnly]);
+
+  // 入力表に出ない実績（完了した作業・退職したメンバーなど）を参照用にまとめる。
+  // これが無いと、退職者が対応した過去の工数を画面から確認できなくなる。
+  const historyRows = useMemo(() => {
+    if (!dayEntries.length) return [];
+    const shownTask = new Set(visibleTasks.map((t) => t.id));
+    const shownPerson = new Set(visiblePersons.map((p) => p.id));
+    const taskById = new Map(allTasks.map((t) => [t.id, t]));
+    const personById = new Map(persons.map((p) => [p.id, p]));
+    const out = [];
+    for (const e of dayEntries) {
+      // 入力表のセルとして出ているものは重複するので載せない
+      if (shownTask.has(e.task_id) && shownPerson.has(e.person_id)) continue;
+      const v = Number(e.value) || 0;
+      const c = e.done_count == null ? null : Number(e.done_count) || 0;
+      if (!v && !c) continue; // 空の記録は出さない
+      const t = taskById.get(e.task_id);
+      // トータル作業時間は自動集計なので参照表には載せない
+      if (t && /トータル作業時間/.test(t.content || "")) continue;
+      const p = personById.get(e.person_id);
+      if (p && ["owner", "admin"].includes(p.role || "member")) continue;
+      out.push({
+        key: e.task_id + "|" + e.person_id,
+        type: t?.task_type || "—",
+        content: t?.content || "（削除された作業）",
+        person: p?.name || "（退職者）",
+        retired: p ? p.active === false : true,
+        value: v,
+        done: c,
+      });
+    }
+    return out.sort(
+      (a, b) => a.type.localeCompare(b.type, "ja") || a.content.localeCompare(b.content, "ja")
+    );
+  }, [dayEntries, visibleTasks, visiblePersons, allTasks, persons]);
 
   // 全メンバーが入力できるよう、表示されている作業は全員が入力可。
   const isAssigned = useCallback(() => true, []);
@@ -590,6 +634,47 @@ export default function KosuInputPage() {
             </table>
           </div>
         </div>
+      )}
+
+      {/* 入力表に出ない実績（完了した作業・退職したメンバー）の参照 */}
+      {historyRows.length > 0 && (
+        <>
+          <div className="sec-row hist-row">
+            <div className="sec-head">この日の他の記録</div>
+            <span className="hist-note">
+              完了した作業や退職したメンバーの記録です（参照のみ・編集できません）
+            </span>
+          </div>
+          <div className="card no-pad">
+            <div className="dtw">
+              <table className="dtable kosu-hist-table">
+                <thead>
+                  <tr>
+                    <th className="l">タスク種別</th>
+                    <th className="l">作業内容</th>
+                    <th className="l">担当</th>
+                    <th>稼働時間</th>
+                    <th>完了数</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historyRows.map((r) => (
+                    <tr key={r.key}>
+                      <td className="l type-cell">{r.type}</td>
+                      <td className="l">{r.content}</td>
+                      <td className="l">
+                        {r.person}
+                        {r.retired && <span className="hist-ret">退職</span>}
+                      </td>
+                      <td>{r.value ? r.value.toLocaleString("ja-JP") : ""}</td>
+                      <td>{r.done == null || r.done === 0 ? "" : r.done.toLocaleString("ja-JP")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

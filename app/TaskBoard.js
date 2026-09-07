@@ -986,6 +986,25 @@ export default function TaskBoard({ mode = "view" }) {
   const [newBoard, setNewBoard] = useState("adhoc"); // 追加するタスクの区分（adhoc / regular）
   const [addError, setAddError] = useState(null);
   const [addBusy, setAddBusy] = useState(false);
+  // 追加モーダルで一緒に設定する項目（追加後に個別設定して回らなくて済むように）
+  const ADD_FORM_INIT = {
+    status: "On Track",
+    start: "",
+    end: "",
+    prio: "",
+    assign: [],
+    kosuLink: "",
+    sheetUrl: "",
+    orderCell: "",
+    doneCell: "",
+  };
+  const [addForm, setAddForm] = useState(ADD_FORM_INIT);
+  const setAF = (k, v) => setAddForm((f) => ({ ...f, [k]: v }));
+  const toggleAddAssign = (id) =>
+    setAddForm((f) => ({
+      ...f,
+      assign: f.assign.includes(id) ? f.assign.filter((x) => x !== id) : [...f.assign, id],
+    }));
   // ログイン中の権限（タスク編集の可否・アカウント管理の閲覧可否）
   const [perms, setPerms] = useState(null);
   useEffect(() => {
@@ -1026,6 +1045,7 @@ export default function TaskBoard({ mode = "view" }) {
   const openAdd = () => {
     setNewTask("");
     setNewBoard("adhoc");
+    setAddForm(ADD_FORM_INIT);
     setAddError(null);
     setAdding(true);
   };
@@ -1034,6 +1054,7 @@ export default function TaskBoard({ mode = "view" }) {
     setAdding(false);
     setNewTask("");
     setNewBoard("adhoc");
+    setAddForm(ADD_FORM_INIT);
     setAddError(null);
   };
   const addAdhoc = async () => {
@@ -1054,16 +1075,27 @@ export default function TaskBoard({ mode = "view" }) {
       setAddError(j.error);
       return;
     }
-    // 追加直後の進捗は「On Track」を初期値にする。
-    // 未設定のままだと工数入力に出る条件が判断できないため、対応中として始める。
-    setOvField("adhoc", name, "status", "On Track");
+    // モーダルで入力した項目をまとめて反映する。
+    // setOvField は同じキーぶんをまとめて1回で保存するので、順に呼んで問題ない。
+    // 進捗の既定は「On Track」。未設定だと工数入力に出る条件が判断できないため。
+    setOvField("adhoc", name, "status", addForm.status || "On Track");
     // Regular 区分として追加する場合は、カスタムタスクに区分マーカーを付ける
     // （設定は scope="adhoc" に保存し、表示上 Regular セクションに並べる）
     if (newBoard === "regular") {
       setOvField("adhoc", name, "board", "regular");
     }
+    if (addForm.start) setOvField("adhoc", name, "start", fromDateInput(addForm.start));
+    if (addForm.end) setOvField("adhoc", name, "end", fromDateInput(addForm.end));
+    if (addForm.kosuLink) setOvField("adhoc", name, "kosuLink", addForm.kosuLink);
+    if (addForm.sheetUrl) setOvField("adhoc", name, "sheetUrl", addForm.sheetUrl.trim());
+    if (addForm.orderCell) setOvField("adhoc", name, "orderCell", addForm.orderCell.trim());
+    if (addForm.doneCell) setOvField("adhoc", name, "doneCell", addForm.doneCell.trim());
+    if (addForm.assign.length) setAssign("adhoc", name, addForm.assign);
+    if (String(addForm.prio).trim()) setPriority("adhoc", name, addForm.prio);
+
     setNewTask("");
     setNewBoard("adhoc");
+    setAddForm(ADD_FORM_INIT);
     setAdding(false);
     loadCustomAdhoc();
   };
@@ -2398,6 +2430,7 @@ export default function TaskBoard({ mode = "view" }) {
         open={adding}
         title="タスク追加"
         onClose={closeAdd}
+        width={560}
         footer={
           <>
             <button className="mini-btn" onClick={closeAdd} disabled={addBusy}>
@@ -2413,7 +2446,7 @@ export default function TaskBoard({ mode = "view" }) {
           </>
         }
       >
-        <div className="modal-fields">
+        <div className="modal-fields add-task-fields">
           <label className="fld">
             タスク名
             <input
@@ -2424,19 +2457,124 @@ export default function TaskBoard({ mode = "view" }) {
               placeholder="例：Room mapping 13"
             />
           </label>
+
+          <div className="cfg-grid">
+            <label className="fld">
+              区分
+              <select value={newBoard} onChange={(e) => setNewBoard(e.target.value)}>
+                <option value="adhoc">Ad Hoc</option>
+                <option value="regular">Regular</option>
+              </select>
+            </label>
+            <label className="fld">
+              進捗
+              <select value={addForm.status} onChange={(e) => setAF("status", e.target.value)}>
+                {STATUS_OPTIONS.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="cfg-grid">
+            <label className="fld">
+              開始
+              <input
+                type="date"
+                value={addForm.start}
+                onChange={(e) => setAF("start", e.target.value)}
+              />
+            </label>
+            <label className="fld">
+              期日
+              <input
+                type="date"
+                value={addForm.end}
+                onChange={(e) => setAF("end", e.target.value)}
+              />
+            </label>
+          </div>
+
           <label className="fld">
-            区分
-            <select value={newBoard} onChange={(e) => setNewBoard(e.target.value)}>
-              <option value="adhoc">Ad Hoc</option>
-              <option value="regular">Regular</option>
+            優先（未入力なら優先なし）
+            <input
+              type="number"
+              min="1"
+              value={addForm.prio}
+              onChange={(e) => setAF("prio", e.target.value)}
+              placeholder="例：1"
+            />
+          </label>
+
+          <div className="fld">
+            対応者
+            <div className="add-asg">
+              {persons.length === 0 ? (
+                <span className="add-asg-none">担当者が未登録です</span>
+              ) : (
+                persons.map((p) => (
+                  <label key={p.id} className="chk-row">
+                    <input
+                      type="checkbox"
+                      checked={addForm.assign.includes(p.id)}
+                      onChange={() => toggleAddAssign(p.id)}
+                    />
+                    {p.name}
+                  </label>
+                ))
+              )}
+            </div>
+          </div>
+
+          <label className="fld">
+            工数グルーピング（工数明細のどの作業にまとめるか）
+            <select value={addForm.kosuLink} onChange={(e) => setAF("kosuLink", e.target.value)}>
+              <option value="">紐づけない</option>
+              {kosuContents.map((c) => (
+                <option key={c.type + "|" + c.detail} value={c.detail}>
+                  {c.detail}
+                </option>
+              ))}
             </select>
           </label>
+
+          <label className="fld">
+            スプレッドシートURL（受注数・完了数の自動取得。対象のタブを開いた状態でコピー）
+            <input
+              type="text"
+              value={addForm.sheetUrl}
+              onChange={(e) => setAF("sheetUrl", e.target.value)}
+              placeholder="https://docs.google.com/spreadsheets/d/.../edit#gid=..."
+            />
+          </label>
+          <div className="cfg-grid">
+            <label className="fld">
+              受注数のセル
+              <input
+                type="text"
+                value={addForm.orderCell}
+                onChange={(e) => setAF("orderCell", e.target.value)}
+                placeholder="例：C2"
+              />
+            </label>
+            <label className="fld">
+              完了数のセル
+              <input
+                type="text"
+                value={addForm.doneCell}
+                onChange={(e) => setAF("doneCell", e.target.value)}
+                placeholder="例：C3"
+              />
+            </label>
+          </div>
         </div>
         {addError && <div className="modal-err">{addError}</div>}
         <p className="modal-note">
-          進捗は <b>On Track</b> で登録されます（あとから一覧で変更できます）。
-          区分は工数側にも引き継がれます。<b>Regular</b> は工数入力に常時表示される作業、
-          <b>Ad Hoc</b> は進捗が On Track / Behind のときだけ表示される作業になります。
+          タスク名以外は後から一覧でも変更できます。区分は工数側にも引き継がれ、
+          <b>Regular</b> は工数入力に常時表示される作業、<b>Ad Hoc</b> は進捗が
+          On Track / Behind のときだけ表示される作業になります。
         </p>
       </Modal>
 

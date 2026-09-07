@@ -4,11 +4,30 @@ import { denyUnlessPerm } from "../../../lib/auth";
 export const dynamic = "force-dynamic";
 
 // 作業マスタ一覧
-export async function GET() {
+//   ?all=1 … 無効化した作業・集約した作業も含めて全件返す（名前の解決用）。
+//            工数入力の「この日の他の記録」で、表に出ない作業名を出すのに使う。
+export async function GET(req) {
   if (!supabaseConfigured()) {
     return Response.json({ configured: false, tasks: [] });
   }
+  const all = new URL(req.url).searchParams.get("all") === "1";
   try {
+    if (all) {
+      const [rows, ovr] = await Promise.all([
+        sb("kosu_task?order=sort_order,created_at&select=*"),
+        sb("task_override?scope=eq.adhoc&select=key,data").catch(() => null),
+      ]);
+      const renamed = {};
+      for (const o of ovr || []) {
+        if (o?.data?.name && o.data.name !== o.key) renamed[o.key] = o.data.name;
+      }
+      const tasks = (rows || []).map((t) =>
+        renamed[t.content]
+          ? { ...t, content: renamed[t.content], original_content: t.content }
+          : t
+      );
+      return Response.json({ configured: true, tasks });
+    }
     // プロジェクト管理で改名したタスクは task_override(scope=adhoc) の name に入る。
     // kosu_task.content は作成時の名前のままなので、ここで表示名を差し替えて
     // 工数入力・工数明細でもダッシュボードと同じ名前が出るようにする。

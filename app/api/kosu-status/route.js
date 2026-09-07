@@ -15,13 +15,20 @@ export async function GET() {
     return Response.json({ configured: false, persons: DEMO_PERSONS });
   }
   try {
-    // role は工数入力で管理者を除外するために使う
+    // role は工数入力で管理者を除外するために使う。
+    // 退職者も active=false 付きで返す：過去の工数を参照できるようにするため
+    // （入力欄は出さない。画面側で active を見て出し分ける）。
     const rows = await sb(
-      "kosu_person?active=eq.true&order=sort_order&select=id,name,role"
+      "kosu_person?order=active.desc,sort_order&select=id,name,role,active"
     );
     const persons =
       Array.isArray(rows) && rows.length
-        ? rows.map((r) => ({ id: r.id, name: r.name, role: r.role || "member" }))
+        ? rows.map((r) => ({
+            id: r.id,
+            name: r.name,
+            role: r.role || "member",
+            active: r.active !== false,
+          }))
         : [];
     return Response.json({ configured: true, persons });
   } catch (e) {

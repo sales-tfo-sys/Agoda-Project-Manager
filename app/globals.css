@@ -8980,3 +8980,65 @@ td.v-strong,
 .kosu-input-table .qtotal td {
   font-weight: 800;
 }
+
+/* 工数入力：入力表に出ない実績（完了した作業・退職したメンバー）の参照表 */
+.hist-row {
+  margin-top: 18px;
+}
+.hist-note {
+  font-size: 11.5px;
+  color: var(--ink-2);
+}
+.kosu-hist-table {
+  width: 100%;
+}
+.kosu-hist-table thead th {
+  font-size: 12.5px;
+  font-weight: 800;
+}
+.kosu-hist-table tbody td {
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.kosu-hist-table tbody td.type-cell {
+  font-weight: 800;
+}
+.hist-ret {
+  margin-left: 6px;
+  padding: 0 6px;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 15px;
+  color: var(--ink-3);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+/* タスク追加モーダル：項目が多いので本文をスクロールさせる */
+.modal-box .modal-body {
+  min-height: 0;
+  overflow-y: auto;
+}
+.add-task-fields .cfg-grid {
+  align-items: end;
+}
+/* 対応者のチェックボックス群 */
+.add-asg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  padding: 9px 11px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.add-asg .chk-row {
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.add-asg-none {
+  font-size: 12px;
+  color: var(--ink-3);
+}
