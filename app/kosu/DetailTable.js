@@ -657,11 +657,25 @@ export default function DetailTable({ title, compact = false }) {
     });
   }, [data, allRows, tab, isDone, link]);
 
+  // タブの件数は行数（作業内容×担当者）ではなく「作業の数」で数える。
+  //   Ad Hoc … 作業内容ごとに1件
+  //   それ以外（Regular task・その他）… ひとまとまりで1件
+  // 行数だと同じ作業でも担当者の人数ぶん膨らむため。
   const counts = useMemo(() => {
     if (!allRows.length) return { active: 0, done: 0 };
-    let done = 0;
-    for (const r of allRows) if (isDone(r)) done += 1;
-    return { active: allRows.length - done, done };
+    const tally = (rows) => {
+      const adhoc = new Set();
+      const blocks = new Set();
+      for (const r of rows) {
+        if (/ad\s*hoc/i.test(r.type || "")) adhoc.add(r.detail);
+        else blocks.add(r.type);
+      }
+      return adhoc.size + blocks.size;
+    };
+    const doneRows = [];
+    const activeRows = [];
+    for (const r of allRows) (isDone(r) ? doneRows : activeRows).push(r);
+    return { active: tally(activeRows), done: tally(doneRows) };
   }, [allRows, isDone]);
 
   // 作業内容は省略表示にしたくないので、実際の文字幅を測って列幅を決める
