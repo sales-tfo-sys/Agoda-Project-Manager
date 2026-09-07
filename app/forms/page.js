@@ -350,13 +350,22 @@ export default function FormsPage() {
               </div>
             </div>
           ) : (
-            <div className="forms-grid">
+            <div className="forms-list">
+              {/* 列見出し（フォーム名／総回答数／今月の回答数） */}
+              <div className="fl-head">
+                <span className="fl-grip" aria-hidden="true" />
+                <span className="fl-name">フォーム名</span>
+                <span className="fl-total">総回答数</span>
+                <span className="fl-month">今月の回答数</span>
+                <span className="fl-act" />
+              </div>
+
               {items.map((f, i) => {
                 const c = counts[f.id];
                 return (
                   <div
                     key={f.id}
-                    className={"form-card" + (dragOver === i ? " dragover" : "")}
+                    className={"fl-row" + (dragOver === i ? " dragover" : "")}
                     role="button"
                     tabIndex={0}
                     onClick={() => openDetail(f.id)}
@@ -369,85 +378,87 @@ export default function FormsPage() {
                     onDragOver={canEdit ? (e) => { e.preventDefault(); if (dragOver !== i) setDragOver(i); } : undefined}
                     onDrop={canEdit ? () => { reorder(dragIndex.current, i); dragIndex.current = null; setDragOver(null); } : undefined}
                   >
-                    {canEdit && (
-                      <span
-                        className="form-card-grip"
-                        draggable
-                        onClick={(e) => e.stopPropagation()}
-                        onDragStart={(e) => { e.stopPropagation(); dragIndex.current = i; }}
-                        onDragEnd={() => { dragIndex.current = null; setDragOver(null); }}
-                        title="ドラッグで並べ替え"
-                        aria-hidden="true"
-                      >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                          <circle cx="9" cy="5" r="1.7" /><circle cx="15" cy="5" r="1.7" />
-                          <circle cx="9" cy="12" r="1.7" /><circle cx="15" cy="12" r="1.7" />
-                          <circle cx="9" cy="19" r="1.7" /><circle cx="15" cy="19" r="1.7" />
-                        </svg>
-                      </span>
-                    )}
+                    <span className="fl-grip">
+                      {canEdit && (
+                        <span
+                          className="fl-grip-btn"
+                          draggable
+                          onClick={(e) => e.stopPropagation()}
+                          onDragStart={(e) => { e.stopPropagation(); dragIndex.current = i; }}
+                          onDragEnd={() => { dragIndex.current = null; setDragOver(null); }}
+                          title="ドラッグで並べ替え"
+                          aria-hidden="true"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="9" cy="5" r="1.7" /><circle cx="15" cy="5" r="1.7" />
+                            <circle cx="9" cy="12" r="1.7" /><circle cx="15" cy="12" r="1.7" />
+                            <circle cx="9" cy="19" r="1.7" /><circle cx="15" cy="19" r="1.7" />
+                          </svg>
+                        </span>
+                      )}
+                    </span>
 
-                    <span className="form-card-head">
-                      <span className="form-card-ico" aria-hidden="true">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <span className="fl-name">
+                      <span className="fl-ico" aria-hidden="true">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-4" />
                           <rect x="9" y="2" width="6" height="4" rx="1" />
                           <line x1="8" y1="11" x2="16" y2="11" /><line x1="8" y1="15" x2="14" y2="15" />
                         </svg>
                       </span>
-                      <span className="form-card-body">
-                        <span className="form-card-title" title={f.title}>{f.title}</span>
-                        {f.description && <span className="form-card-desc">{f.description}</span>}
+                      <span className="fl-name-body">
+                        <span className="fl-title" title={f.title}>{f.title}</span>
+                        {f.description && <span className="fl-desc">{f.description}</span>}
                       </span>
                     </span>
 
-                    <span className="form-card-metric">
-                      <span className="form-card-caption">回答数</span>
+                    <span className="fl-total">
                       {c?.error ? (
-                        <span className="form-card-err" title={c.error}>取得エラー</span>
+                        <span className="fl-err" title={c.error}>取得エラー</span>
                       ) : c ? (
                         <>
-                          <span className="form-card-num">{Number(c.total || 0).toLocaleString("ja-JP")}</span>
-                          <span className="form-card-unit">件</span>
+                          <b>{Number(c.total || 0).toLocaleString("ja-JP")}</b>
+                          <i>件</i>
                         </>
                       ) : (
-                        <span className="form-card-dim">—</span>
+                        <span className="fl-dim">—</span>
                       )}
                     </span>
 
-                    <span className="form-card-metric is-month">
-                      <span className="form-card-caption">今月</span>
+                    <span className="fl-month">
                       {c && !c.error ? (
-                        <>
-                          <span className="form-card-num">{Number(c.month || 0).toLocaleString("ja-JP")}</span>
-                          <span className="form-card-unit">件</span>
-                        </>
+                        <span className="fl-pill">
+                          {Number(c.month || 0).toLocaleString("ja-JP")}
+                          <i>件</i>
+                        </span>
                       ) : (
-                        <span className="form-card-dim">—</span>
+                        <span className="fl-dim">—</span>
                       )}
                     </span>
 
-                    {canEdit && (
-                      <span className="form-card-ops">
-                        <button className="forms-op" onClick={(e) => { e.stopPropagation(); setEditTarget({ id: f.id, title: f.title, url: f.url, description: f.description }); }} title="編集" aria-label="編集">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                          </svg>
-                        </button>
-                        <button className="forms-op danger" onClick={(e) => { e.stopPropagation(); setDelTarget(f); }} title="削除" aria-label="削除">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="3 6 5 6 21 6" />
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                            <line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" />
-                          </svg>
-                        </button>
+                    <span className="fl-act">
+                      {canEdit && (
+                        <span className="fl-ops">
+                          <button className="forms-op" onClick={(e) => { e.stopPropagation(); setEditTarget({ id: f.id, title: f.title, url: f.url, description: f.description }); }} title="編集" aria-label="編集">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                            </svg>
+                          </button>
+                          <button className="forms-op danger" onClick={(e) => { e.stopPropagation(); setDelTarget(f); }} title="削除" aria-label="削除">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                              <line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" />
+                            </svg>
+                          </button>
+                        </span>
+                      )}
+                      <span className="fl-open">
+                        回答を見る
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <polyline points="9 18 15 12 9 6" />
+                        </svg>
                       </span>
-                    )}
-
-                    <span className="form-card-chev" aria-hidden="true">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="9 18 15 12 9 6" />
-                      </svg>
                     </span>
                   </div>
                 );

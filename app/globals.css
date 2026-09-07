@@ -9486,10 +9486,10 @@ tbody tr:nth-child(even),
 
 /* ページの下地はグレー（カードの白と分かれるよう、彩度のない淡いグレー） */
 :root {
-  --bg: #e8eaee;
+  --bg: #dee1e7;
 }
 body {
-  background: #e8eaee;
+  background: #dee1e7;
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -9832,4 +9832,224 @@ button.drive-link:disabled {
 }
 .kosu-table tbody tr:hover td.is-sat {
   background: #dfe8fa;
+}
+
+/* ─────────────────────────────────────────────────────────
+   フォーム回答：一覧を「フォーム名 / 総回答数 / 今月の回答数 / 操作」の
+   行レイアウトにする。見出し行と本文で同じグリッドを使って列を揃える。
+   ───────────────────────────────────────────────────────── */
+.forms-list {
+  background: var(--surface);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.fl-head,
+.fl-row {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) 132px 132px 208px;
+  align-items: center;
+  gap: 12px;
+  padding: 0 18px;
+}
+.fl-head {
+  height: 40px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink-3);
+  border-bottom: 1px solid var(--border);
+}
+.fl-row {
+  min-height: 62px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.14s ease;
+}
+.fl-row:last-child {
+  border-bottom: 0;
+}
+.fl-row:hover,
+.fl-row:focus-visible {
+  background: var(--surface-soft);
+  outline: none;
+}
+.fl-row.dragover {
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+
+/* 並べ替えのつまみ */
+.fl-grip {
+  display: flex;
+  justify-content: center;
+  color: var(--ink-3);
+}
+.fl-grip-btn {
+  display: inline-flex;
+  padding: 2px;
+  cursor: grab;
+  opacity: 0.55;
+}
+.fl-row:hover .fl-grip-btn {
+  opacity: 1;
+}
+
+/* フォーム名（アイコン＋名前） */
+.fl-name {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.fl-head .fl-name {
+  padding-left: 62px; /* アイコンぶん見出しをずらす */
+}
+.fl-ico {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.fl-name-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.fl-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fl-desc {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 総回答数（大きい数字＋小さい単位） */
+.fl-total,
+.fl-month {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+}
+.fl-head .fl-total,
+.fl-head .fl-month {
+  align-items: center;
+}
+.fl-total b {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.fl-total i,
+.fl-pill i {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+/* 今月の回答数はバッジで示す */
+.fl-month {
+  align-items: center;
+}
+.fl-pill {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 5px 14px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #23325a;
+  background: var(--accent-soft);
+  border-radius: 9px;
+  font-variant-numeric: tabular-nums;
+}
+.fl-pill i {
+  color: #5a76b8;
+}
+.fl-dim {
+  color: var(--ink-3);
+  font-weight: 700;
+}
+.fl-err {
+  font-size: 11px;
+  font-weight: 700;
+  color: #b02a37;
+}
+
+/* 右端：編集・削除と「回答を見る」 */
+.fl-act {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.fl-ops {
+  display: inline-flex;
+  gap: 4px;
+  opacity: 0.4;
+  transition: opacity 0.14s ease;
+}
+.fl-row:hover .fl-ops {
+  opacity: 1;
+}
+.fl-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 9px;
+  white-space: nowrap;
+}
+.fl-open svg {
+  color: var(--ink-3);
+}
+.fl-row:hover .fl-open {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.fl-row:hover .fl-open svg {
+  color: var(--accent);
+}
+@media (max-width: 900px) {
+  .fl-head {
+    display: none;
+  }
+  .fl-row {
+    grid-template-columns: 30px minmax(0, 1fr) 96px 96px;
+    row-gap: 8px;
+  }
+  .fl-act {
+    grid-column: 1 / -1;
+  }
+}
+
+/* アカウント管理：退職メンバーの行はもっと暗いグレーにして、在籍と一目で分ける */
+.persons-page tr.row-retired td,
+.persons-page .persons-table tbody tr.row-retired:nth-child(even) td {
+  background: #d2d6dd;
+  color: #5d6472;
+}
+.persons-page tr.row-retired:hover td {
+  background: #c7ccd5;
 }
