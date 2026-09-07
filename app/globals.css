@@ -10682,3 +10682,64 @@ button.drive-link:disabled {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
+/* ══════════════ アカウント管理：除外メンバーまわり ══════════════ */
+/* 「除外」した行は赤系の地色にして、在籍と一目で分ける */
+.persons-page tr.row-retired td,
+.persons-page .persons-table tbody tr.row-retired:nth-child(even) td {
+  background: #f4c9cc;
+  color: #6b2a30;
+}
+.persons-page tr.row-retired:hover td {
+  background: #efbcc0;
+}
+.persons-page .persons-table tbody tr.row-retired td {
+  border-bottom-color: #dda1a6;
+  border-right-color: #dda1a6;
+}
+.persons-page .persons-table tbody tr.row-retired + tr td,
+.persons-page .persons-table tbody tr:has(+ tr.row-retired) td {
+  border-bottom-color: #dda1a6;
+}
+.persons-page .row-retired .name-main {
+  color: #6b2a30;
+}
+.persons-page .row-retired .name-sub {
+  color: #8d5057;
+}
+.persons-page .retired-tag {
+  color: #fff;
+  background: #c0392b;
+  border-color: #c0392b;
+}
+/* 除外日 */
+.persons-page .left-on {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.persons-page .left-on.none {
+  color: var(--ink-3);
+  font-weight: 600;
+}
+.persons-page .row-retired .left-on {
+  color: #6b2a30;
+}
+
+/* 「…」も枠を出してボタンらしく見せる */
+.persons-page .pf-more {
+  border-color: var(--border2);
+  background: var(--surface);
+}
+.persons-page .pf-more:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.persons-page .row-retired .pf-more {
+  border-color: #d08c92;
+  background: #fff;
+  color: #6b2a30;
+}

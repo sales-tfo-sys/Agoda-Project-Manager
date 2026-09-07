@@ -35,6 +35,15 @@ function fmtLogin(v) {
   );
 }
 
+// 除外日の表示（yyyy/mm/dd）。left_on は日付の列なので時刻までは持たない
+function fmtDay(v) {
+  if (!v) return "—";
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return String(v);
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())}`;
+}
+
 export default function KosuPersonsPage({ embedded = false } = {}) {
   const [configured, setConfigured] = useState(null);
   const [persons, setPersons] = useState([]);
@@ -69,7 +78,7 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
       .finally(() => setPermsLoaded(true));
   }, []);
   const canView = !perms ? false : perms.viewAccounts;
-  const canEdit = !!perms?.editAccounts; // 追加・改名・退職・削除ができる
+  const canEdit = !!perms?.editAccounts; // 追加・改名・除外・削除ができる
   const canGrant = !!perms?.grantPerms; // 役割・権限フラグを変更できる（オーナー）
 
   // 絞り込み：在籍タブ・キーワード・権限
@@ -317,9 +326,9 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
 
   const activeList = persons.filter((p) => p.active);
 
-  // 絞り込みは置かない（人数が少なく、退職者も末尾に並ぶだけで探せるため）
+  // 絞り込みは置かない（人数が少なく、除外したメンバーも末尾に並ぶだけで探せるため）
   const pageRows = persons;
-  // 退職者は末尾に固定。現役行だけドラッグ可（現役の表示順＝現役リストの
+  // 除外したメンバーは末尾に固定。現役行だけドラッグ可（現役の表示順＝現役リストの
   // インデックスなので reorder の前提が保たれる）。
   const canDrag = true;
 
@@ -410,7 +419,7 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
 
       {configured === false && (
         <div className="banner warn-banner">
-          Supabase 未接続のため<b>変更は保存されません</b>（デモ表示）。接続すると担当者の追加・改名・退職処理が有効になります。
+          Supabase 未接続のため<b>変更は保存されません</b>（デモ表示）。接続すると担当者の追加・改名・除外処理が有効になります。
         </div>
       )}
 
@@ -438,7 +447,7 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
         <p className="modal-note">
           担当者とログインアカウントを完全に削除します。この操作は取り消せません。
           <br />
-          工数の実績が登録されている場合は削除できません。その場合は「退職」をご利用ください（実績は残ります）。
+          工数の実績が登録されている場合は削除できません。その場合は「除外」をご利用ください（実績は残ります）。
         </p>
       </Modal>
 
@@ -550,13 +559,14 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                   <th className="grant-sub-th">タスク関連</th>
                   <th>ページ権限</th>
                   <th>最終ログイン</th>
+                  <th>除外日</th>
                   <th>操作</th>
                 </tr>
               </thead>
               <tbody>
                 {pageRows.length === 0 && (
                   <tr>
-                    <td className="l no-hit" colSpan={8}>
+                    <td className="l no-hit" colSpan={10}>
                       担当者がまだいません。
                     </td>
                   </tr>
@@ -597,7 +607,7 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                         className="grip-td"
                         title={
                           !p.active
-                            ? "退職者は並べ替えできません"
+                            ? "除外したメンバーは並べ替えできません"
                             : canDrag
                             ? "ドラッグで並べ替え"
                             : "検索中は並べ替えできません"
@@ -661,7 +671,7 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                               {p.login_name || romaji(p.email)}
                             </span>
                           </span>
-                          {!p.active && <span className="retired-tag">退職</span>}
+                          {!p.active && <span className="retired-tag">除外</span>}
                         </span>
                       </td>
                       <td className="l">
@@ -800,16 +810,21 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                           {fmtLogin(p.last_login_at)}
                         </span>
                       </td>
+                      <td>
+                        <span className={"left-on" + (p.active ? " none" : "")}>
+                          {p.active ? "—" : fmtDay(p.left_on)}
+                        </span>
+                      </td>
                       <td className="ops-td">
                         {canEdit ? (
                           <span className="pf-ops">
-                            {/* 退職者は「復帰」をその場に出す（元に戻す操作が多いため） */}
+                            {/* 除外したメンバーは「復帰」をその場に出す（元に戻す操作が多いため） */}
                             {!p.active && (
                               <button
                                 className="mini-btn pf-back"
                                 onClick={() => patch(p.id, { active: true, left_on: null })}
                                 disabled={busy}
-                                title="在籍に戻す"
+                                title="除外を解除する"
                               >
                                 復帰
                               </button>
@@ -867,7 +882,7 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                     patch(p.id, { active: false, left_on: new Date().toISOString().slice(0, 10) });
                   }}
                 >
-                  退職にする
+                  除外にする
                 </button>
               ) : (
                 <button
@@ -879,7 +894,7 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                     patch(p.id, { active: true, left_on: null });
                   }}
                 >
-                  在籍に戻す
+                  除外を解除
                 </button>
               )}
               <button
