@@ -8,28 +8,13 @@ import { holidayName, dowLabel } from "../../lib/holidays";
 const BADGE_W = 82;
 
 // 作業名の正規化：全角/半角（NFKC）を揃え、空白を詰めて小文字化。
-// 進捗シートと作業工数管理シートで（）や空白が食い違っても照合できるように。
-function normName(s) {
-  return String(s || "")
+// 進捗シートと作業工数管理シートでカッコや空白が食い違っても照合できるようにする。
+function normName(v) {
+  return String(v || "")
     .normalize("NFKC")
     .replace(/\s+/g, "")
     .toLowerCase();
 }
-
-function getFridayOfWeek(dateStr) {
-  if (!dateStr) return "9999-12-31";
-  const d = new Date(dateStr.slice(0, 10) + "T12:00:00Z");
-  if (isNaN(d.getTime())) return "9999-12-31";
-  const day = d.getUTCDay();
-  const diff = day === 0 ? -2 : 5 - day;
-  d.setUTCDate(d.getUTCDate() + diff);
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
-}
-
-const getTodayStr = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
 
 // 工数明細（日次）。工数管理ページ内と単独ページの両方で使う共通部品。
 export default function DetailTable({ title, compact = false }) {
@@ -553,40 +538,20 @@ export default function DetailTable({ title, compact = false }) {
 
   // 完了の判定：作業内容管理で完了にしたもの、または
   // 紐づいたダッシュボードの Ad Hoc タスクが全て Complete のもの
+  // Complete になったらすぐ「完了」タブへ移す。
+  // 以前は「完了した週の金曜日までは対応中に残す」扱いだったが、
+  // 完了したものが対応中に居座って分かりにくいのでやめた。
+  // タブは表示の切り替えだけで、工数の集計（作業リソース詳細・担当者別内訳）や
+  // 工数入力の表示には影響しない。
   const isDone = useCallback(
     (r) => {
-      let isCompleted = false;
-      let completedDate = null;
       const key = `${r.type}|${r.detail}`;
-
-      if (completedKeys?.has(key)) {
-        isCompleted = true;
-        completedDate = link.compDateByKey?.[key];
-      } else {
-        const name = link.rename[r.detail] || r.detail;
-        if (link.done?.has(r.detail)) {
-          isCompleted = true;
-          completedDate = link.compDateByLink?.[r.detail];
-        } else if (link.done?.has(name)) {
-          isCompleted = true;
-          completedDate = link.compDateByLink?.[name];
-        } else if (link.doneNorm?.has(normName(name))) {
-          isCompleted = true;
-          completedDate = link.compDateByNorm?.[normName(name)];
-        }
-      }
-
-      if (!isCompleted) return false;
-
-      // 完了済みでも、その週の金曜日までは「対応中」タブに残す
-      if (completedDate) {
-        const todayStr = getTodayStr();
-        if (todayStr <= getFridayOfWeek(completedDate)) {
-          return false;
-        }
-      }
-
-      return true;
+      if (completedKeys?.has(key)) return true;
+      const name = link.rename[r.detail] || r.detail;
+      if (link.done?.has(r.detail)) return true;
+      if (link.done?.has(name)) return true;
+      if (link.doneNorm?.has(normName(name))) return true;
+      return false;
     },
     [completedKeys, link]
   );
