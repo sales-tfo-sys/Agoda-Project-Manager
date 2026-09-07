@@ -8,12 +8,26 @@ const pad2 = (n) => String(n).padStart(2, "0");
 const isoOf = (y, m, d) => `${y}-${pad2(m)}-${pad2(d)}`;
 
 // ダッシュボードのスケジュール用カレンダー。日本の祝日（振替休日・国民の休日含む）を表示する。
+//   ym       … 表示する年月 { y, m }。渡さない場合は自前で持つ（単独利用）。
+//   onNav    … 前後の月への移動。2つ並べたときに同じ月を出せないよう、
+//              どちらのボタンを押しても呼び出し側の基準月をずらす。
+//   onToday  … 「今月」ボタン。
 //   events   … { "YYYY-MM-DD": [...] }。件数のぶんだけ日付に印を出す。
 //   selected … 選択中の日付（ISO）。クリックで onSelect(iso) を呼ぶ。
-export default function Calendar({ events = null, selected = null, onSelect = null }) {
+//   range    … { start, end }（ISO）。範囲内の日を薄く塗る（週・月表示のとき）。
+export default function Calendar({
+  ym: ymProp = null,
+  onNav = null,
+  onToday = null,
+  events = null,
+  selected = null,
+  onSelect = null,
+  range = null,
+}) {
   const today = new Date();
   const baseYm = { y: today.getFullYear(), m: today.getMonth() + 1 };
-  const [ym, setYm] = useState(baseYm);
+  const [ymOwn, setYmOwn] = useState(baseYm);
+  const ym = ymProp || ymOwn;
   const holidays = useMemo(() => holidaysForYear(ym.y), [ym.y]);
 
   const cells = useMemo(() => {
@@ -26,11 +40,18 @@ export default function Calendar({ events = null, selected = null, onSelect = nu
     return arr;
   }, [ym]);
 
-  const prev = () => setYm(({ y, m }) => (m === 1 ? { y: y - 1, m: 12 } : { y, m: m - 1 }));
-  const next = () => setYm(({ y, m }) => (m === 12 ? { y: y + 1, m: 1 } : { y, m: m + 1 }));
-  const toToday = () => {
-    setYm(baseYm);
-    onSelect?.(isoOf(today.getFullYear(), today.getMonth() + 1, today.getDate()));
+  const shift = (delta) => {
+    if (onNav) return onNav(delta);
+    setYmOwn(({ y, m }) => {
+      const n = m + delta;
+      if (n < 1) return { y: y - 1, m: 12 };
+      if (n > 12) return { y: y + 1, m: 1 };
+      return { y, m: n };
+    });
+  };
+  const goToday = () => {
+    if (onToday) return onToday();
+    setYmOwn(baseYm);
   };
 
   const isToday = (d) =>
@@ -39,11 +60,13 @@ export default function Calendar({ events = null, selected = null, onSelect = nu
     ym.m === today.getMonth() + 1 &&
     d === today.getDate();
   const holOf = (d) => (d ? holidays.get(`${ym.m}-${d}`) || null : null);
+  const inRange = (iso) =>
+    !!(range && range.start && range.end && iso >= range.start && iso <= range.end);
 
   return (
     <section className="cal-card">
       <div className="cal-head">
-        <button type="button" className="cal-nav" onClick={prev} aria-label="前の月">
+        <button type="button" className="cal-nav" onClick={() => shift(-1)} aria-label="前の月">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <polyline points="15 18 9 12 15 6" />
           </svg>
@@ -51,12 +74,12 @@ export default function Calendar({ events = null, selected = null, onSelect = nu
         <span className="cal-title">
           {ym.y}年 {ym.m}月
         </span>
-        <button type="button" className="cal-nav" onClick={next} aria-label="次の月">
+        <button type="button" className="cal-nav" onClick={() => shift(1)} aria-label="次の月">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <polyline points="9 18 15 12 9 6" />
           </svg>
         </button>
-        <button type="button" className="cal-today" onClick={toToday}>
+        <button type="button" className="cal-today" onClick={goToday}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <rect x="3" y="4" width="18" height="18" rx="2" />
             <line x1="16" y1="2" x2="16" y2="6" />
@@ -86,6 +109,7 @@ export default function Calendar({ events = null, selected = null, onSelect = nu
             (d == null ? " empty" : "") +
             (name || dow === 0 ? " sun" : dow === 6 ? " sat" : "") +
             (isToday(d) ? " today" : "") +
+            (iso && inRange(iso) ? " in-range" : "") +
             (iso && selected === iso ? " selected" : "");
           const inner =
             d != null ? (

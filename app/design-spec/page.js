@@ -732,7 +732,7 @@ export default function DesignSpecPage() {
                   "ダッシュボード",
                   <C>/dashboard</C>,
                   <>
-                    閲覧専用。<b>スケジュール</b>（カレンダー1つと、選んだ日の予定一覧。予定は Ad Hoc タスクの開始日・期日で、入っている日には印と件数を出す）／<b>全体</b>（Regular Task・Pending のサマリー表と Ad Hoc Task 一覧）／
+                    閲覧専用。<b>スケジュール</b>（連続する2か月のカレンダーと予定一覧。月送りは2つ共通なので常に連続した月になる。予定は Ad Hoc タスクの開始日・期日で、入っている日には印と件数を出す。一覧は日／週／月で範囲を切り替えられ、週・月は日付ごとにまとめて表示する）／<b>全体</b>（Regular Task・Pending のサマリー表と Ad Hoc Task 一覧）／
                     <b>案件詳細</b>（案件タイプ別のステータス×四半期）の3タブ。選択タブは localStorage に保存。カードはドラッグで並べ替え可（localStorage）。
                   </>,
                   <><C>/api/records</C>・<C>/api/adhoc</C>・<C>/api/adhoc-counts</C>・<C>/api/priority</C>・<C>/api/assign</C>・<C>/api/override</C>・<C>/api/adhoc-tasks</C>・<C>/api/kosu?list=1</C>・<C>/api/auth/me</C></>,

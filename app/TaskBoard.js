@@ -26,6 +26,31 @@ const ADHOC_COLS = [46, 330, 106, 106, 70, 70, 70, 62, 96, 92, 88, null, null, 6
 const ADHOC_FLEX_MIN = 110; // 幅を分け合う列の最低幅（これを下回ると横スクロール）
 const ADHOC_W = ADHOC_COLS.reduce((a, b) => a + (b == null ? ADHOC_FLEX_MIN : b), 0);
 
+// スケジュールの日付ユーティリティ（ISO "YYYY-MM-DD" で扱う）
+const pad2 = (n) => String(n).padStart(2, "0");
+const isoOfDate = (dt) => `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`;
+const parseIso = (s) => {
+  const m = String(s || "").match(/(\d{4})-(\d{2})-(\d{2})/);
+  return m ? { y: Number(m[1]), m: Number(m[2]), d: Number(m[3]) } : null;
+};
+const dateOfIso = (s) => {
+  const p = parseIso(s);
+  return p ? new Date(p.y, p.m - 1, p.d) : null;
+};
+// その日が属する週の月曜日
+const mondayOfIso = (s) => {
+  const dt = dateOfIso(s);
+  if (!dt) return null;
+  dt.setDate(dt.getDate() - ((dt.getDay() + 6) % 7));
+  return isoOfDate(dt);
+};
+const addDaysIso = (s, n) => {
+  const dt = dateOfIso(s);
+  if (!dt) return null;
+  dt.setDate(dt.getDate() + n);
+  return isoOfDate(dt);
+};
+
 // 進捗フラグ（Regular Task / Ad Hoc Task 共通）
 const STATUS_OPTIONS = ["On Track", "Behind", "Onhold", "Complete"];
 function statusClass(st) {
@@ -1212,12 +1237,32 @@ export default function TaskBoard({ mode = "view" }) {
     return () => window.removeEventListener("resize", fit);
   }, [subEl, mngStatus, mngFilter]);
 
-  // スケジュールタブで選択中の日付（既定は今日）
+  // スケジュールタブ：選択中の日付（既定は今日）と、左側カレンダーの基準月。
+  // カレンダーは2つ並べるが、月送りは共通なので常に「当月＋翌月」の関係が崩れない。
   const [schedDate, setSchedDate] = useState(() => {
     const d = new Date();
     const p = (n) => String(n).padStart(2, "0");
     return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
   });
+  const [schedYm, setSchedYm] = useState(() => {
+    const d = new Date();
+    return { y: d.getFullYear(), m: d.getMonth() + 1 };
+  });
+  // 予定の表示範囲：日 / 週 / 月
+  const [schedRange, setSchedRange] = useState("day");
+  const shiftYm = ({ y, m }, delta) => {
+    const n = m + delta;
+    if (n < 1) return { y: y - 1, m: 12 };
+    if (n > 12) return { y: y + 1, m: 1 };
+    return { y, m: n };
+  };
+  const navSched = (delta) => setSchedYm((v) => shiftYm(v, delta));
+  const todaySched = () => {
+    const d = new Date();
+    const p = (n) => String(n).padStart(2, "0");
+    setSchedYm({ y: d.getFullYear(), m: d.getMonth() + 1 });
+    setSchedDate(`${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`);
+  };
   // Ad Hoc タスクの開始日・期日を日付ごとにまとめてカレンダーの予定にする
   const schedEvents = useMemo(() => {
     const seen = new Set((adhoc || []).map((a) => a.task));
@@ -1823,44 +1868,140 @@ export default function TaskBoard({ mode = "view" }) {
           </div>
           )}
 
-          {/* スケジュール：カレンダーは1つ。選んだ日の予定を下に出す */}
+          {/* スケジュール：カレンダー2つ（当月＋翌月・月送りは共通）＋下に予定 */}
           {activeTab === "schedule" && !isEdit && (() => {
-            const items = schedEvents[schedDate] || [];
-            const md = String(schedDate).match(/(\d{4})-(\d{2})-(\d{2})/);
-            const y = md ? Number(md[1]) : null;
-            const mo = md ? Number(md[2]) : null;
-            const dd = md ? Number(md[3]) : null;
-            const hol = md ? holidayName(y, mo, dd) : null;
-            const dw = md ? dowLabel(y, mo, dd) : "";
+            const p = parseIso(schedDate);
+            // 表示範囲（日 / 週 / 月）
+            let start = schedDate;
+            let end = schedDate;
+            let rangeLabel = "—";
+            if (p) {
+              const dw = dowLabel(p.y, p.m, p.d);
+              if (schedRange === "week") {
+                start = mondayOfIso(schedDate);
+                end = addDaysIso(start, 6);
+                const s = parseIso(start);
+                const e = parseIso(end);
+                rangeLabel = `${s.y}/${pad2(s.m)}/${pad2(s.d)} 〜 ${e.y === s.y ? "" : e.y + "/"}${pad2(e.m)}/${pad2(e.d)}`;
+              } else if (schedRange === "month") {
+                start = `${p.y}-${pad2(p.m)}-01`;
+                end = `${p.y}-${pad2(p.m)}-${pad2(new Date(p.y, p.m, 0).getDate())}`;
+                rangeLabel = `${p.y}年${p.m}月`;
+              } else {
+                rangeLabel = `${p.y}年${p.m}月${p.d}日（${dw}）`;
+              }
+            }
+            const hol = p && schedRange === "day" ? holidayName(p.y, p.m, p.d) : null;
+            const dw = p ? dowLabel(p.y, p.m, p.d) : "";
+            // 範囲内で予定がある日を日付順に集める
+            const days = Object.keys(schedEvents)
+              .filter((iso) => iso >= start && iso <= end)
+              .sort();
+            const total = days.reduce((a, iso) => a + schedEvents[iso].length, 0);
+            const dayLabel = (iso) => {
+              const q = parseIso(iso);
+              if (!q) return iso;
+              return `${q.m}/${q.d}（${dowLabel(q.y, q.m, q.d)}）`;
+            };
+            const rangeProp = schedRange === "day" ? null : { start, end };
             return (
               <div className="tab-panel sched-wrap">
-                <Calendar events={schedEvents} selected={schedDate} onSelect={setSchedDate} />
+                <div className="sched-cals">
+                  <Calendar
+                    ym={schedYm}
+                    onNav={navSched}
+                    onToday={todaySched}
+                    events={schedEvents}
+                    selected={schedDate}
+                    onSelect={setSchedDate}
+                    range={rangeProp}
+                  />
+                  <Calendar
+                    ym={shiftYm(schedYm, 1)}
+                    onNav={navSched}
+                    onToday={todaySched}
+                    events={schedEvents}
+                    selected={schedDate}
+                    onSelect={setSchedDate}
+                    range={rangeProp}
+                  />
+                </div>
+
                 <section className="sched-panel">
                   <div className="sched-panel-head">
-                    <span className={"sched-date" + (dw === "日" || hol ? " sun" : dw === "土" ? " sat" : "")}>
-                      {md ? `${y}年${mo}月${dd}日（${dw}）` : "—"}
+                    <span
+                      className={
+                        "sched-date" +
+                        (schedRange === "day" && (dw === "日" || hol)
+                          ? " sun"
+                          : schedRange === "day" && dw === "土"
+                          ? " sat"
+                          : "")
+                      }
+                    >
+                      {rangeLabel}
                     </span>
                     {hol && <span className="sched-hol">{hol}</span>}
-                    <span className="sched-count">{items.length} 件</span>
-                  </div>
-                  {items.length === 0 ? (
-                    <div className="sched-empty">この日の予定はありません</div>
-                  ) : (
-                    <ul className="sched-items">
-                      {items.map((e, i) => (
-                        <li key={e.task + e.kind + i} className="sched-item">
-                          <span className={"sched-kind " + e.kind}>
-                            {e.kind === "start" ? "開始" : "期日"}
-                          </span>
-                          <span className="sched-task" title={e.task}>
-                            {e.task}
-                          </span>
-                          <span className={"st-pill " + statusClass(e.status)}>
-                            {e.status || "—"}
-                          </span>
-                        </li>
+                    <span className="range-seg" role="group" aria-label="予定の表示範囲">
+                      {[
+                        ["day", "日"],
+                        ["week", "週"],
+                        ["month", "月"],
+                      ].map(([k, label]) => (
+                        <button
+                          key={k}
+                          type="button"
+                          className={"range-seg-btn" + (schedRange === k ? " active" : "")}
+                          onClick={() => setSchedRange(k)}
+                          aria-pressed={schedRange === k}
+                        >
+                          {label}
+                        </button>
                       ))}
-                    </ul>
+                    </span>
+                    <span className="sched-count">{total} 件</span>
+                  </div>
+                  {total === 0 ? (
+                    <div className="sched-empty">
+                      {schedRange === "day"
+                        ? "この日の予定はありません"
+                        : schedRange === "week"
+                        ? "この週の予定はありません"
+                        : "この月の予定はありません"}
+                    </div>
+                  ) : (
+                    <div className="sched-groups">
+                      {days.map((iso) => (
+                        <div key={iso} className="sched-group">
+                          {schedRange !== "day" && (
+                            <button
+                              type="button"
+                              className={"sched-gday" + (iso === schedDate ? " on" : "")}
+                              onClick={() => setSchedDate(iso)}
+                              title="この日を選ぶ"
+                            >
+                              {dayLabel(iso)}
+                              <span className="sched-gcount">{schedEvents[iso].length}</span>
+                            </button>
+                          )}
+                          <ul className="sched-items">
+                            {schedEvents[iso].map((e, i) => (
+                              <li key={e.task + e.kind + i} className="sched-item">
+                                <span className={"sched-kind " + e.kind}>
+                                  {e.kind === "start" ? "開始" : "期日"}
+                                </span>
+                                <span className="sched-task" title={e.task}>
+                                  {e.task}
+                                </span>
+                                <span className={"st-pill " + statusClass(e.status)}>
+                                  {e.status || "—"}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </section>
               </div>

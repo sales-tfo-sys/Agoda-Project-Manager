@@ -6349,16 +6349,104 @@ th.hid-opcol {
   align-items: flex-start;
   gap: 14px;
 }
-/* スケジュール：カレンダー1つ＋その下に選んだ日の予定 */
+/* スケジュール：カレンダー2つ（月送りは共通）＋その下に予定 */
 .sched-wrap {
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 14px;
-  max-width: 620px;
+  max-width: 952px;
+}
+.sched-cals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+@media (max-width: 900px) {
+  .sched-cals {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 .sched-wrap .cal-card {
   width: 100%;
+}
+/* 週・月表示のときに対象期間を薄く塗る */
+.cal-cell.in-range {
+  background: var(--accent-soft);
+  border-color: #cadcf7;
+}
+.cal-cell.today.in-range {
+  background: var(--accent);
+}
+/* 表示範囲の切り替え（日/週/月） */
+.range-seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: #eef2fb;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+.range-seg-btn {
+  min-width: 34px;
+  padding: 3px 9px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink-2);
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.range-seg-btn:hover {
+  color: var(--accent);
+}
+.range-seg-btn.active {
+  color: var(--accent);
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(52, 84, 170, 0.12);
+}
+/* 日付ごとのまとまり（週・月表示） */
+.sched-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sched-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sched-gday {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  align-self: flex-start;
+  padding: 2px 10px;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--ink-2);
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.sched-gday:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.sched-gday.on {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.sched-gcount {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--ink-3);
+}
+.sched-gday.on .sched-gcount {
+  color: var(--accent);
 }
 /* 日付セルはクリックで選べる（button になる） */
 button.cal-cell {
