@@ -9600,3 +9600,67 @@ th,
   background: linear-gradient(180deg, var(--brand-1), var(--brand-2));
   color: #ffffff;
 }
+
+/* Google ドライブのフォルダへのショートカット（タスク追加／シート連携モーダル） */
+.drive-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.drive-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--ink-2);
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 999px;
+}
+.drive-link:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.drive-link.drive-done:hover {
+  color: #1c8a4e;
+  border-color: #1c8a4e;
+  background: #e3f5ea;
+}
+.drive-link.drive-hold:hover {
+  color: #8a5a12;
+  border-color: #ecd8a8;
+  background: var(--warn-bg);
+}
+.drive-note {
+  margin-top: 6px;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+/* Excel ダウンロードのボタン */
+.forms-op.dl {
+  color: #1c8a4e;
+  border-color: #bde3cd;
+  background: #e9f7ef;
+}
+.forms-op.dl:hover {
+  color: #ffffff;
+  background: #1c8a4e;
+  border-color: #1c8a4e;
+}
+
+/* ヘッダーの帯とサイドバーのロゴ帯の高さ・位置を揃える。
+   ヘッダーは 0〜58px なので、ロゴ帯も上端 0 から同じ 58px にする
+   （サイドバーの上余白ぶんロゴが下がって高さも違っていた）。 */
+.sidebar {
+  padding-top: 0;
+}
+.sidebar-brand {
+  height: 58px;
+  margin-bottom: 8px;
+}

@@ -51,6 +51,61 @@ const addDaysIso = (s, n) => {
   return isoOfDate(dt);
 };
 
+// Agoda から届いた作業シートの置き場所（Google ドライブ）。
+// 依頼を受けたら「アップ先」に置いてスプレッドシートに変換し、
+// 完了・保留になったら該当のフォルダへ移す運用に合わせたショートカット。
+const DRIVE_FOLDERS = [
+  {
+    key: "new",
+    label: "アップ先",
+    url: "https://drive.google.com/drive/u/0/folders/1KFnrcBpPbilgC20wOFlRm-yOpq-tfIha",
+  },
+  {
+    key: "done",
+    label: "完了",
+    url: "https://drive.google.com/drive/u/0/folders/1ZN1KOn5Ob2jT3dZm5wf_S5-WrvsbS2mm",
+  },
+  {
+    key: "hold",
+    label: "保留",
+    url: "https://drive.google.com/drive/u/0/folders/1Qi8GMVPSywyle1rr1UftHLicSxZry2g7",
+  },
+];
+
+// Google ドライブのフォルダへのショートカット
+function DriveLinks({ note }) {
+  return (
+    <div className="fld">
+      Google ドライブのフォルダ
+      <span className="drive-links">
+        {DRIVE_FOLDERS.map((f) => (
+          <a
+            key={f.key}
+            className={"drive-link drive-" + f.key}
+            href={f.url}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
+            </svg>
+            {f.label}
+          </a>
+        ))}
+      </span>
+      {note && <span className="drive-note">{note}</span>}
+    </div>
+  );
+}
+
+// スプレッドシートURL → Excel(.xlsx) で書き出すURL。
+// Google の標準機能なので API もサービスアカウントも要らない
+// （開いている本人のGoogleアカウントの権限でダウンロードされる）。
+function xlsxUrlOf(url) {
+  const m = String(url || "").match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  return m ? `https://docs.google.com/spreadsheets/d/${m[1]}/export?format=xlsx` : null;
+}
+
 // タスクの削除は一旦無効（誤操作防止のため削除ボタンを出さない）。
 // 再開するときはここを true に戻せば、削除ボタンと確認モーダルが復活する。
 const ALLOW_TASK_DELETE = false;
@@ -1867,6 +1922,12 @@ export default function TaskBoard({ mode = "view" }) {
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="7" x2="21" y2="7" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="17" x2="16" y2="17" /><line x1="3.5" y1="7" x2="3.51" y2="7" /><line x1="3.5" y1="12" x2="3.51" y2="12" /><line x1="3.5" y1="17" x2="3.51" y2="17" /></svg>
                                   </button>
                                 )}
+                                {/* 作業シートを Excel(.xlsx) で落とす。提出用にそのまま使える */}
+                                {o.sheetUrl && xlsxUrlOf(o.sheetUrl) && (
+                                  <a className="forms-op dl" href={xlsxUrlOf(o.sheetUrl)} target="_blank" rel="noreferrer" title={"作業シートを Excel(.xlsx) でダウンロード\n" + (o.name ?? row.key)} aria-label="Excelでダウンロード">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                                  </a>
+                                )}
                                 {/* 連携済みならスプレッドシートを直接開けるようにする（閲覧時も表示） */}
                                 {o.sheetUrl && (
                                   <a className="forms-op on" href={o.sheetUrl} target="_blank" rel="noreferrer" title={"スプレッドシートを開く\n" + o.sheetUrl} aria-label="スプレッドシートを開く">
@@ -2829,6 +2890,7 @@ export default function TaskBoard({ mode = "view" }) {
             </select>
           </label>
 
+          <DriveLinks note="Agoda から届いた Excel は「アップ先」に置いてスプレッドシートに変換し、そのURLを下に貼ってください。" />
           <label className="fld">
             スプレッドシートURL（受注数・完了数の自動取得。対象のタブを開いた状態でコピー）
             <input
@@ -3036,6 +3098,7 @@ export default function TaskBoard({ mode = "view" }) {
                     placeholder="https://docs.google.com/spreadsheets/d/.../edit#gid=..."
                   />
                 </label>
+                <DriveLinks note="完了・保留になったら、シートを該当のフォルダへ移動してください。" />
                 <div className="cfg-grid">
                   <label className="fld">
                     受注数のセル
