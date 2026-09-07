@@ -9470,10 +9470,10 @@ tbody tr:nth-child(even),
   background: transparent;
 }
 
-/* ページの下地を白に */
+/* ページの下地はグレー（カードの白と分かれるよう、彩度のない淡いグレー） */
 :root {
-  --bg: #ffffff;
+  --bg: #f2f3f5;
 }
 body {
-  background: #ffffff;
+  background: #f2f3f5;
 }
