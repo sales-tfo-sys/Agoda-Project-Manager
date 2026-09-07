@@ -10776,7 +10776,7 @@ button.drive-link:disabled {
   padding-left: 9px;
   border-left-width: 4px;
 }
-/* 件数バッジが上に寄って見えるので、行の中央に揃える。
+/* 件数バッジを行の中央に揃える。
    幾何的には中央だが、隣の日本語は文字の重心が少し下にあるため
    0.5px だけ下げて見た目を合わせる */
 .segbar-btn .seg-count,
@@ -10785,6 +10785,15 @@ button.drive-link:disabled {
   position: relative;
   top: 0.5px;
   vertical-align: middle;
+}
+/* 丸の中の数字が上に寄る件。
+   line-height:1 だと行ボックスが数字の高さぴったりになり、
+   フォントの下側の余白ぶんだけ数字が上に見える。
+   行ボックスを丸の高さいっぱいにして、中央に座らせる。 */
+.seg-count {
+  line-height: 15px;
+  padding-top: 1px;
+  box-sizing: border-box;
 }
 
 /* 工数入力の保存はアイコンボタン。押せると分かるようにブランド色で塗る */
@@ -10811,4 +10820,24 @@ button.drive-link:disabled {
 }
 .kosu-page .sec-row .segbar-sm .segbar-btn {
   height: 24px;
+}
+
+/* 工数明細：ダッシュボードと連動している印（青丸）は作業内容列の右端に置く。
+   名前のすぐ後ろだと作業内容ごとに位置がばらついて読みにくいため。 */
+.kosu-table td.c-content.has-link {
+  padding-right: 20px;
+}
+.kosu-table td.c-content.has-link .link-dot {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 0;
+}
+/* 完了タブは右端に Complete バッジが出るので、その左に置く */
+.kosu-table td.c-content.has-done.has-link {
+  padding-right: 100px;
+}
+.kosu-table td.c-content.has-done.has-link .link-dot {
+  right: 84px;
 }

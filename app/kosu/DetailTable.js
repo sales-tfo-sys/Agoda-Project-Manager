@@ -727,7 +727,7 @@ export default function DetailTable({ title, compact = false }) {
                 grp.rows.map((r, ri) => (
                   <tr
                     key={grp.type + r.detail + r.tanto + ri}
-                    className={r.unit === "time" ? "row-time" : ""}
+                    className={/作業時間/.test(r.detail || "") ? "row-time" : ""}
                   >
                     {ri === 0 ? (
                       <td className="l type-cell c-type" rowSpan={grp.rows.length}>
@@ -746,7 +746,11 @@ export default function DetailTable({ title, compact = false }) {
                       return (
                         <>
                           <td
-                            className={"l c-content" + (tab === "done" ? " has-done" : "")}
+                            className={
+                              "l c-content" +
+                              (tab === "done" ? " has-done" : "") +
+                              (srcTasks.length > 0 ? " has-link" : "")
+                            }
                           >
                             {name}
                             {tab === "done" && (
