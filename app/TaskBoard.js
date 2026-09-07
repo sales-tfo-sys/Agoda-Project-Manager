@@ -853,7 +853,10 @@ export default function TaskBoard({ mode = "view" }) {
       // Ad Hoc のシート連携（受注数・完了数）も取得。更新のたびに最新化する。
       fetch("/api/adhoc-counts", { cache: "no-store" })
         .then((r) => r.json())
-        .then((j) => setSheetCounts(j.items || {}))
+        .then((j) => {
+          setSheetCounts(j.items || {});
+          setSheetErrors(j.errors || {});
+        })
         .catch(() => {});
     } catch (e) {
       setError(String(e?.message || e));
@@ -1109,6 +1112,8 @@ export default function TaskBoard({ mode = "view" }) {
   const [adhocTab, setAdhocTab] = useState("active"); // active（対応中）/ done（完了）
   // 各Ad Hocタスクの受注数・完了数（登録シートのセルから取得）: { [task]: {total, done} }
   const [sheetCounts, setSheetCounts] = useState({});
+  // シートを読めなかったタスクの理由（連携ボタンとモーダルに出す）
+  const [sheetErrors, setSheetErrors] = useState({});
   // シート連携の設定モーダル対象タスク
   const [cfgTask, setCfgTask] = useState(null);
   // 詳細編集モーダル（管理表に列が無い項目）の対象タスク
@@ -1662,9 +1667,12 @@ export default function TaskBoard({ mode = "view" }) {
             {/* 対象年は「全体」「案件詳細」の集計に使うもの。
                 スケジュールは Ad Hoc の開始日・期日で表示するので出さない。 */}
             {years.length > 0 && activeTab !== "schedule" && (
-              <label className="head-year">
-                対象年
-                <select value={year ?? ""} onChange={(e) => setYear(Number(e.target.value))}>
+              <label className="head-year head-year-bare">
+                <select
+                  value={year ?? ""}
+                  onChange={(e) => setYear(Number(e.target.value))}
+                  aria-label="対象年"
+                >
                   {years.map((y) => (
                     <option key={y} value={y}>
                       {y} 年
@@ -1920,9 +1928,17 @@ export default function TaskBoard({ mode = "view" }) {
                                     />
                                     <button
                                       type="button"
-                                      className={"klink-btn klink-sheet" + (o.sheetUrl ? " on" : "")}
+                                      className={
+                                        "klink-btn klink-sheet" +
+                                        (o.sheetUrl ? " on" : "") +
+                                        (sheetErrors[row.key] ? " ng" : "")
+                                      }
                                       onClick={() => setCfgTask(row.key)}
-                                      title="スプレッドシート連携（受注数・完了数を自動取得）"
+                                      title={
+                                        sheetErrors[row.key]
+                                          ? "シートを読めませんでした：" + sheetErrors[row.key]
+                                          : "スプレッドシート連携（受注数・完了数を自動取得）"
+                                      }
                                       aria-label="シート連携を設定"
                                     >
                                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -1953,7 +1969,9 @@ export default function TaskBoard({ mode = "view" }) {
                                         </span>
                                       )}
                                       {o.sheetUrl && (
-                                        <span className="mng-link-mark sheet" title={`スプレッドシート連携中（受注数・完了数を自動取得）\n${o.sheetUrl}`} aria-label="シート連携あり">
+                                        <span className={"mng-link-mark sheet" + (sheetErrors[row.key] ? " ng" : "")} title={sheetErrors[row.key] ? `シートを読めませんでした：
+${sheetErrors[row.key]}` : `スプレッドシート連携中（受注数・完了数を自動取得）
+${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めませんでした" : "シート連携あり"}>
                                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="9" x2="9" y2="21" /></svg>
                                         </span>
                                       )}
@@ -2305,7 +2323,7 @@ export default function TaskBoard({ mode = "view" }) {
                   )}
                   </span>
                 </div>
-                <div className="card no-pad">
+                <div className="qcard adhoc-card">
                   <div className="dtw adhoc-tw">
                     {/* 幅は100%。指定のない最終列（メモ）が余白を全部吸収する */}
                     <table
@@ -3218,10 +3236,15 @@ export default function TaskBoard({ mode = "view" }) {
                     />
                   </label>
                 </div>
+                {sheetErrors[cfgTask] && (
+                  <div className="banner err-banner cfg-err">
+                    シートを読めませんでした：{sheetErrors[cfgTask]}
+                  </div>
+                )}
                 <p className="modal-note">
-                  対象シートは「リンクを知っている全員が閲覧可」にしてください。
                   <b>読み取るタブを開いた状態のURL</b>を貼ってください（URL末尾の <code>gid</code> でタブを判別します）。
-                  受注数・完了数は<b>同じタブ</b>にある前提です。入力は自動保存され、ダッシュボードの「更新」で最新値を取得します。
+                  受注数・完了数は<b>同じタブ</b>にある前提です。入力は自動保存され、次回の読み込みで最新値を取得します。
+                  シートはサービスアカウントに「閲覧者」で共有するか、「リンクを知っている全員が閲覧可」にしてください。
                   別タブに分かれている場合はお知らせください。
                 </p>
               </div>

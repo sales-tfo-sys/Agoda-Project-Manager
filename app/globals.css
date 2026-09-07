@@ -10527,3 +10527,31 @@ button.drive-link:disabled {
     padding-left: 8px;
   }
 }
+
+/* ダッシュボードの Ad Hoc Task も Regular と同じ枠（丸角のカード）に置く。
+   .card.no-pad の全幅扱いをやめたので、左右の位置も Regular の表と揃う */
+.adhoc-card {
+  width: 100%;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.adhoc-card .adhoc-tw {
+  overflow-x: auto;
+}
+/* 「対象年」のラベル文字は出さずプルダウンだけにする */
+.head-year-bare {
+  gap: 0;
+}
+
+/* シート連携：読めていないタスクは連携ボタンを警告色にする */
+.klink-btn.klink-sheet.ng {
+  color: #e5484d;
+  border-color: #f0b7b9;
+  background: #fdecea;
+}
+.cfg-err {
+  margin: 10px 0 0;
+}
+.mng-link-mark.sheet.ng {
+  color: #e5484d;
+}
