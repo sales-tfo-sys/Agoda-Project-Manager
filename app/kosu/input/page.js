@@ -239,6 +239,21 @@ export default function KosuInputPage() {
   // メンバー本人は自分ぶんだけ
   const selfOnly = !isManager && myId ? myId : null;
 
+  // その日に「実際に記録がある」作業・担当者。
+  // 通常の表示条件から外れていても、記録があるものは表に出して編集できるようにする。
+  const recorded = useMemo(() => {
+    const tasksWith = new Set();
+    const personsWith = new Set();
+    for (const e of dayEntries) {
+      const v = Number(e.value) || 0;
+      const c = e.done_count == null ? 0 : Number(e.done_count) || 0;
+      if (!v && !c) continue; // 空の記録は対象にしない
+      tasksWith.add(e.task_id);
+      personsWith.add(e.person_id);
+    }
+    return { tasks: tasksWith, persons: personsWith };
+  }, [dayEntries]);
+
   // 表示する作業：
   //  ・Regular task は従来どおり常に固定表示（進捗・担当の絞り込みをしない）
   //  ・Ad Hoc task は進捗が「On Track / Behind」のものだけ（Onhold・Complete は出さない）
@@ -246,7 +261,7 @@ export default function KosuInputPage() {
   //    ※進捗が未設定のものは判断できないので従来どおり表示する
   //  ・あわせて、開始日より前の日付では表示しない
   const visibleTasks = useMemo(() => {
-    return tasks.filter((t) => {
+    const base = tasks.filter((t) => {
       // 「トータル作業時間」は入力する作業ではなく、工数明細で自動計算する集計行。
       // 入力画面には出さない。
       if (/トータル作業時間/.test(t.content || "")) return false;
@@ -321,56 +336,36 @@ export default function KosuInputPage() {
       // 本人が担当かどうかでは絞らない（期間内・未完了ならすべて表示）。
       return true;
     });
-  }, [tasks, link, date]);
+
+    // 上の条件から外れていても、その日に記録がある作業は表に出す。
+    // 完了した作業や無効化した作業の記録を、あとから直せなくならないようにするため。
+    const shown = new Set(base.map((t) => t.id));
+    const dict = allTasks.length ? allTasks : tasks;
+    const extra = dict
+      .filter(
+        (t) =>
+          !shown.has(t.id) &&
+          recorded.tasks.has(t.id) &&
+          !/トータル作業時間/.test(t.content || "") // 自動集計行は入力対象外
+      )
+      .map((t) => ({ ...t, viaRecord: true }));
+    return [...base, ...extra];
+  }, [tasks, allTasks, link, date, recorded]);
 
   // 表示する担当者：オーナー・管理者は入力対象に含めない（メンバーのみ）。
   // メンバー本人がログイン中は自分の列だけ。
   // Regular task は全員が入力するため、1件でも表示されていれば全員を出す。
   const visiblePersons = useMemo(() => {
-    const members = persons.filter(
-      (p) => !["owner", "admin"].includes(p.role || "member") && p.active !== false
-    );
+    const members = persons.filter((p) => !["owner", "admin"].includes(p.role || "member"));
+    const active = members.filter((p) => p.active !== false);
+    // 退職者は、その日に記録があるときだけ列を出す（過去分を確認・修正できるように）。
+    // 記録が無い日は列を増やさない。
+    const gone = members.filter((p) => p.active === false && recorded.persons.has(p.id));
     // メンバー本人は自分の列だけ。オーナー・管理者は全メンバーの列を編集できる。
     // Ad Hoc も含め、全メンバーが入力対象（担当者に限定しない）。
-    // 退職者は入力対象外（過去の実績は下の「この日の他の記録」で参照する）。
-    if (selfOnly) return members.filter((p) => p.id === selfOnly);
-    return members;
-  }, [persons, selfOnly]);
-
-  // 入力表に出ない実績（完了した作業・退職したメンバーなど）を参照用にまとめる。
-  // これが無いと、退職者が対応した過去の工数を画面から確認できなくなる。
-  const historyRows = useMemo(() => {
-    if (!dayEntries.length) return [];
-    const shownTask = new Set(visibleTasks.map((t) => t.id));
-    const shownPerson = new Set(visiblePersons.map((p) => p.id));
-    const taskById = new Map(allTasks.map((t) => [t.id, t]));
-    const personById = new Map(persons.map((p) => [p.id, p]));
-    const out = [];
-    for (const e of dayEntries) {
-      // 入力表のセルとして出ているものは重複するので載せない
-      if (shownTask.has(e.task_id) && shownPerson.has(e.person_id)) continue;
-      const v = Number(e.value) || 0;
-      const c = e.done_count == null ? null : Number(e.done_count) || 0;
-      if (!v && !c) continue; // 空の記録は出さない
-      const t = taskById.get(e.task_id);
-      // トータル作業時間は自動集計なので参照表には載せない
-      if (t && /トータル作業時間/.test(t.content || "")) continue;
-      const p = personById.get(e.person_id);
-      if (p && ["owner", "admin"].includes(p.role || "member")) continue;
-      out.push({
-        key: e.task_id + "|" + e.person_id,
-        type: t?.task_type || "—",
-        content: t?.content || "（削除された作業）",
-        person: p?.name || "（退職者）",
-        retired: p ? p.active === false : true,
-        value: v,
-        done: c,
-      });
-    }
-    return out.sort(
-      (a, b) => a.type.localeCompare(b.type, "ja") || a.content.localeCompare(b.content, "ja")
-    );
-  }, [dayEntries, visibleTasks, visiblePersons, allTasks, persons]);
+    if (selfOnly) return active.filter((p) => p.id === selfOnly);
+    return [...active, ...gone];
+  }, [persons, selfOnly, recorded]);
 
   // 全メンバーが入力できるよう、表示されている作業は全員が入力可。
   const isAssigned = useCallback(() => true, []);
@@ -552,7 +547,14 @@ export default function KosuInputPage() {
                   <th className="l">作業内容</th>
                   <th>単位</th>
                   {visiblePersons.map((p) => (
-                    <th key={p.id}>{p.name}</th>
+                    <th key={p.id}>
+                      {p.name}
+                      {p.active === false && (
+                        <span className="col-ret" title="退職済み。この日に記録があるため表示しています">
+                          退職
+                        </span>
+                      )}
+                    </th>
                   ))}
                 </tr>
               </thead>
@@ -565,7 +567,17 @@ export default function KosuInputPage() {
                           {grp.type}
                         </td>
                       ) : null}
-                      <td className="l">{t.content}</td>
+                      <td className="l">
+                        {t.content}
+                        {t.viaRecord && (
+                          <span
+                            className="task-rec"
+                            title="通常は表示されない作業ですが、この日に記録があるため表示しています"
+                          >
+                            記録あり
+                          </span>
+                        )}
+                      </td>
                       <td>
                         {isRegular(t) ? (
                           <span className={"unit-tag " + (t.unit === "time" ? "u-time" : "u-count")}>
@@ -636,46 +648,6 @@ export default function KosuInputPage() {
         </div>
       )}
 
-      {/* 入力表に出ない実績（完了した作業・退職したメンバー）の参照 */}
-      {historyRows.length > 0 && (
-        <>
-          <div className="sec-row hist-row">
-            <div className="sec-head">この日の他の記録</div>
-            <span className="hist-note">
-              完了した作業や退職したメンバーの記録です（参照のみ・編集できません）
-            </span>
-          </div>
-          <div className="card no-pad">
-            <div className="dtw">
-              <table className="dtable kosu-hist-table">
-                <thead>
-                  <tr>
-                    <th className="l">タスク種別</th>
-                    <th className="l">作業内容</th>
-                    <th className="l">担当</th>
-                    <th>稼働時間</th>
-                    <th>完了数</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {historyRows.map((r) => (
-                    <tr key={r.key}>
-                      <td className="l type-cell">{r.type}</td>
-                      <td className="l">{r.content}</td>
-                      <td className="l">
-                        {r.person}
-                        {r.retired && <span className="hist-ret">退職</span>}
-                      </td>
-                      <td>{r.value ? r.value.toLocaleString("ja-JP") : ""}</td>
-                      <td>{r.done == null || r.done === 0 ? "" : r.done.toLocaleString("ja-JP")}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </>
-      )}
     </div>
   );
 }

@@ -8981,38 +8981,26 @@ td.v-strong,
   font-weight: 800;
 }
 
-/* 工数入力：入力表に出ない実績（完了した作業・退職したメンバー）の参照表 */
-.hist-row {
-  margin-top: 18px;
-}
-.hist-note {
-  font-size: 11.5px;
-  color: var(--ink-2);
-}
-.kosu-hist-table {
-  width: 100%;
-}
-.kosu-hist-table thead th {
-  font-size: 12.5px;
-  font-weight: 800;
-}
-.kosu-hist-table tbody td {
-  font-weight: 600;
-  color: var(--ink-2);
-}
-.kosu-hist-table tbody td.type-cell {
-  font-weight: 800;
-}
-.hist-ret {
+/* 工数入力：通常は出ない列・行（退職者／この日に記録がある作業）の目印。
+   参照だけでなく編集もできるよう、入力表そのものに混ぜて出す。 */
+.kosu-input-table thead th .col-ret,
+.kosu-input-table tbody td .task-rec {
+  display: inline-block;
   margin-left: 6px;
   padding: 0 6px;
   font-size: 9.5px;
   font-weight: 700;
   line-height: 15px;
+  vertical-align: 1px;
   color: var(--ink-3);
-  background: var(--surface-soft);
-  border: 1px solid var(--border);
+  background: #ffffff;
+  border: 1px solid var(--border2);
   border-radius: 999px;
+}
+.kosu-input-table tbody td .task-rec {
+  color: var(--warn);
+  background: var(--warn-bg);
+  border-color: #ecd8a8;
 }
 
 /* タスク追加モーダル：項目が多いので本文をスクロールさせる */

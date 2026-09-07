@@ -118,13 +118,13 @@ const API_GROUPS = [
     group: "工数",
     rows: [
       ["GET", "/api/kosu", "ログイン", "工数明細の全データ（months / dates / isoDates / dateMonthIdx / holidayOf / dowOf / rows）を Supabase から組み立てる（60秒キャッシュ）。?list=1 で作業内容一覧のみ。"],
-      ["GET", "/api/kosu-tasks", "ログイン", "作業マスタ（active）。task_override(scope=adhoc) の name で表示名を差し替え、kosuLink でまとめた元タスクは除外（ただし実績があるものは残す）。?all=1 で無効化・集約したものも含む全件を返す（名前の解決用・除外なし）。"],
+      ["GET", "/api/kosu-tasks", "ログイン", "作業マスタ（active）。task_override(scope=adhoc) の name で表示名を差し替え、kosuLink でまとめた元タスクは除外（ただし実績があるものは残す）。?all=1 で無効化・集約したものも含む全件を返す（工数入力で「その日に記録がある作業」を出すのに使う・除外なし）。"],
       ["POST", "/api/kosu-tasks", "editTasks", "作業内容の追加。"],
       ["PATCH", "/api/kosu-tasks", "editTasks", "作業内容の更新（並べ替え・単位・active・completed）。completed 切替時に completed_on も更新。"],
       ["GET", "/api/kosu-entries", "ログイン", "?date= で1日ぶん、?from=&to= で期間ぶん（1000件超は offset で全件取得）。"],
       ["POST", "/api/kosu-entries", "ログイン（自分ぶん）", "(entry_date, task_id, person_id) で upsert。value と done_count が両方空なら削除。オーナー・管理者以外は自分の person_id 以外を含むと拒否。"],
       ["POST", "/api/kosu-import", "editTasks", "作業工数管理シートの過去データを kosu_entry に取り込む（移行用）。不足する kosu_task を作成し、Ad Hoc は実績者を task_assign に登録。"],
-      ["GET", "/api/kosu-status", "ログイン", "Supabase 接続状態と担当者一覧（id / name / role / active）。退職者も active=false 付きで返す（工数入力の参照表で名前を出すため）。"],
+      ["GET", "/api/kosu-status", "ログイン", "Supabase 接続状態と担当者一覧（id / name / role / active）。退職者も active=false 付きで返す（工数入力で過去の記録がある日だけ列を出すため）。"],
       ["GET", "/api/resource", "ログイン", "週次リソース。① kosu_entry から集計 ② 実績が無ければ作業リソースシートを読む（移行前の互換）。"],
     ],
   },
@@ -780,7 +780,7 @@ export default function DesignSpecPage() {
                   <>
                     対象日を選び、作業 × メンバーで稼働時間（Ad Hoc は稼働時間＋完了数）を入力して保存。
                     メンバー本人がログイン中なら自分の列だけ、オーナー・管理者は全メンバーの列を編集できる。
-                    入力表に出ない実績（完了した作業・退職したメンバー）は、下部の「この日の他の記録」に参照専用で表示する。
+                    通常の表示条件から外れていても、その日に記録がある作業は行として、退職したメンバーは列として表に出す（そのまま編集できる）。
                   </>,
                   <><C>/api/kosu-status</C>・<C>/api/kosu-tasks</C>・<C>/api/kosu-entries</C>・<C>/api/assign</C>・<C>/api/override</C>・<C>/api/adhoc</C>・<C>/api/auth/me</C></>,
                 ],
@@ -1006,8 +1006,12 @@ export default function DesignSpecPage() {
               </li>
               <li>開始日より前の日付では表示しない。完了済みは、期日（無ければ完了日）より後の日付では表示しない。</li>
               <li>
-                入力表に出ない実績は「この日の他の記録」に参照専用でまとめる（完了して表から消えた作業、退職したメンバーの記録など）。
-                値が入っていないもの、トータル作業時間、オーナー・管理者ぶんは載せない。
+                上の条件から外れていても、<b>その日に記録がある</b>作業は行として出す（「記録あり」バッジ付き）。
+                完了した作業や無効化した作業の記録を、あとから直せなくならないようにするため。トータル作業時間は自動集計なので対象外。
+              </li>
+              <li>
+                退職したメンバーも、その日に記録があるときだけ列を出す（「退職」バッジ付き）。記録が無い日は列を増やさない。
+                本人ログイン時（selfOnly）は自分の列だけなので、退職者の列は出ない。
               </li>
               <li>
                 担当者列は<b>メンバーのみ</b>（オーナー・管理者は作業者ではないので工数の対象外）。
