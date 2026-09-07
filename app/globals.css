@@ -10749,3 +10749,21 @@ button.drive-link:disabled {
   background: #fff;
   color: #6b2a30;
 }
+
+/* ══════════════ 完了の合図は緑で統一 ══════════════ */
+/* 保存・削除などが終わったときの丸いチェック（flashDone）。
+   グレーだと成功したのか分かりにくいので緑にする */
+.busy-check {
+  background: #2f9e57;
+  box-shadow: 0 6px 20px rgba(28, 110, 60, 0.32);
+}
+/* 上に出る成功メッセージ（showToast の ok）も同じ緑に揃える */
+.toast-ok {
+  background: #2f9e57;
+  box-shadow: 0 8px 24px rgba(28, 110, 60, 0.3);
+}
+/* チェックの下の文字はグレーの背景に白抜きだと読みにくいので濃色にする */
+.busy-text {
+  color: #234a33;
+  text-shadow: none;
+}
