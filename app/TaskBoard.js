@@ -1606,6 +1606,22 @@ export default function TaskBoard({ mode = "view" }) {
                                     onChange={(v) => setOvField(row.scope, row.key, "kosuLink", v)}
                                   />
                                 )}
+                                {/* シート連携の設定。グルーピングの隣に置く */}
+                                {row.kind === "Ad Hoc" && editable && (
+                                  <button
+                                    type="button"
+                                    className={"klink-btn" + (o.sheetUrl ? " on" : "")}
+                                    onClick={() => setCfgTask(row.key)}
+                                    title="スプレッドシート連携（受注数・完了数を自動取得）"
+                                    aria-label="シート連携を設定"
+                                  >
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                                      <line x1="3" y1="9" x2="21" y2="9" />
+                                      <line x1="9" y1="9" x2="9" y2="21" />
+                                    </svg>
+                                  </button>
+                                )}
                                 {!editable && o.kosuLink && o.kosuLink !== row.key && (
                                   <span className="mng-link-mark" title={`工数はこの作業にまとめています：\n${o.kosuLink}`} aria-label="工数グルーピングあり">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
@@ -1620,7 +1636,7 @@ export default function TaskBoard({ mode = "view" }) {
                             <td className="v-strong">{row.count == null ? "—" : row.count}</td>
                             <td>{row.done == null ? "—" : row.done}</td>
                             <td>{row.rate == null ? "—" : row.rate + "%"}</td>
-                            <td className="mng-ops">{row.kind === "Ad Hoc" ? (
+                            <td className="mng-ops">{row.kind === "Ad Hoc" && (o.sheetUrl || row.customId) ? (
                               <span className="mng-ops-wrap">
                                 {/* 連携済みならスプレッドシートを直接開けるようにする（閲覧時も表示） */}
                                 {o.sheetUrl && (
@@ -1628,11 +1644,7 @@ export default function TaskBoard({ mode = "view" }) {
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
                                   </a>
                                 )}
-                                {editable && (
-                                  <button type="button" className={"forms-op" + (o.sheetUrl ? " on" : "")} title="スプレッドシート連携（受注数・完了数を自動取得）" aria-label="シート連携" onClick={() => setCfgTask(row.key)}>
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="9" x2="9" y2="21" /></svg>
-                                  </button>
-                                )}
+                                {/* シート連携の設定ボタンはタスク名の横（グルーピングの隣）へ移設 */}
                                 {row.customId && (
                                   <button type="button" className="forms-op danger" title="削除" aria-label="削除" onClick={() => removeAdhoc({ id: row.customId, task: row.key })}>
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
