@@ -108,7 +108,7 @@ const API_GROUPS = [
     rows: [
       ["GET", "/api/priority", "ログイン", "task_priority の全件。"],
       ["POST", "/api/priority", "editTasks", "scope / key / priority を upsert。priority が空なら null（＝優先なし）。"],
-      ["GET", "/api/assign", "ログイン", "task_assign と担当者マスタ（active のみ）。ready=false はテーブル未作成。"],
+      ["GET", "/api/assign", "ログイン", "task_assign と担当者マスタ。退職者も active=false 付きで返す（完了タスクの「当時の担当者」を表示・設定できるようにするため）。ready=false はテーブル未作成。"],
       ["POST", "/api/assign", "editTasks", "personIds の並び順で差し替え保存。先頭が role=main、以降 sub。空配列で全解除。"],
       ["GET", "/api/override", "ログイン", "task_override の全件（全 scope）。"],
       ["POST", "/api/override", "editTasks", "data を丸ごと保存（部分マージなし）。空文字・null の項目は保存せず、全項目が空なら行ごと削除して元データに戻す。文字列は 2000 文字で切る。"],
@@ -133,7 +133,7 @@ const API_GROUPS = [
     rows: [
       ["GET", "/api/kosu-persons", "ログイン", "担当者一覧。?all=1 で退職者を含む全件。"],
       ["POST", "/api/kosu-persons", "editAccounts", "担当者の追加。役割・個別付与を設定できるのは grantPerms（オーナー）のみ。それ以外が作成すると必ず member・権限なし。"],
-      ["PATCH", "/api/kosu-persons", "editAccounts", "改名・メール・並び順・退職／復帰など。role / can_edit_* の変更はオーナーのみ（403）。メール未設定で can_login=true は拒否。退職にすると task_assign と app_session も削除。"],
+      ["PATCH", "/api/kosu-persons", "editAccounts", "改名・メール・並び順・退職／復帰など。role / can_edit_* の変更はオーナーのみ（403）。メール未設定で can_login=true は拒否。退職にするとログインセッション（app_session）だけ削除し、担当割当と実績は履歴として残す。"],
       ["DELETE", "/api/kosu-persons", "editAccounts", "完全削除。kosu_entry が1件でもあれば拒否（「退職」を案内）。assign / session を外してから削除し、Supabase Auth のユーザーも best-effort で削除。"],
       ["POST", "/api/kosu-persons/password", "—（緊急用）", "管理者がログインパスワードを設定／変更。パスワードは Supabase に渡すだけで保存・記録しない。"],
       ["GET", "/api/page-perms", "viewAccounts", "対象ユーザーの実効ページ権限（既定＋保存済みの上書き）。"],
@@ -1035,7 +1035,7 @@ export default function DesignSpecPage() {
               <li>日付は表示・保存とも <C>YYYY/MM/DD</C>。<C>&lt;input type=&quot;date&quot;&gt;</C> 用に <C>YYYY-MM-DD</C> と相互変換する。</li>
               <li>数値は 3 桁区切り。数値に見えないもの（<C>98%</C>・<C>1h 100件</C> など）はそのまま表示する。</li>
               <li>上書きの保存は 600ms のデバウンスでまとめてから送る。</li>
-              <li>退職者は担当者一覧から外れるため、割当に残っていると名前が「?」になる。解決できる現役だけを採用して表示・カウントから除外する。</li>
+              <li>退職した担当者も割当を残し、対応者欄に「退職」と分かる形で表示する。対応者の選択肢に出すのは、既に割り当てられている場合か、そのタスクが Complete のときだけ。</li>
               <li>フィルターやタブの選択枠は、選択中ボタンの実寸を測って CSS 変数（<C>--thumb-x</C> / <C>--thumb-w</C>）に渡し、<C>transform</C> で滑らかに移動させる。</li>
             </Ul>
           </Sec>

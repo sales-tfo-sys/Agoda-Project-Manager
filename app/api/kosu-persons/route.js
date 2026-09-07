@@ -134,13 +134,10 @@ export async function PATCH(req) {
       body: patch,
       prefer: "return=representation",
     });
-    // 退職（active=false）にしたら、担当割当とログインセッションも外す。
-    // 実績（kosu_entry）は履歴として残す。これをしないと対応者一覧に「?」で残る。
+    // 退職（active=false）にしたらログインセッションだけ外す（すぐアクセスを止める）。
+    // 担当割当（task_assign）と実績（kosu_entry）は履歴として残す。
+    // 割当まで消すと、完了したタスクの「当時の担当者」が分からなくなるため。
     if (patch.active === false) {
-      await sb(`task_assign?person_id=eq.${encodeURIComponent(b.id)}`, {
-        method: "DELETE",
-        prefer: "return=minimal",
-      }).catch(() => null);
       await sb(`app_session?person_id=eq.${encodeURIComponent(b.id)}`, {
         method: "DELETE",
         prefer: "return=minimal",

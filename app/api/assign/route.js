@@ -10,9 +10,11 @@ export async function GET() {
     return Response.json({ configured: false, items: [], persons: [] });
   }
   // task_assign が未作成でも担当者一覧は返す（SQL実行前でも画面が壊れないように）
+  // 退職者も active=false 付きで返す。完了したタスクの「当時の担当者」を
+  // 表示・設定できるようにするため、ここで在籍者だけに絞り込まない。
   const [items, persons] = await Promise.all([
     sb("task_assign?select=scope,key,person_id,role&order=role,updated_at").catch(() => null),
-    sb("kosu_person?active=eq.true&order=sort_order&select=id,name,role").catch(() => null),
+    sb("kosu_person?order=active.desc,sort_order&select=id,name,role,active").catch(() => null),
   ]);
   return Response.json({
     configured: true,

@@ -294,7 +294,8 @@ export default function DetailTable({ title, compact = false }) {
             const tid = taskIdOf.get(content);
             const isTotal = /トータル作業時間/.test(content);
             for (const p of asg?.persons || []) {
-              if (!isWorker(p) || info.names.has(p.name)) continue;
+              // 退職者は空行を増やさない（過去の実績がある行は上で作られる）
+              if (!isWorker(p) || p.active === false || info.names.has(p.name)) continue;
               info.names.add(p.name);
               const vals = isTotal
                 ? totalByPid.get(p.id) || {}

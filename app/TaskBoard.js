@@ -256,7 +256,7 @@ function buildPending(records, y) {
 }
 
 // 作業ごとの担当アサイン（複数人・先頭が主担当）。セルをクリックで選択パネルを開く。
-function AssignCell({ scope, akey, ids, persons, setAssign }) {
+function AssignCell({ scope, akey, ids, persons, retired = [], allowRetired = false, setAssign }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState(null); // 表は横スクロールするため position:fixed で出す
   const ref = useRef(null);
@@ -292,7 +292,16 @@ function AssignCell({ scope, akey, ids, persons, setAssign }) {
       window.removeEventListener("scroll", onScroll, true);
     };
   }, [open]);
-  const nameOf = (id) => persons.find((p) => p.id === id)?.name || "?";
+  // 選択肢は「在籍中の担当者」＋「退職者のうち、完了タスク or すでに割当済みの人」。
+  // 完了したタスクは当時の担当者を残す／設定できる必要があるため、退職しても隠さない。
+  const options = [
+    ...persons.map((p) => ({ ...p, gone: false })),
+    ...retired
+      .filter((p) => allowRetired || ids.includes(p.id))
+      .map((p) => ({ ...p, gone: true })),
+  ];
+  const optOf = (id) => options.find((p) => p.id === id);
+  const nameOf = (id) => optOf(id)?.name || "?";
   const toggle = (id) =>
     setAssign(scope, akey, ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]);
 
@@ -304,10 +313,10 @@ function AssignCell({ scope, akey, ids, persons, setAssign }) {
       style={pos ? { top: pos.top, left: pos.left } : undefined}
     >
       <div className="asg-pop-h">担当者</div>
-      {persons.length === 0 ? (
+      {options.length === 0 ? (
         <div className="asg-none">担当者が未登録です</div>
       ) : (
-        persons.map((p) => (
+        options.map((p) => (
           <label key={p.id} className="asg-item">
             <input
               type="checkbox"
@@ -315,6 +324,7 @@ function AssignCell({ scope, akey, ids, persons, setAssign }) {
               onChange={() => toggle(p.id)}
             />
             <span>{p.name}</span>
+            {p.gone && <span className="asg-ret">退職</span>}
           </label>
         ))
       )}
@@ -501,6 +511,7 @@ function SummaryTable({
   assignOf,
   setAssign,
   persons = [],
+  retired = [],
   ovOf,
   setOvField,
   edit = false,
@@ -516,7 +527,9 @@ function SummaryTable({
         return pa - pb || types.indexOf(a) - types.indexOf(b);
       })
     : types;
-  const nameOf = (id) => persons.find((p) => p.id === id)?.name || "?";
+  // 退職者も名前を引けるようにする（当時の担当者を「?」にしない）
+  const nameOf = (id) =>
+    persons.find((p) => p.id === id)?.name || retired.find((p) => p.id === id)?.name || "?";
   return (
     <div className="summary-block">
       <div className="sec-row">
@@ -630,6 +643,8 @@ function SummaryTable({
                         akey={t}
                         ids={ids}
                         persons={persons}
+                        retired={retired}
+                        allowRetired={o.status === "Complete"}
                         setAssign={setAssign}
                       />
                     ) : handlers.length ? (
@@ -872,7 +887,8 @@ export default function TaskBoard({ mode = "view" }) {
 
   // 作業ごとの担当アサイン（Supabaseに保存）
   const [assign, setAssignMap] = useState({}); // { "scope|key": [person_id,...] }
-  const [persons, setPersons] = useState([]);
+  const [persons, setPersons] = useState([]); // 在籍中の作業者（対応者の既定の選択肢）
+  const [retiredPersons, setRetiredPersons] = useState([]); // 退職した作業者
   useEffect(() => {
     (async () => {
       try {
@@ -881,13 +897,12 @@ export default function TaskBoard({ mode = "view" }) {
         const workers = (j.persons || []).filter(
           (p) => !["owner", "admin"].includes(p.role || "member")
         );
-        // 退職者（active=false で一覧から外れた担当者）は persons に居ないため、
-        // 割当に残っていると名前が「?」になる。解決できる現役だけを採用して表示・
-        // カウントから除外する。
-        const validSet = new Set(workers.map((p) => p.id));
+        // 退職者の割当も残す。完了したタスクは「当時の担当者」が分からなくなると
+        // 設定し直せないため、退職を理由に割当を捨てない（名前を引けない分だけ除外）。
+        const known = new Set(workers.map((p) => p.id));
         const m = {};
         for (const it of j.items || []) {
-          if (!validSet.has(it.person_id)) continue;
+          if (!known.has(it.person_id)) continue;
           const k = `${it.scope}|${it.key}`;
           if (!m[k]) m[k] = [];
           // 主担当を先頭に保つ
@@ -895,10 +910,18 @@ export default function TaskBoard({ mode = "view" }) {
           else m[k].push(it.person_id);
         }
         setAssignMap(m);
-        setPersons(workers);
+        setPersons(workers.filter((p) => p.active !== false));
+        setRetiredPersons(workers.filter((p) => p.active === false));
       } catch {}
     })();
   }, []);
+  // 在籍・退職の両方から担当者を引く（表示用）
+  const personById = useMemo(() => {
+    const m = new Map();
+    for (const p of persons) m.set(p.id, p);
+    for (const p of retiredPersons) m.set(p.id, p);
+    return m;
+  }, [persons, retiredPersons]);
   // 画面から編集した内容（上書き）
   const [ov, setOv] = useState({}); // { "scope|key": {field: value} }
   const ovRef = useRef({});
@@ -1642,7 +1665,7 @@ export default function TaskBoard({ mode = "view" }) {
                             </td>
                             <td className="mng-date">{row.kind === "Ad Hoc" ? (editable ? dateField(row, "start") : (row.start || "—")) : <span className="mng-dim">—</span>}</td>
                             <td className="mng-date">{row.kind === "Ad Hoc" ? (editable ? dateField(row, "end") : (row.end || "—")) : <span className="mng-dim">—</span>}</td>
-                            <td className="l">{editable ? (<AssignCell scope={row.scope} akey={row.key} ids={ids} persons={persons} setAssign={setAssign} />) : (ids.map((id) => persons.find((p) => p.id === id)?.name).filter(Boolean).join("、") || "—")}</td>
+                            <td className="l">{editable ? (<AssignCell scope={row.scope} akey={row.key} ids={ids} persons={persons} retired={retiredPersons} allowRetired={row.status === "Complete"} setAssign={setAssign} />) : (ids.length ? ids.map((id) => { const p = personById.get(id); return p ? (<span key={id} className={"mng-asg-name" + (p.active === false ? " gone" : "")} title={p.active === false ? `${p.name}（退職）` : undefined}>{p.name}</span>) : null; }).filter(Boolean) : "—")}</td>
                             <td>{editable ? (<select className="ed-input ed-sel" value={row.status || ""} onChange={(e) => setOvField(row.scope, row.key, "status", e.target.value)}><option value="">—</option>{STATUS_OPTIONS.map((s) => (<option key={s} value={s}>{s}</option>))}</select>) : (<span className={"st-pill " + statusClass(row.status)}>{row.status || "—"}</span>)}</td>
                             <td className="v-strong">{row.count == null ? "—" : row.count}</td>
                             <td>{row.done == null ? "—" : row.done}</td>
@@ -1686,6 +1709,7 @@ export default function TaskBoard({ mode = "view" }) {
                 assignOf={assignOf}
                 setAssign={setAssign}
                 persons={persons}
+                retired={retiredPersons}
                 ovOf={ovOf}
                 setOvField={setOvField}
                 edit={editable}
@@ -1710,6 +1734,7 @@ export default function TaskBoard({ mode = "view" }) {
                     assignOf={assignOf}
                     setAssign={setAssign}
                     persons={persons}
+                    retired={retiredPersons}
                     ovOf={ovOf}
                     setOvField={setOvField}
                     edit={editable}
@@ -1884,7 +1909,7 @@ export default function TaskBoard({ mode = "view" }) {
                           const o = ovOf("adhoc", t.task);
                           const ids = assignOf("adhoc", t.task);
                           const names = ids.length
-                            ? ids.map((id) => persons.find((p) => p.id === id)?.name || "?")
+                            ? ids.map((id) => personById.get(id)?.name || "?")
                             : null;
                           // 上書きがあればそれを、なければ元データを表示
                           const val = (k, src) => (o[k] !== undefined ? o[k] : src);
@@ -2163,6 +2188,8 @@ export default function TaskBoard({ mode = "view" }) {
                                   akey={t.task}
                                   ids={ids}
                                   persons={persons}
+                                  retired={retiredPersons}
+                                  allowRetired={status === "Complete"}
                                   setAssign={setAssign}
                                 />
                               ) : names ? (

@@ -8932,3 +8932,51 @@ td.v-strong,
   font-size: 11px;
   color: var(--ink-3);
 }
+
+/* ─────────────────────────────────────────────────────────
+   退職した担当者の表示
+   完了したタスクは「当時の担当者」を残す必要があるため、退職しても
+   割当を消さずに、退職と分かる形で表示する。
+   ───────────────────────────────────────────────────────── */
+/* 対応者パネルの「退職」バッジ */
+.asg-ret {
+  margin-left: auto;
+  padding: 0 5px;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 15px;
+  color: var(--ink-3);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+/* 管理表の対応者（読み取り時）。退職者は淡く＋点線の下線で区別する */
+.mng-asg-name:not(:last-child)::after {
+  content: "、";
+  color: var(--ink-3);
+}
+.mng-asg-name.gone {
+  color: var(--ink-3);
+  text-decoration: underline dotted var(--border2);
+  text-underline-offset: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────
+   工数入力：入力しながら読む画面なので、文字を太め・見出しを大きめに
+   ───────────────────────────────────────────────────────── */
+.kosu-input-table thead th {
+  font-size: 14px;
+  font-weight: 800;
+}
+.kosu-input-table tbody td {
+  font-weight: 600;
+}
+.kosu-input-table .type-cell {
+  font-weight: 800;
+}
+.kosu-input-table .cell-input {
+  font-weight: 700;
+}
+.kosu-input-table .qtotal td {
+  font-weight: 800;
+}
