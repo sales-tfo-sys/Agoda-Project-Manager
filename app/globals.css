@@ -10787,13 +10787,13 @@ button.drive-link:disabled {
   vertical-align: middle;
 }
 /* 丸の中の数字が上に寄る件。
-   line-height:1 だと行ボックスが数字の高さぴったりになり、
-   フォントの下側の余白ぶんだけ数字が上に見える。
-   行ボックスを丸の高さいっぱいにして、中央に座らせる。 */
+   上だけ余白を入れると中身の箱が下にずれ、中央寄せの数字もそのぶん下がる。
+   幅は3桁（100件以上）でも崩れないように広げておく。 */
 .seg-count {
-  line-height: 15px;
-  padding-top: 1px;
   box-sizing: border-box;
+  min-width: 26px;
+  padding: 3px 7px 0;
+  line-height: 1;
 }
 
 /* 工数入力の保存はアイコンボタン。押せると分かるようにブランド色で塗る */
