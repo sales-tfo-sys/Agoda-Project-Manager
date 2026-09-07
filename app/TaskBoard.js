@@ -1031,6 +1031,9 @@ export default function TaskBoard({ mode = "view" }) {
       setAddError(j.error);
       return;
     }
+    // 追加直後の進捗は「On Track」を初期値にする。
+    // 未設定のままだと工数入力に出る条件が判断できないため、対応中として始める。
+    setOvField("adhoc", name, "status", "On Track");
     // Regular 区分として追加する場合は、カスタムタスクに区分マーカーを付ける
     // （設定は scope="adhoc" に保存し、表示上 Regular セクションに並べる）
     if (newBoard === "regular") {
@@ -2371,6 +2374,7 @@ export default function TaskBoard({ mode = "view" }) {
         </div>
         {addError && <div className="modal-err">{addError}</div>}
         <p className="modal-note">
+          進捗は <b>On Track</b> で登録されます（あとから一覧で変更できます）。
           区分は工数側にも引き継がれます。<b>Regular</b> は工数入力に常時表示される作業、
           <b>Ad Hoc</b> は進捗が On Track / Behind のときだけ表示される作業になります。
         </p>
