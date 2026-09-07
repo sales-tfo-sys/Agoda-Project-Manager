@@ -9269,3 +9269,34 @@ td.v-strong,
   font-size: 12px;
   color: var(--ink-3);
 }
+
+/* Ad Hoc Task 表（閲覧時）：グルーピング／シート連携の印をタスク列の右端に寄せる */
+.adhoc-table .tname-view {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+.adhoc-table .tname-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.adhoc-table .tname-marks {
+  flex: none;
+  margin-left: auto;
+  padding-left: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+/* 印は2つとも同じ見た目（青の線画）に揃える */
+.adhoc-table .tname-marks .klink-mark,
+.adhoc-table .tname-marks .sheet-mark {
+  margin-left: 0;
+  color: var(--accent);
+  background: transparent;
+}

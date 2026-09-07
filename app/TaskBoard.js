@@ -2354,26 +2354,39 @@ export default function TaskBoard({ mode = "view" }) {
                                   )}
                                 </span>
                               ) : (
-                                <>
-                                  {val("name", t.task)}
-                                  {o.kosuLink && (
-                                    <span className="klink-mark" aria-hidden="true">
-                                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7" />
-                                        <path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" />
-                                      </svg>
+                                // グルーピング／シート連携の印はタスク列の右端に寄せる
+                                <span className="tname-view">
+                                  <span className="tname-text">{val("name", t.task)}</span>
+                                  {(o.kosuLink || o.sheetUrl) && (
+                                    <span className="tname-marks">
+                                      {o.kosuLink && (
+                                        <span
+                                          className="klink-mark"
+                                          title={
+                                            o.kosuLink === t.task
+                                              ? `工数明細の作業：\n${o.kosuLink}`
+                                              : `工数はこの作業にまとめています：\n${o.kosuLink}`
+                                          }
+                                          aria-label="工数グルーピングあり"
+                                        >
+                                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7" />
+                                            <path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" />
+                                          </svg>
+                                        </span>
+                                      )}
+                                      {o.sheetUrl && (
+                                        <span className="sheet-mark" title={"シート連携中（受注数・完了数を自動取得）\n" + o.sheetUrl} aria-label="シート連携あり">
+                                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                                            <line x1="3" y1="9" x2="21" y2="9" />
+                                            <line x1="9" y1="9" x2="9" y2="21" />
+                                          </svg>
+                                        </span>
+                                      )}
                                     </span>
                                   )}
-                                  {o.sheetUrl && (
-                                    <span className="sheet-mark" title="シート連携中（受注数・完了数を自動取得）" aria-hidden="true">
-                                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                                        <rect x="3" y="3" width="18" height="18" rx="2" />
-                                        <line x1="3" y1="9" x2="21" y2="9" />
-                                        <line x1="9" y1="9" x2="9" y2="21" />
-                                      </svg>
-                                    </span>
-                                  )}
-                                </>
+                                </span>
                               )}
                             </td>
                             <td className="period">{ed ? dateIn("start", t.start) : cell(val("start", t.start))}</td>
