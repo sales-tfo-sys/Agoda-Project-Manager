@@ -779,17 +779,17 @@ h1 {
 /* 数値・内訳列は均一幅・中央揃え・見出しは1行・行は低め */
 .qtable.summary-table th,
 .qtable.summary-table td {
-  width: 66px;
-  padding: 3px 5px;
+  width: 78px;
+  padding: 5px 9px;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
-  line-height: 1.35;
+  line-height: 1.4;
 }
 .qtable.summary-table th {
-  padding: 6px 5px;
-  font-size: 10px;
-  letter-spacing: -0.02em;
+  padding: 8px 9px;
+  font-size: 10.5px;
+  letter-spacing: -0.01em;
 }
 .qtable.summary-table td:not(.l) {
   font-weight: 700;
@@ -797,10 +797,10 @@ h1 {
 /* タスク・対応者だけ広め＋左揃え */
 .qtable.summary-table th.l,
 .qtable.summary-table td.l {
-  width: 92px;
+  width: 124px;
   text-align: left;
   white-space: nowrap;
-  padding-left: 10px;
+  padding-left: 12px;
   text-overflow: ellipsis;
 }
 /* 見出しは列の内容にかかわらず中央揃えで統一 */
@@ -812,12 +812,12 @@ h1 {
    見出しの文字幅（例：CM情報待ち=56px）＋左右余白10px を下限として決めている。 */
 .qtable.summary-table th.st-th,
 .qtable.summary-table td.st-td {
-  width: 76px; /* 進捗バッジ(62px)＋余白 */
-  padding: 3px 5px;
+  width: 88px; /* 進捗バッジ(62px)＋余白 */
+  padding: 5px 9px;
 }
 .qtable.summary-table th.prio-th,
 .qtable.summary-table td.prio-td {
-  width: 46px; /* 優先の入力欄(38px)＋余白 */
+  width: 56px; /* 優先の入力欄(38px)＋余白 */
 }
 /* 受注数・完了数・対応中・完了率・対応人数（数値のみの列） */
 .qtable.summary-table th:nth-child(3),
@@ -830,7 +830,7 @@ h1 {
 .qtable.summary-table td:nth-child(7),
 .qtable.summary-table th:nth-child(8),
 .qtable.summary-table td:nth-child(8) {
-  width: 52px;
+  width: 64px;
 }
 /* タスク名は Ad Hoc Task 表（.tname）と同じ太さに揃える */
 .qtable.summary-table td.l:not(.asg-td) {

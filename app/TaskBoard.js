@@ -18,10 +18,12 @@ const EMPTY_OV = {};
 
 // Ad Hoc Task 表の列幅（px）。内容で自動調整させるとタブ切替のたびに幅がぶれるため固定する。
 // 順: 優先/タスク/開始/期日/受注数/完了数/残件数/進捗率/進捗/目標対応件数/実作業工数/
-//     課題・遅延理由/次回アクション/対応人数/対応者　※メモ列は幅を指定せず余りを全て使う
-const ADHOC_COLS = [46, 324, 106, 106, 70, 70, 70, 62, 96, 92, 88, 160, 148, 66, 110];
-const ADHOC_MEMO_MIN = 170;
-const ADHOC_W = ADHOC_COLS.reduce((a, b) => a + b, 0) + ADHOC_MEMO_MIN;
+//     課題・遅延理由/次回アクション/対応人数/対応者/メモ
+// null は「余った幅を分け合う列」。メモは幅を決めておき、余りは長文が入る
+// 課題・遅延理由／次回アクションに回す（メモだけが極端に広くならないように）。
+const ADHOC_COLS = [46, 330, 106, 106, 70, 70, 70, 62, 96, 92, 88, null, null, 66, 118, 240];
+const ADHOC_FLEX_MIN = 110; // 幅を分け合う列の最低幅（これを下回ると横スクロール）
+const ADHOC_W = ADHOC_COLS.reduce((a, b) => a + (b == null ? ADHOC_FLEX_MIN : b), 0);
 
 // 進捗フラグ（Regular Task / Ad Hoc Task 共通）
 const STATUS_OPTIONS = ["On Track", "Behind", "Onhold", "Complete"];
@@ -1921,9 +1923,8 @@ export default function TaskBoard({ mode = "view" }) {
                     >
                       <colgroup>
                         {ADHOC_COLS.map((w, ci) => (
-                          <col key={ci} style={{ width: w }} />
+                          <col key={ci} style={w == null ? undefined : { width: w }} />
                         ))}
-                        <col />
                       </colgroup>
                       <thead>
                         <tr>
