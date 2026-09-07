@@ -51,6 +51,10 @@ const addDaysIso = (s, n) => {
   return isoOfDate(dt);
 };
 
+// タスクの削除は一旦無効（誤操作防止のため削除ボタンを出さない）。
+// 再開するときはここを true に戻せば、削除ボタンと確認モーダルが復活する。
+const ALLOW_TASK_DELETE = false;
+
 // 進捗フラグ（Regular Task / Ad Hoc Task 共通）
 const STATUS_OPTIONS = ["On Track", "Behind", "Onhold", "Complete"];
 function statusClass(st) {
@@ -494,6 +498,43 @@ function KosuLinkCell({ value, contents, onChange }) {
           document.body
         )}
     </>
+  );
+}
+
+// モーダル用の日付欄。ブラウザ標準の日付入力は OS の書式に引きずられて
+// 「年/月/日 ()」のように空のかっこが出るため、表示は自前で描き、
+// カレンダーだけ隠した input から showPicker() で開く。
+function ModalDateField({ label, value, onChange }) {
+  const open = (e) => {
+    const inp = e.currentTarget.parentNode.querySelector(".dt-native");
+    if (inp?.showPicker) inp.showPicker();
+    else inp?.click();
+  };
+  return (
+    <div className="fld">
+      {label}
+      <span className="dt-field modal-dt">
+        <input
+          className="dt-native"
+          type="date"
+          value={value || ""}
+          onChange={(e) => onChange(e.target.value)}
+          tabIndex={-1}
+          aria-hidden="true"
+        />
+        <button type="button" className="dt-btn" onClick={open} aria-label={`${label}を選択`}>
+          <span className={value ? "" : "dt-ph"}>
+            {value ? String(value).replace(/-/g, "/") : "未設定"}
+          </span>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="3" y="4.5" width="18" height="17" rx="2" />
+            <line x1="3" y1="9.5" x2="21" y2="9.5" />
+            <line x1="8" y1="2.5" x2="8" y2="6.5" />
+            <line x1="16" y1="2.5" x2="16" y2="6.5" />
+          </svg>
+        </button>
+      </span>
+    </div>
   );
 }
 
@@ -1812,7 +1853,7 @@ export default function TaskBoard({ mode = "view" }) {
                             <td>{row.rate == null ? "—" : row.rate + "%"}</td>
                             {/* 操作：シートを開く／詳細編集／削除。
                                 scope=adhoc（Ad Hoc・区分Regularで追加した分）だけが対象。 */}
-                            <td className="mng-ops">{row.scope === "adhoc" && (o.sheetUrl || row.customId || editable) ? (
+                            <td className="mng-ops">{row.scope === "adhoc" && (o.sheetUrl || editable || (ALLOW_TASK_DELETE && row.customId)) ? (
                               <span className="mng-ops-wrap">
                                 {/* 表に列が無い項目（目標対応件数・実作業工数・課題・次回アクション・メモ） */}
                                 {editable && (
@@ -1827,7 +1868,7 @@ export default function TaskBoard({ mode = "view" }) {
                                   </a>
                                 )}
                                 {/* シート連携の設定ボタンはタスク名の横（グルーピングの隣）へ移設 */}
-                                {row.customId && (
+                                {ALLOW_TASK_DELETE && row.customId && (
                                   <button type="button" className="forms-op danger" title="削除" aria-label="削除" onClick={() => removeAdhoc({ id: row.customId, task: row.key })}>
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
                                   </button>
@@ -2358,7 +2399,7 @@ export default function TaskBoard({ mode = "view" }) {
                                       <line x1="9" y1="9" x2="9" y2="21" />
                                     </svg>
                                   </button>
-                                  {t.customId && (
+                                  {ALLOW_TASK_DELETE && t.customId && (
                                     <button
                                       type="button"
                                       className="row-del"
@@ -2720,22 +2761,12 @@ export default function TaskBoard({ mode = "view" }) {
           </div>
 
           <div className="cfg-grid">
-            <label className="fld">
-              開始
-              <input
-                type="date"
-                value={addForm.start}
-                onChange={(e) => setAF("start", e.target.value)}
-              />
-            </label>
-            <label className="fld">
-              期日
-              <input
-                type="date"
-                value={addForm.end}
-                onChange={(e) => setAF("end", e.target.value)}
-              />
-            </label>
+            <ModalDateField
+              label="開始"
+              value={addForm.start}
+              onChange={(v) => setAF("start", v)}
+            />
+            <ModalDateField label="期日" value={addForm.end} onChange={(v) => setAF("end", v)} />
           </div>
 
           <label className="fld">
@@ -2860,11 +2891,6 @@ export default function TaskBoard({ mode = "view" }) {
           </label>
         </div>
         {addError && <div className="modal-err">{addError}</div>}
-        <p className="modal-note">
-          タスク名以外は後から一覧でも変更できます。区分は工数側にも引き継がれ、
-          <b>Regular</b> は工数入力に常時表示される作業、<b>Ad Hoc</b> は進捗が
-          On Track / Behind のときだけ表示される作業になります。
-        </p>
       </Modal>
 
       <Modal

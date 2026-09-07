@@ -9325,3 +9325,16 @@ td.v-strong,
   color: var(--accent);
   background: transparent;
 }
+
+/* モーダル内の日付欄：他の入力欄と同じ見た目に合わせる
+   （標準の日付入力は「年/月/日 ()」と空のかっこが出るため自前表示にしている） */
+.modal-fields .modal-dt .dt-btn {
+  height: auto;
+  padding: 6px 9px;
+  font-size: 12.5px;
+  font-weight: 500;
+  border-radius: 7px;
+}
+.modal-fields .modal-dt .dt-btn .dt-ph {
+  color: var(--ink-3);
+}
