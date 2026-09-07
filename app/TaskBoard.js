@@ -962,6 +962,7 @@ export default function TaskBoard({ mode = "view" }) {
   const [newTask, setNewTask] = useState("");
   const [newBoard, setNewBoard] = useState("adhoc"); // 追加するタスクの区分（adhoc / regular）
   const [addError, setAddError] = useState(null);
+  const [addBusy, setAddBusy] = useState(false);
   // ログイン中の権限（タスク編集の可否・アカウント管理の閲覧可否）
   const [perms, setPerms] = useState(null);
   useEffect(() => {
@@ -998,10 +999,25 @@ export default function TaskBoard({ mode = "view" }) {
   useEffect(() => {
     loadCustomAdhoc();
   }, [loadCustomAdhoc]);
+  // 追加フォームはモーダルで開く。開くたびに前回の入力・エラーを消す。
+  const openAdd = () => {
+    setNewTask("");
+    setNewBoard("adhoc");
+    setAddError(null);
+    setAdding(true);
+  };
+  const closeAdd = () => {
+    if (addBusy) return;
+    setAdding(false);
+    setNewTask("");
+    setNewBoard("adhoc");
+    setAddError(null);
+  };
   const addAdhoc = async () => {
     const name = newTask.trim();
-    if (!name) return;
+    if (!name || addBusy) return;
     setAddError(null);
+    setAddBusy(true);
     const j = await fetch("/api/adhoc-tasks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1010,6 +1026,7 @@ export default function TaskBoard({ mode = "view" }) {
     })
       .then((r) => r.json())
       .catch((e) => ({ error: String(e?.message || e) }));
+    setAddBusy(false);
     if (j.error) {
       setAddError(j.error);
       return;
@@ -1533,25 +1550,13 @@ export default function TaskBoard({ mode = "view" }) {
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z" /></svg>
                         )}
                       </button>
-                      {adding ? (
-                        <span className="addbar">
-                          <select className="ed-input ed-sel" value={newBoard} onChange={(e) => setNewBoard(e.target.value)} aria-label="区分">
-                            <option value="adhoc">Ad Hoc</option>
-                            <option value="regular">Regular</option>
-                          </select>
-                          <input className="ed-input" type="text" value={newTask} onChange={(e) => setNewTask(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addAdhoc(); if (e.key === "Escape") { setAdding(false); setAddError(null); } }} placeholder="タスク名" autoFocus />
-                          <button type="button" className="edit-btn on" onClick={addAdhoc}>追加</button>
-                          <button type="button" className="edit-btn" onClick={() => { setAdding(false); setNewTask(""); setNewBoard("adhoc"); setAddError(null); }}>取消</button>
-                          {addError && <span className="add-err">{addError}</span>}
-                        </span>
-                      ) : (
-                        <button type="button" className="icon-btn" onClick={() => setAdding(true)} title="タスク追加" aria-label="タスク追加">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                            <line x1="12" y1="5" x2="12" y2="19" />
-                            <line x1="5" y1="12" x2="19" y2="12" />
-                          </svg>
-                        </button>
-                      )}
+                      {/* 追加はモーダルで行う（表の見出し行にフォームを差し込まない） */}
+                      <button type="button" className="icon-btn" onClick={openAdd} title="タスク追加" aria-label="タスク追加">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <line x1="12" y1="5" x2="12" y2="19" />
+                          <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                      </button>
                     </span>
                   )}
                 </div>
@@ -1802,50 +1807,16 @@ export default function TaskBoard({ mode = "view" }) {
                     </button>
                   </div>
                   <span className="sec-actions">
-                  {editable &&
-                    (adding ? (
-                      <span className="addbar">
-                        <input
-                          className="ed-input"
-                          type="text"
-                          value={newTask}
-                          onChange={(e) => setNewTask(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") addAdhoc();
-                            if (e.key === "Escape") {
-                              setAdding(false);
-                              setAddError(null);
-                            }
-                          }}
-                          placeholder="タスク名を入力"
-                          autoFocus
-                        />
-                        <button type="button" className="edit-btn on" onClick={addAdhoc}>
-                          追加
-                        </button>
-                        <button
-                          type="button"
-                          className="edit-btn"
-                          onClick={() => {
-                            setAdding(false);
-                            setNewTask("");
-                            setAddError(null);
-                          }}
-                        >
-                          取消
-                        </button>
-                        {addError && <span className="add-err">{addError}</span>}
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        className="edit-btn"
-                        onClick={() => setAdding(true)}
-                        title="Ad Hoc タスクを追加"
-                      >
-                        ＋ タスク追加
-                      </button>
-                    ))}
+                  {editable && (
+                    <button
+                      type="button"
+                      className="edit-btn"
+                      onClick={openAdd}
+                      title="Ad Hoc タスクを追加"
+                    >
+                      ＋ タスク追加
+                    </button>
+                  )}
                   </span>
                 </div>
                 <div className="card no-pad">
@@ -2358,6 +2329,52 @@ export default function TaskBoard({ mode = "view" }) {
           )}
         </>
       )}
+
+      {/* タスク追加 */}
+      <Modal
+        open={adding}
+        title="タスク追加"
+        onClose={closeAdd}
+        footer={
+          <>
+            <button className="mini-btn" onClick={closeAdd} disabled={addBusy}>
+              キャンセル
+            </button>
+            <button
+              className="save-btn"
+              onClick={addAdhoc}
+              disabled={addBusy || !newTask.trim()}
+            >
+              {addBusy ? "追加中…" : "追加する"}
+            </button>
+          </>
+        }
+      >
+        <div className="modal-fields">
+          <label className="fld">
+            タスク名
+            <input
+              type="text"
+              value={newTask}
+              onChange={(e) => setNewTask(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addAdhoc()}
+              placeholder="例：Room mapping 13"
+            />
+          </label>
+          <label className="fld">
+            区分
+            <select value={newBoard} onChange={(e) => setNewBoard(e.target.value)}>
+              <option value="adhoc">Ad Hoc</option>
+              <option value="regular">Regular</option>
+            </select>
+          </label>
+        </div>
+        {addError && <div className="modal-err">{addError}</div>}
+        <p className="modal-note">
+          区分は工数側にも引き継がれます。<b>Regular</b> は工数入力に常時表示される作業、
+          <b>Ad Hoc</b> は進捗が On Track / Behind のときだけ表示される作業になります。
+        </p>
+      </Modal>
 
       <Modal
         open={!!delTarget}
