@@ -10285,3 +10285,245 @@ button.drive-link:disabled {
 .sys-health .sh-table thead th.r {
   text-align: center;
 }
+
+/* ═════════════════════════════════════════════════════════
+   設計仕様書：ドキュメントらしい作りに寄せる
+   ・章ごとのカード（枠・影・角丸）をやめ、1本の文書として続ける
+   ・左は目次だけの細い列。区切りは縦の細線1本
+   ・先頭に「最終更新」「タイトル」「要旨」を置く
+   ・表は見出しだけ淡い地色。一覧の青ヘッダーはここでは使わない
+   ═════════════════════════════════════════════════════════ */
+.spec-page {
+  min-height: 100vh;
+  background: #f7f4f0;
+}
+.spec-page .head {
+  background: #f7f4f0;
+  border-bottom: 1px solid #e5ded5;
+}
+.spec-layout {
+  grid-template-columns: 248px minmax(0, 1fr);
+  gap: 0;
+  margin-top: 0;
+}
+
+/* ── 目次 ── */
+.spec-toc {
+  top: 58px;
+  max-height: calc(100vh - 58px);
+  gap: 0;
+  padding: 22px 20px 40px 2px;
+  background: transparent;
+  border: 0;
+  border-right: 1px solid #e5ded5;
+  border-radius: 0;
+  box-shadow: none;
+}
+.spec-toc-h {
+  padding: 0 0 10px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #6b6157;
+  border-bottom: 0;
+  margin-bottom: 2px;
+}
+.spec-toc-grp {
+  display: flex;
+  flex-direction: column;
+}
+.spec-toc-item {
+  padding: 4px 8px 4px 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #3f3a34;
+  border-radius: 0;
+}
+.spec-toc-item:hover {
+  background: transparent;
+  color: #b3543f;
+  text-decoration: underline;
+}
+.spec-toc-item.active {
+  color: #b3543f;
+  background: transparent;
+  font-weight: 800;
+}
+.spec-toc-item.active::before {
+  display: none;
+}
+/* 小見出しは一段下げて細く */
+.spec-toc-item.spec-toc-sub {
+  padding-left: 14px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #6b6157;
+}
+
+/* ── 本文 ── */
+.spec-body {
+  gap: 0;
+  padding: 26px 8px 72px 32px;
+}
+.spec-doc-head {
+  margin-bottom: 26px;
+}
+.spec-updated {
+  display: inline-block;
+  margin-bottom: 14px;
+  padding: 4px 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #6b6157;
+  background: #ece6de;
+  border-radius: 999px;
+}
+.spec-title {
+  margin: 0 0 18px;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+  color: #2b2721;
+}
+/* 要旨：この文書が何のためにあるかを最初に置く */
+.spec-abstract {
+  padding: 16px 20px;
+  font-size: 13px;
+  line-height: 1.95;
+  color: #4a3f36;
+  background: #f6e9e6;
+  border-left: 3px solid #c4705c;
+  border-radius: 0 8px 8px 0;
+}
+.spec-abstract b {
+  font-weight: 800;
+  color: #2b2721;
+}
+
+/* 章：カードをやめて見出しの罫線で区切る */
+.spec-sec {
+  padding: 0;
+  margin-bottom: 34px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.spec-h2 {
+  margin: 0 0 14px;
+  padding-bottom: 10px;
+  font-size: 20px;
+  font-weight: 800;
+  color: #2b2721;
+  border-bottom: 1px solid #e0d8ce;
+}
+.spec-lead {
+  font-size: 13px;
+  color: #4a3f36;
+}
+.spec-h3 {
+  margin: 24px 0 10px;
+  font-size: 14.5px;
+  color: #2b2721;
+}
+.spec-h3::before {
+  width: 3px;
+  height: 14px;
+  background: #c4705c;
+}
+.spec-p,
+.spec-ul {
+  font-size: 13px;
+  color: #3f3a34;
+}
+.spec-note {
+  font-size: 12.5px;
+  color: #4a3f36;
+  background: #f1ece5;
+  border: 1px solid #e0d8ce;
+  border-left: 3px solid #c4705c;
+}
+.spec-code {
+  font-size: 11.5px;
+  color: #7a4b3a;
+  background: #efe9e1;
+  border-color: #e0d8ce;
+}
+
+/* ── 表：見出しは淡い地色。本文は白 ── */
+.spec-tw {
+  margin: 4px 0 10px;
+  border: 1px solid #e0d8ce;
+  border-radius: 8px;
+  overflow: hidden;
+  overflow-x: auto;
+  background: #ffffff;
+}
+.spec-table {
+  border: 0;
+}
+.spec-page .spec-table th,
+.spec-table th {
+  padding: 9px 14px;
+  font-size: 12.5px;
+  font-weight: 800;
+  text-align: left;
+  color: #3f3a34;
+  background: #f1ece5;
+  background-image: none;
+  border-bottom: 1px solid #e0d8ce;
+  border-right: 1px solid #e0d8ce;
+  white-space: nowrap;
+}
+.spec-table th:last-child {
+  border-right: 0;
+}
+.spec-table td {
+  padding: 9px 14px;
+  font-size: 12.5px;
+  line-height: 1.8;
+  /* 文書の表なので中央寄せにはしない（既定の中央寄せを打ち消す） */
+  text-align: left;
+  color: #3f3a34;
+  background: #ffffff;
+  border-bottom: 1px solid #ece6de;
+  border-right: 1px solid #ece6de;
+}
+.spec-table td:last-child {
+  border-right: 0;
+}
+.spec-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.spec-table td:first-child {
+  font-weight: 700;
+  color: #2b2721;
+}
+
+/* 処理の流れ（番号つきの箱） */
+.spec-flow-step {
+  background: #ffffff;
+  border: 1px solid #e0d8ce;
+}
+.spec-flow-n {
+  background: #c4705c;
+}
+.spec-foot {
+  margin-top: 40px;
+  padding-top: 16px;
+  font-size: 11.5px;
+  color: #8a8078;
+  border-top: 1px solid #e0d8ce;
+}
+
+@media (max-width: 1000px) {
+  .spec-toc {
+    border-right: 0;
+    border-bottom: 1px solid #e5ded5;
+  }
+  .spec-body {
+    padding-left: 8px;
+  }
+}

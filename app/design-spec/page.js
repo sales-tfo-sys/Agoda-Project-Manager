@@ -167,6 +167,23 @@ const API_GROUPS = [
 
 export default function DesignSpecPage() {
   const [active, setActive] = useState(SECTIONS[0].id);
+  // 目次は本文から起こす。章の下に小見出し（H3）もぶら下げるので、
+  // 本文を書き換えても目次を直し忘れることがない。
+  const [toc, setToc] = useState(() => SECTIONS.map((s) => ({ ...s, subs: [] })));
+
+  useEffect(() => {
+    const secs = [...document.querySelectorAll(".spec-sec")];
+    setToc(
+      secs.map((sec) => ({
+        id: sec.id,
+        label: sec.querySelector(".spec-h2")?.textContent || "",
+        subs: [...sec.querySelectorAll(".spec-h3")].map((h, i) => {
+          if (!h.id) h.id = `${sec.id}-h${i}`;
+          return { id: h.id, label: h.textContent || "" };
+        }),
+      }))
+    );
+  }, []);
 
   // 現在読んでいる位置を目次に反映する
   useEffect(() => {
@@ -206,7 +223,6 @@ export default function DesignSpecPage() {
             </svg>
           </span>
           <span className="page-h page-h-gap">設計仕様書</span>
-          <span className="spec-ver">Agoda Management System</span>
         </div>
       </div>
 
@@ -214,19 +230,44 @@ export default function DesignSpecPage() {
         {/* 目次 */}
         <nav className="spec-toc" aria-label="目次">
           <div className="spec-toc-h">目次</div>
-          {SECTIONS.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              className={"spec-toc-item" + (active === s.id ? " active" : "")}
-              onClick={() => jump(s.id)}
-            >
-              {s.label}
-            </button>
+          {toc.map((s) => (
+            <div key={s.id} className="spec-toc-grp">
+              <button
+                type="button"
+                className={"spec-toc-item" + (active === s.id ? " active" : "")}
+                onClick={() => jump(s.id)}
+              >
+                {s.label}
+              </button>
+              {s.subs.map((sub) => (
+                <button
+                  key={sub.id}
+                  type="button"
+                  className="spec-toc-item spec-toc-sub"
+                  onClick={() => jump(sub.id)}
+                >
+                  {sub.label}
+                </button>
+              ))}
+            </div>
           ))}
         </nav>
 
         <div className="spec-body">
+          <header className="spec-doc-head">
+            <span className="spec-updated">最終更新：2026-09-07</span>
+            <h1 className="spec-title">Agoda 管理システム 仕様・設計書</h1>
+            <div className="spec-abstract">
+              Agoda 案件（施設の YCS 登録・CM 接続作業）の進捗と、担当メンバーの作業工数を
+              1か所で管理する社内向け Web アプリケーションの設計書。
+              <b>目的＝改修や機能追加をしても既存の動きを壊さないこと。</b>
+              実装（<code className="spec-code">app/</code>・
+              <code className="spec-code">lib/</code>・
+              <code className="spec-code">middleware.js</code>・Supabase）から起こしているので、
+              コードを変更したときは該当する章も併せて更新すること。
+            </div>
+          </header>
+
           {/* ───────────── 1. 概要 ───────────── */}
           <Sec
             id="overview"
