@@ -329,9 +329,12 @@ export default function SystemHealthPage() {
           </section>
 
           {/* ④ 接続先 */}
-          <p className="sh-conn">
-            ホスト：{data.host || "(不明)"}　／　{pgVer || "(バージョン不明)"}
-          </p>
+          <section className="sh-conn-sec">
+            <h2 className="sh-conn-h">接続先</h2>
+            <p className="sh-conn">
+              ホスト：{data.host || "(不明)"}　／　{pgVer || "(バージョン不明)"}
+            </p>
+          </section>
         </>
       )}
     </div>

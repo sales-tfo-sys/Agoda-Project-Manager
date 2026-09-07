@@ -10044,12 +10044,84 @@ button.drive-link:disabled {
   }
 }
 
-/* アカウント管理：退職メンバーの行はもっと暗いグレーにして、在籍と一目で分ける */
+/* アカウント管理：退職メンバーの行は暗いグレーにして、在籍と一目で分ける */
 .persons-page tr.row-retired td,
 .persons-page .persons-table tbody tr.row-retired:nth-child(even) td {
-  background: #d2d6dd;
-  color: #5d6472;
+  background: #bcc2cd;
+  color: #3f4757;
 }
 .persons-page tr.row-retired:hover td {
-  background: #c7ccd5;
+  background: #b1b8c5;
+}
+
+
+/* システムヘルス：接続先は見出しの帯＋情報行の形にする */
+.sh-conn-sec {
+  overflow: hidden;
+  margin-bottom: 12px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+.sh-conn-h {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  padding: 8px 13px;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--ink);
+  background: var(--surface-soft);
+  border-bottom: 1px solid var(--border);
+}
+.sh-conn-h::before {
+  content: "";
+  flex: none;
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.sh-conn-sec .sh-conn {
+  margin: 0;
+  padding: 11px 16px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+
+/* ─────────────────────────────────────────────────────────
+   システムヘルス
+   ・文字はすべて太字（数値が多く、細いと読みにくいため）
+   ・「テーブル別の使用状況」と「データの取り込み状況」は高さを揃える
+     （右側だけ最終同期の1行があって背が高くなっていた）
+   ───────────────────────────────────────────────────────── */
+.sys-health :where(p, span, div, td, li, a, small) {
+  font-weight: 700;
+}
+.sys-health th,
+.sys-health .sh-h,
+.sys-health .sh-conn-h,
+.sys-health .sh-card-val,
+.sys-health .sh-card-label {
+  font-weight: 800;
+}
+.sh-cols {
+  align-items: stretch;
+}
+.sh-cols .sh-panel {
+  display: flex;
+  flex-direction: column;
+}
+.sh-cols .sh-panel .sh-tw-300 {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 300px;
+}
+/* 一覧共通の指定(600)より強くして、システムヘルスの表も太字に揃える */
+.sys-health .sh-table tbody td,
+.sys-health .sh-table tbody td.l,
+.sys-health .sh-table tbody td.r {
+  font-weight: 700;
 }
