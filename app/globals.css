@@ -5839,6 +5839,15 @@ tbody tr.clickable {
   flex: none;
   color: var(--accent);
 }
+/* グルーピング／シート連携の印・ボタンはタスク列の右端に寄せる */
+.mng-task-marks {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  margin-left: auto;
+  padding-left: 8px;
+}
 .manage-table tbody td {
   padding: 2px 10px;
   text-align: center;
