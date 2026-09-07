@@ -10786,3 +10786,16 @@ button.drive-link:disabled {
   top: 0.5px;
   vertical-align: middle;
 }
+
+/* 工数入力の保存はアイコンボタン。押せると分かるようにブランド色で塗る */
+.icon-btn.save-icon-btn {
+  color: #fff;
+  background: linear-gradient(180deg, var(--brand-1), var(--brand-2));
+  border-color: var(--brand-2);
+}
+.icon-btn.save-icon-btn:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+.icon-btn.save-icon-btn:disabled {
+  opacity: 0.5;
+}

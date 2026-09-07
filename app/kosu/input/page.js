@@ -455,8 +455,19 @@ export default function KosuInputPage() {
           <span className="page-h page-h-gap">工数入力</span>
         </div>
         <div className="head-right">
-          <button className="save-btn" onClick={save} disabled={saving || loading}>
-            保存
+          <button
+            className="icon-btn save-icon-btn"
+            onClick={save}
+            disabled={saving || loading}
+            title="保存"
+            aria-label="保存"
+          >
+            {/* フロッピー（保存）のアイコン */}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg>
           </button>
         </div>
       </div>
@@ -469,8 +480,7 @@ export default function KosuInputPage() {
       {error && <div className="banner err-banner">エラー：{error}</div>}
 
       <div className="input-bar">
-        <span className="head-year">
-          対象日
+        <span className="head-year head-year-bare">
           {/* ブラウザ既定の日付表示は OS の書式に引きずられて「2026/07/24 ()」の
               ように空のかっこが出るため、表示は自前にしてカレンダーだけ借りる */}
           <span className="date-field">
