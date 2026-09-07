@@ -446,7 +446,7 @@ function KosuLinkCell({ value, contents, onChange }) {
         title={value ? `工数明細：${value}` : "工数明細の作業内容に紐づける"}
         aria-label="工数明細との紐づけ"
       >
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7" />
           <path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" />
         </svg>
@@ -1803,12 +1803,12 @@ export default function TaskBoard({ mode = "view" }) {
                                     />
                                     <button
                                       type="button"
-                                      className={"klink-btn" + (o.sheetUrl ? " on" : "")}
+                                      className={"klink-btn klink-sheet" + (o.sheetUrl ? " on" : "")}
                                       onClick={() => setCfgTask(row.key)}
                                       title="スプレッドシート連携（受注数・完了数を自動取得）"
                                       aria-label="シート連携を設定"
                                     >
-                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                                         <rect x="3" y="3" width="18" height="18" rx="2" />
                                         <line x1="3" y1="9" x2="21" y2="9" />
                                         <line x1="9" y1="9" x2="9" y2="21" />
@@ -1832,12 +1832,12 @@ export default function TaskBoard({ mode = "view" }) {
                                           }
                                           aria-label="工数グルーピングあり"
                                         >
-                                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+                                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
                                         </span>
                                       )}
                                       {o.sheetUrl && (
-                                        <span className="mng-link-mark" title={`スプレッドシート連携中（受注数・完了数を自動取得）\n${o.sheetUrl}`} aria-label="シート連携あり">
-                                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="9" x2="9" y2="21" /></svg>
+                                        <span className="mng-link-mark sheet" title={`スプレッドシート連携中（受注数・完了数を自動取得）\n${o.sheetUrl}`} aria-label="シート連携あり">
+                                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="9" x2="9" y2="21" /></svg>
                                         </span>
                                       )}
                                     </span>
@@ -2427,7 +2427,7 @@ export default function TaskBoard({ mode = "view" }) {
                                           }
                                           aria-label="工数グルーピングあり"
                                         >
-                                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                                          <svg width="12.5" height="12.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
                                             <path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7" />
                                             <path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" />
                                           </svg>
@@ -2435,7 +2435,7 @@ export default function TaskBoard({ mode = "view" }) {
                                       )}
                                       {o.sheetUrl && (
                                         <span className="sheet-mark" title={"シート連携中（受注数・完了数を自動取得）\n" + o.sheetUrl} aria-label="シート連携あり">
-                                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                          <svg width="12.5" height="12.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
                                             <rect x="3" y="3" width="18" height="18" rx="2" />
                                             <line x1="3" y1="9" x2="21" y2="9" />
                                             <line x1="9" y1="9" x2="9" y2="21" />

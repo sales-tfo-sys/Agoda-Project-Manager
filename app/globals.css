@@ -5811,7 +5811,7 @@ tbody tr.clickable {
   font-weight: 700;
   text-align: center;
   white-space: nowrap;
-  padding: 8px 10px;
+  padding: 8px 7px;
   border-bottom: 1px solid var(--border2);
   border-right: 1px solid var(--border2);
 }
@@ -5856,7 +5856,7 @@ tbody tr.clickable {
   padding-left: 8px;
 }
 .manage-table tbody td {
-  padding: 2px 10px;
+  padding: 2px 7px;
   text-align: center;
   border-bottom: 1px solid var(--border);
   color: var(--ink);
@@ -5906,10 +5906,10 @@ tbody tr.clickable {
   color: var(--ink-3);
 }
 .manage-table .prio-input {
-  width: 46px;
+  width: 38px;
 }
 .manage-table .ed-sel {
-  min-width: 92px;
+  min-width: 84px;
 }
 .manage-table .ed-input {
   width: 100%;
@@ -5918,13 +5918,51 @@ tbody tr.clickable {
 .manage-table .mng-date {
   white-space: nowrap;
 }
-.manage-table .mng-date-in {
-  width: 122px;
-  min-width: 122px;
-}
 .manage-table .mng-ops {
   white-space: nowrap;
 }
+
+/* ── 管理表の列幅 ──────────────────────────────────────
+   数値・バッジ・日付の列は中身ぶんだけにして、余った幅は
+   3列目（タスク名）が受け取る。並びは
+   優先/区分/タスク/開始/期日/対応者/進捗/件数/完了/進捗率/操作。 */
+.manage-table th:nth-child(1),
+.manage-table td:nth-child(1) {
+  width: 54px;
+}
+.manage-table th:nth-child(2),
+.manage-table td:nth-child(2) {
+  width: 72px;
+}
+.manage-table th:nth-child(4),
+.manage-table td:nth-child(4),
+.manage-table th:nth-child(5),
+.manage-table td:nth-child(5) {
+  width: 98px;
+}
+.manage-table th:nth-child(6),
+.manage-table td:nth-child(6) {
+  width: 118px;
+}
+.manage-table th:nth-child(7),
+.manage-table td:nth-child(7) {
+  width: 92px;
+}
+.manage-table th:nth-child(8),
+.manage-table td:nth-child(8),
+.manage-table th:nth-child(9),
+.manage-table td:nth-child(9) {
+  width: 58px;
+}
+.manage-table th:nth-child(10),
+.manage-table td:nth-child(10) {
+  width: 60px;
+}
+.manage-table th:nth-child(11),
+.manage-table td:nth-child(11) {
+  width: 76px;
+}
+
 .mng-ops-wrap {
   display: inline-flex;
   gap: 4px;
@@ -9337,4 +9375,105 @@ td.v-strong,
 }
 .modal-fields .modal-dt .dt-btn .dt-ph {
   color: var(--ink-3);
+}
+
+/* ─────────────────────────────────────────────────────────
+   グルーピング／スプレッドシート連携のアイコン
+   2つを見分けやすいよう色を分け、線を太くする。
+   グルーピング＝紫（Ad Hoc バッジと同系）／シート＝緑（Sheets の色）
+   ───────────────────────────────────────────────────────── */
+.mng-link-mark,
+.adhoc-table .tname-marks .klink-mark {
+  color: #7c3aed;
+}
+.mng-link-mark.sheet,
+.adhoc-table .tname-marks .sheet-mark {
+  color: #1c8a4e;
+}
+/* 編集時のボタン（設定済みのとき塗りつぶし） */
+.klink-btn.on {
+  color: #ffffff;
+  background: #7c3aed;
+  border-color: #7c3aed;
+}
+.klink-btn:hover {
+  color: #7c3aed;
+  border-color: #7c3aed;
+}
+.klink-btn.klink-sheet.on {
+  background: #1c8a4e;
+  border-color: #1c8a4e;
+}
+.klink-btn.klink-sheet:hover {
+  color: #1c8a4e;
+  border-color: #1c8a4e;
+}
+.klink-btn.klink-sheet.on:hover {
+  color: #ffffff;
+}
+.klink-btn.on:hover {
+  color: #ffffff;
+}
+
+/* ─────────────────────────────────────────────────────────
+   一覧の文字が薄くて読みにくいので、本文を少し太くする。
+   （ダッシュボードの .qtable / Ad Hoc 表は既に 700 で指定済み）
+   ───────────────────────────────────────────────────────── */
+.dtable tbody td,
+.manage-table tbody td,
+.tw table tbody td,
+.sh-table tbody td {
+  font-weight: 600;
+}
+/* 見出しも一段濃く */
+.dtable thead th,
+.manage-table thead th,
+.tw table thead th,
+.sh-table thead th {
+  font-weight: 800;
+}
+/* 「—」など補助的な表示は太らせない */
+.mng-dim,
+.dtable td.z,
+.dtable td .empty,
+.tw table td .empty {
+  font-weight: 500;
+}
+
+/* ─────────────────────────────────────────────────────────
+   一覧の見え方の調整
+   ・ゼブラ（1行おきの背景色）はやめる（目が疲れるため）。
+     行の区切りは罫線とホバーで足りる。
+   ・ページの下地は白にする。
+   ───────────────────────────────────────────────────────── */
+tbody tr:nth-child(even),
+.qtable tbody tr:nth-child(even),
+.dtable tbody tr:nth-child(even),
+.kosu-table tbody tr:nth-child(even),
+.adhoc-table tbody tr:nth-child(even),
+.adhoc-table tbody tr.row-done:nth-child(even),
+.manage-table tbody tr:nth-child(even),
+.list-tw table tbody tr:nth-child(even),
+.tw table tbody tr:nth-child(even),
+.forms-tw table tbody tr:nth-child(even),
+.persons-page .persons-table tbody tr:nth-child(even),
+.sh-table tbody tr:nth-child(even),
+.spec-table tbody tr:nth-child(even) {
+  background: transparent;
+}
+/* 横スクロール時に固定される列も同じ扱い（下の行が透けないよう白で塗る） */
+.tw table tbody tr:nth-child(even) td.wr-freeze,
+.tw table tbody tr:nth-child(even) td.wr-opcol {
+  background: var(--surface);
+}
+.summary-table tbody tr:nth-child(even) td.l:not(.asg-td) {
+  background: transparent;
+}
+
+/* ページの下地を白に */
+:root {
+  --bg: #ffffff;
+}
+body {
+  background: #ffffff;
 }
