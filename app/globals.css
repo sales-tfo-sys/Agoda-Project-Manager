@@ -10555,3 +10555,33 @@ button.drive-link:disabled {
 .mng-link-mark.sheet.ng {
   color: #e5484d;
 }
+
+/* 操作ボタンは button と a が混在する。button だけブラウザ既定の padding(1px 6px) が付き、
+   box-sizing:border-box と幅指定のせいで中身が右にはみ出していたので padding を消す */
+.forms-op {
+  padding: 0;
+}
+
+/* プロジェクト管理：1行の高さを少しだけ戻し、操作ボタンもそれに合わせて大きくする */
+.manage-table tbody td {
+  padding: 4px 7px;
+}
+.manage-table .mng-badge {
+  padding: 2px 8px;
+}
+.manage-table .st-pill {
+  padding: 2px 9px;
+}
+.manage-table .forms-op {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+}
+.manage-table .forms-op svg {
+  width: 13px;
+  height: 13px;
+}
+.manage-table .klink-btn {
+  width: 20px;
+  height: 20px;
+}
