@@ -9751,3 +9751,85 @@ button.drive-link:disabled {
   width: 17px;
   height: 17px;
 }
+
+/* ─────────────────────────────────────────────────────────
+   一覧がヘッダーのすぐ下に来るページは、上下の隙間を作らない。
+   （ヘッダー下の余白と、ページ下端の余白を 0 にする）
+   ───────────────────────────────────────────────────────── */
+.head:has(+ .card.no-pad) {
+  margin-bottom: 0;
+}
+.wrap:has(> .card.no-pad) {
+  padding-bottom: 0;
+}
+/* 表のスクロール領域は「残りの高さいっぱい」にする。
+   固定値で引くとツールバーが折り返したときに下がはみ出す／余るため、
+   flex で余白を残さず埋める。 */
+.wrap:has(> .manage-card) {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+.manage-card {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.manage-card > .manage-tw {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+}
+
+/* ヘッダーの高さはページによらずロゴ帯と同じ 58px に揃える
+   （page-compact だけ 50px になっていて、サイドバーのロゴ帯とズレていた） */
+.wrap.page-compact .head,
+.wrap.page-fill > .head,
+.persons-page .head.persons-head {
+  min-height: 58px;
+}
+
+/* 積み上げグラフのラベル（100% (8h) など）は小さめに */
+.stack-lbl {
+  font-size: 9.5px;
+  font-weight: 700;
+}
+
+/* 工数明細：単位が「時間」の行（作業時間・トータル作業時間）は青地にする。
+   ゼブラ解除の指定が後勝ちして色が消えていたため、ここで指定し直す。
+   左の固定列も同じ青にして帯がつながるようにする。
+   土日・祝日の列はセル側の色（赤／青）を優先するので対象外。 */
+.kosu-table tbody tr.row-time,
+.kosu-table tbody tr.row-time:nth-child(even) {
+  background: var(--accent-soft);
+}
+.kosu-table tbody tr.row-time .c-content,
+.kosu-table tbody tr.row-time .c-tanto {
+  background: var(--accent-soft);
+}
+.kosu-table tbody tr.row-time td {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* 工数明細：ホバーの効き方を全部の行で揃える。
+   行(tr)に色を付けていたが、独自の背景を持つセル（左の固定列・土日祝・時間行）は
+   その上に塗られてしまい、行によって色が付いたり付かなかったりしていた。
+   セル(td)側に指定して必ず効くようにする。※rowspan の「タスク種別」列は除く */
+.kosu-table tbody tr:hover td,
+.kosu-table tbody tr:hover .c-content,
+.kosu-table tbody tr:hover .c-tanto {
+  background: #e9ecf2;
+}
+.kosu-table tbody tr:hover .c-type {
+  background: var(--surface-soft);
+}
+/* 土日・祝日の列はホバー時も色味を残す */
+.kosu-table tbody tr:hover td.is-holiday {
+  background: #f7e2e6;
+}
+.kosu-table tbody tr:hover td.is-sat {
+  background: #dfe8fa;
+}
