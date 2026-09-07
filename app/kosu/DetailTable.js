@@ -176,6 +176,8 @@ export default function DetailTable({ title, compact = false }) {
               monthly: monthly.map((v) => Math.round(v * 10) / 10),
               daily,
               byIso: { ...vals }, // 日付→値（全月表示で日付から引く）
+              // 工数入力で実際に記録がある日。0 と「未入力」を見分けるために持つ
+              recIso: new Set(Object.keys(vals || {})),
               unit: unit === "time" ? "time" : "count",
               fromDb: true, // シートではなくサイト側のデータ
             };
@@ -263,6 +265,8 @@ export default function DetailTable({ title, compact = false }) {
               ...r,
               daily,
               byIso,
+              // 工数入力で実際に記録がある日（シートの空欄と 0 入力を見分ける）
+              recIso: new Set(Object.keys(perDates || {})),
               monthly: monthly.map((v) => Math.round(v * 10) / 10),
               total: Math.round(daily.reduce((a, b) => a + b, 0) * 10) / 10,
             };
@@ -776,6 +780,9 @@ export default function DetailTable({ title, compact = false }) {
                     })()}
                     {dayCols.map((d) => {
                       const v = r.byIso?.[d.iso] || 0;
+                      // 0 でも工数入力で記録された 0 なら出す（未入力の空欄と区別する）
+                      const rec = r.recIso?.has(d.iso);
+                      const blank = v === 0 && !rec;
                       return (
                         <td
                           key={d.iso}
@@ -786,7 +793,7 @@ export default function DetailTable({ title, compact = false }) {
                           }
                           title={d.holiday || undefined}
                         >
-                          {v === 0 ? "" : v.toLocaleString("ja-JP")}
+                          {blank ? "" : v.toLocaleString("ja-JP")}
                         </td>
                       );
                     })}

@@ -10799,3 +10799,16 @@ button.drive-link:disabled {
 .icon-btn.save-icon-btn:disabled {
   opacity: 0.5;
 }
+
+/* 工数管理：見出し横のプルダウン（作業リソース詳細・工数明細）と
+   工数明細のタブの高さを揃える。見出しを大きくしたので28pxに統一する */
+.kosu-page .sec-row .detail-tools select,
+.kosu-page .sec-row .detail-tools select.slim-select {
+  height: 28px;
+}
+.kosu-page .sec-row .segbar.segbar-sm {
+  height: 28px;
+}
+.kosu-page .sec-row .segbar-sm .segbar-btn {
+  height: 24px;
+}
