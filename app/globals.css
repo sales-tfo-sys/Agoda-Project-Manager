@@ -5940,9 +5940,10 @@ tbody tr.clickable {
 .manage-table td:nth-child(5) {
   width: 98px;
 }
+/* 対応者：人数が増えても折り返さないよう広めに取る（4人ぶんが1行に入る） */
 .manage-table th:nth-child(6),
 .manage-table td:nth-child(6) {
-  width: 118px;
+  width: 176px;
 }
 .manage-table th:nth-child(7),
 .manage-table td:nth-child(7) {
@@ -9257,10 +9258,22 @@ td.v-strong,
   content: "、";
   color: var(--ink-3);
 }
+/* 退職した担当者は赤で示す（当時の担当だと一目で分かるように） */
 .mng-asg-name.gone {
-  color: var(--ink-3);
-  text-decoration: underline dotted var(--border2);
-  text-underline-offset: 2px;
+  color: #e5484d;
+}
+/* 編集時のチップも赤に */
+.asg-chip.gone,
+.asg-chip.gone.main {
+  color: #ffffff;
+  background: #e5484d;
+  border-color: #e5484d;
+}
+/* 選択パネルの「退職」バッジも赤系に */
+.asg-ret {
+  color: #b02a37;
+  background: #fdeaee;
+  border-color: #f0c6d0;
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -9472,8 +9485,118 @@ tbody tr:nth-child(even),
 
 /* ページの下地はグレー（カードの白と分かれるよう、彩度のない淡いグレー） */
 :root {
-  --bg: #f2f3f5;
+  --bg: #e8eaee;
 }
 body {
-  background: #f2f3f5;
+  background: #e8eaee;
+}
+
+/* ─────────────────────────────────────────────────────────
+   一覧のヘッダーはブランド（ロゴ）と同じ青。
+   ロゴのグラデーション #5b9dff → #2f6be0 をそのまま使い、文字は白。
+   ───────────────────────────────────────────────────────── */
+th,
+.qtable th,
+.dtable thead th,
+.sh-table thead th,
+.manage-table thead th,
+.tw table th,
+.spec-table th,
+.persons-page .persons-table thead th,
+.wrap.persons-page .persons-table thead th {
+  background: linear-gradient(180deg, var(--brand-1), var(--brand-2));
+  color: #ffffff;
+  border-bottom-color: rgba(255, 255, 255, 0.3);
+  border-right-color: rgba(255, 255, 255, 0.22);
+}
+/* 並べ替え中・ホバーは一段濃い青 */
+th.sortable:hover {
+  background: linear-gradient(180deg, #4a90f5, #2560cc);
+}
+th.sortable.sorted {
+  background: linear-gradient(180deg, #3f86f2, #1f57bd);
+}
+/* 工数明細の日付ヘッダー：祝日・土曜の色分けは残す（青地でも読めるよう白文字） */
+.dtable thead th.is-holiday {
+  background: linear-gradient(180deg, #f0849d, #d84a6c);
+  color: #ffffff;
+}
+.dtable thead th.is-sat {
+  background: linear-gradient(180deg, #7fb4ff, #3f7ee6);
+  color: #ffffff;
+}
+.day-th .d-dow,
+.dtable th.day-th.is-holiday .d-dow,
+.dtable th.day-th.is-sat .d-dow {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+/* 一覧のヘッダーは全ページで同じ文字サイズに揃える（読みやすさ優先で大きめ） */
+th,
+.qtable th,
+.qtable.summary-table th,
+.dtable thead th,
+.wrap.page-compact .dtable thead th,
+.adhoc-table th,
+.kosu-table thead th,
+.dtw.dtw-embed .kosu-table thead th,
+.kosu-input-table thead th,
+.res-card .res-table thead th,
+.sh-table thead th,
+.manage-table thead th,
+.tw table th,
+.spec-table th,
+.persons-page .persons-table thead th,
+.wrap.persons-page .persons-table thead th {
+  font-size: 13px;
+  letter-spacing: 0;
+}
+/* 工数明細の日付ヘッダーだけは列が細いので従来どおりの小さめ表示 */
+.day-th .d-date {
+  font-size: 10.5px;
+}
+.day-th .d-dow {
+  font-size: 9px;
+}
+/* 見出しが大きくなったぶん、サマリー表の内訳列を広げて省略されないようにする */
+.qtable.summary-table th,
+.qtable.summary-table td {
+  width: 96px;
+}
+.qtable.summary-table th.l,
+.qtable.summary-table td.l {
+  width: 132px;
+}
+.qtable.summary-table th.prio-th,
+.qtable.summary-table td.prio-td {
+  width: 60px;
+}
+.qtable.summary-table th.st-th,
+.qtable.summary-table td.st-td {
+  width: 92px;
+}
+.qtable.summary-table th:nth-child(3),
+.qtable.summary-table td:nth-child(3),
+.qtable.summary-table th:nth-child(4),
+.qtable.summary-table td:nth-child(4),
+.qtable.summary-table th:nth-child(5),
+.qtable.summary-table td:nth-child(5),
+.qtable.summary-table th:nth-child(7),
+.qtable.summary-table td:nth-child(7),
+.qtable.summary-table th:nth-child(8),
+.qtable.summary-table td:nth-child(8) {
+  width: 74px;
+}
+
+/* 固定表示（sticky）のヘッダーセルは個別に背景が指定されているので、
+   こちらもブランドの青にそろえる（白文字が薄い青地に乗ると読めないため） */
+.kosu-table thead .c-type,
+.kosu-table thead .c-content,
+.kosu-table thead .c-tanto,
+.qtable.summary-table th.l:not(.asg-th),
+.summary-table th.l,
+.adhoc-table th.l:nth-child(2),
+.adhoc-table thead .prio-th {
+  background: linear-gradient(180deg, var(--brand-1), var(--brand-2));
+  color: #ffffff;
 }

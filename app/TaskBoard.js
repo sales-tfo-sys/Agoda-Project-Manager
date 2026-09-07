@@ -22,7 +22,7 @@ const EMPTY_OV = {};
 //     課題・遅延理由/次回アクション/対応人数/対応者/メモ
 // null は「余った幅を分け合う列」。メモは幅を決めておき、余りは長文が入る
 // 課題・遅延理由／次回アクションに回す（メモだけが極端に広くならないように）。
-const ADHOC_COLS = [46, 330, 106, 106, 70, 70, 70, 62, 96, 92, 88, null, null, 66, 118, 240];
+const ADHOC_COLS = [50, 330, 106, 106, 70, 70, 70, 66, 96, 96, 92, null, null, 78, 118, 240];
 const ADHOC_FLEX_MIN = 110; // 幅を分け合う列の最低幅（これを下回ると横スクロール）
 const ADHOC_W = ADHOC_COLS.reduce((a, b) => a + (b == null ? ADHOC_FLEX_MIN : b), 0);
 
@@ -383,7 +383,13 @@ function AssignCell({ scope, akey, ids, persons, retired = [], allowRetired = fa
       >
         {ids.length ? (
           ids.map((id, i) => (
-            <span key={id} className={"asg-chip" + (i === 0 ? " main" : "")}>
+            <span
+              key={id}
+              className={
+                "asg-chip" + (i === 0 ? " main" : "") + (optOf(id)?.gone ? " gone" : "")
+              }
+              title={optOf(id)?.gone ? `${nameOf(id)}（退職）` : undefined}
+            >
               {nameOf(id)}
             </span>
           ))
@@ -2516,8 +2522,19 @@ export default function TaskBoard({ mode = "view" }) {
                                   allowRetired={status === "Complete"}
                                   setAssign={setAssign}
                                 />
-                              ) : names ? (
-                                names.join("、")
+                              ) : ids.length ? (
+                                ids.map((id) => {
+                                  const pp = personById.get(id);
+                                  return pp ? (
+                                    <span
+                                      key={id}
+                                      className={"mng-asg-name" + (pp.active === false ? " gone" : "")}
+                                      title={pp.active === false ? `${pp.name}（退職）` : undefined}
+                                    >
+                                      {pp.name}
+                                    </span>
+                                  ) : null;
+                                })
                               ) : (
                                 cell(t.pic)
                               )}
