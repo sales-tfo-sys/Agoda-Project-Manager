@@ -14,7 +14,7 @@ export async function GET() {
   // 表示・設定できるようにするため、ここで在籍者だけに絞り込まない。
   const [items, persons] = await Promise.all([
     sb("task_assign?select=scope,key,person_id,role&order=role,updated_at").catch(() => null),
-    sb("kosu_person?order=active.desc,sort_order&select=id,name,role,active").catch(() => null),
+    sb("kosu_person?order=active.desc,sort_order&select=id,name,role,active,left_on").catch(() => null),
   ]);
   return Response.json({
     configured: true,

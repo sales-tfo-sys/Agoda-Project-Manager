@@ -39,6 +39,9 @@ export default function DetailTable({ title, compact = false }) {
   const [tab, setTab] = useState("active"); // active（対応中）/ done（完了）
   const [completedKeys, setCompletedKeys] = useState(null);
   const [extraRows, setExtraRows] = useState([]); // シートに無い作業（Supabase 側）
+  // 除外したメンバーの除外日（担当者名 → "YYYY-MM-DD"）。
+  // 除外日より前の日付には名前を出し、除外日以降は出さない。
+  const [leftOnByName, setLeftOnByName] = useState({});
 
   // ダッシュボードで編集した「作業内容（名称）」と「対応者」を反映するための対応表
   const [link, setLink] = useState({ rename: {}, tanto: {}, tasks: {}, done: new Set(), doneNorm: new Set(), compDateByKey: {}, compDateByLink: {}, compDateByNorm: {} });
@@ -80,6 +83,11 @@ export default function DetailTable({ title, compact = false }) {
         // ダッシュボードの編集内容 → 工数明細（作業内容・担当）へ連動。
         // 対象は Ad Hoc Task のみ。Regular Task は工数明細と1対1の関係がないため除外する。
         const nameById = new Map((asg?.persons || []).map((p) => [p.id, p.name]));
+        const leftOn = {};
+        for (const p of asg?.persons || []) {
+          if (p.active === false && p.left_on) leftOn[p.name] = String(p.left_on).slice(0, 10);
+        }
+        setLeftOnByName(leftOn);
         // オーナー・管理者は作業者ではないので工数明細に含めない
         const isWorker = (p) => !["owner", "admin"].includes(p.role || "member");
         const workerIds = new Set((asg?.persons || []).filter(isWorker).map((p) => p.id));
@@ -534,11 +542,23 @@ export default function DetailTable({ title, compact = false }) {
     [completedKeys, link]
   );
 
-  // シート由来の行＋サイト側で追加した行
-  const allRows = useMemo(
-    () => (data ? [...(data.rows || []), ...extraRows] : []),
-    [data, extraRows]
-  );
+  // シート由来の行＋サイト側で追加した行。
+  // 除外したメンバーは「除外日より前の日付」しか対象にしないので、
+  // 表示中の月の初日が除外日以降なら、その人の行は出さない。
+  const allRows = useMemo(() => {
+    const rows = data ? [...(data.rows || []), ...extraRows] : [];
+    if (!rows.length || !Object.keys(leftOnByName).length) return rows;
+    // 全月表示（monthIdx が null）のときは、いちばん古い日を基準にする
+    const ym = monthIdx == null ? null : monthYM[monthIdx];
+    const first = ym
+      ? `${ym.y}-${String(ym.m).padStart(2, "0")}-01`
+      : (data?.isoDates || []).find(Boolean) || null;
+    if (!first) return rows;
+    return rows.filter((r) => {
+      const gone = leftOnByName[r.tanto];
+      return !gone || first < gone;
+    });
+  }, [data, extraRows, leftOnByName, monthIdx, monthYM]);
 
   const grouped = useMemo(() => {
     if (!data) return [];
