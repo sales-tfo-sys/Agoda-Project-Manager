@@ -4612,7 +4612,8 @@ tbody tr.clickable {
   color: var(--ink-2);
 }
 .modal-fields .fld input,
-.modal-fields .fld select {
+.modal-fields .fld select,
+.modal-fields .fld textarea {
   font: inherit;
   font-size: 12.5px;
   font-weight: 500;
@@ -4622,8 +4623,14 @@ tbody tr.clickable {
   border-radius: 7px;
   background: var(--surface);
 }
+.modal-fields .fld textarea {
+  resize: vertical;
+  min-height: 46px;
+  line-height: 1.5;
+}
 .modal-fields .fld input:focus,
-.modal-fields .fld select:focus {
+.modal-fields .fld select:focus,
+.modal-fields .fld textarea:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 2px var(--accent-soft);
@@ -6357,18 +6364,36 @@ th.hid-opcol {
   gap: 14px;
   max-width: 952px;
 }
-.sched-cals {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-@media (max-width: 900px) {
-  .sched-cals {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
 .sched-wrap .cal-card {
   width: 100%;
+}
+/* 複数月を1つの枠に並べる（月送りは枠に1組だけ） */
+.cal-multi {
+  padding: 14px 16px 16px;
+}
+.cal-months {
+  display: grid;
+  grid-template-columns: repeat(var(--cal-cols, 1), minmax(0, 1fr));
+  gap: 8px 22px;
+}
+.cal-multi .cal-months {
+  --cal-cols: 2;
+}
+@media (max-width: 860px) {
+  .cal-multi .cal-months {
+    --cal-cols: 1;
+  }
+}
+.cal-mtitle {
+  margin-bottom: 8px;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--ink);
+  text-align: center;
+}
+/* 2か月表示のときは「今月」を右端に寄せる（＜ ＞ は左にまとめる） */
+.cal-multi .cal-today {
+  margin-left: auto;
 }
 /* 週・月表示のときに対象期間を薄く塗る */
 .cal-cell.in-range {

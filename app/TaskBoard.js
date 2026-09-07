@@ -998,11 +998,19 @@ export default function TaskBoard({ mode = "view" }) {
 
   // Ad Hoc Task（進捗シート由来）
   const [adhoc, setAdhoc] = useState(null);
+  // タスク名 → シート由来の元データ（詳細編集で「上書きが無いときの値」を出すのに使う）
+  const adhocByTask = useMemo(() => {
+    const m = new Map();
+    for (const a of adhoc || []) m.set(a.task, a);
+    return m;
+  }, [adhoc]);
   const [adhocTab, setAdhocTab] = useState("active"); // active（対応中）/ done（完了）
   // 各Ad Hocタスクの受注数・完了数（登録シートのセルから取得）: { [task]: {total, done} }
   const [sheetCounts, setSheetCounts] = useState({});
   // シート連携の設定モーダル対象タスク
   const [cfgTask, setCfgTask] = useState(null);
+  // 詳細編集モーダル（管理表に列が無い項目）の対象タスク
+  const [detailTask, setDetailTask] = useState(null);
   // Ad Hoc の手動並べ替え（同一優先度内の順番）
   const adhocDragIndex = useRef(null);
   const [adhocDragOver, setAdhocDragOver] = useState(null);
@@ -1025,6 +1033,11 @@ export default function TaskBoard({ mode = "view" }) {
     sheetUrl: "",
     orderCell: "",
     doneCell: "",
+    daily: "",
+    effort: "",
+    issue: "",
+    next: "",
+    memo: "",
   };
   const [addForm, setAddForm] = useState(ADD_FORM_INIT);
   const setAF = (k, v) => setAddForm((f) => ({ ...f, [k]: v }));
@@ -1118,6 +1131,9 @@ export default function TaskBoard({ mode = "view" }) {
     if (addForm.sheetUrl) setOvField("adhoc", name, "sheetUrl", addForm.sheetUrl.trim());
     if (addForm.orderCell) setOvField("adhoc", name, "orderCell", addForm.orderCell.trim());
     if (addForm.doneCell) setOvField("adhoc", name, "doneCell", addForm.doneCell.trim());
+    for (const k of ["daily", "effort", "issue", "next", "memo"]) {
+      if (String(addForm[k] || "").trim()) setOvField("adhoc", name, k, addForm[k].trim());
+    }
     if (addForm.assign.length) setAssign("adhoc", name, addForm.assign);
     if (String(addForm.prio).trim()) setPriority("adhoc", name, addForm.prio);
 
@@ -1792,8 +1808,16 @@ export default function TaskBoard({ mode = "view" }) {
                             <td className="v-strong">{row.count == null ? "—" : row.count}</td>
                             <td>{row.done == null ? "—" : row.done}</td>
                             <td>{row.rate == null ? "—" : row.rate + "%"}</td>
-                            <td className="mng-ops">{row.kind === "Ad Hoc" && (o.sheetUrl || row.customId) ? (
+                            {/* 操作：シートを開く／詳細編集／削除。
+                                scope=adhoc（Ad Hoc・区分Regularで追加した分）だけが対象。 */}
+                            <td className="mng-ops">{row.scope === "adhoc" && (o.sheetUrl || row.customId || editable) ? (
                               <span className="mng-ops-wrap">
+                                {/* 表に列が無い項目（目標対応件数・実作業工数・課題・次回アクション・メモ） */}
+                                {editable && (
+                                  <button type="button" className="forms-op" title="詳細を編集（目標対応件数・実作業工数・課題・遅延理由・次回アクション・メモ）" aria-label="詳細を編集" onClick={() => setDetailTask(row.key)}>
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="7" x2="21" y2="7" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="17" x2="16" y2="17" /><line x1="3.5" y1="7" x2="3.51" y2="7" /><line x1="3.5" y1="12" x2="3.51" y2="12" /><line x1="3.5" y1="17" x2="3.51" y2="17" /></svg>
+                                  </button>
+                                )}
                                 {/* 連携済みならスプレッドシートを直接開けるようにする（閲覧時も表示） */}
                                 {o.sheetUrl && (
                                   <a className="forms-op on" href={o.sheetUrl} target="_blank" rel="noreferrer" title={"スプレッドシートを開く\n" + o.sheetUrl} aria-label="スプレッドシートを開く">
@@ -1906,26 +1930,17 @@ export default function TaskBoard({ mode = "view" }) {
             const rangeProp = schedRange === "day" ? null : { start, end };
             return (
               <div className="tab-panel sched-wrap">
-                <div className="sched-cals">
-                  <Calendar
-                    ym={schedYm}
-                    onNav={navSched}
-                    onToday={todaySched}
-                    events={schedEvents}
-                    selected={schedDate}
-                    onSelect={setSchedDate}
-                    range={rangeProp}
-                  />
-                  <Calendar
-                    ym={shiftYm(schedYm, 1)}
-                    onNav={navSched}
-                    onToday={todaySched}
-                    events={schedEvents}
-                    selected={schedDate}
-                    onSelect={setSchedDate}
-                    range={rangeProp}
-                  />
-                </div>
+                {/* 当月＋翌月を1つの枠に。月送りは1組だけ置く */}
+                <Calendar
+                  months={2}
+                  ym={schedYm}
+                  onNav={navSched}
+                  onToday={todaySched}
+                  events={schedEvents}
+                  selected={schedDate}
+                  onSelect={setSchedDate}
+                  range={rangeProp}
+                />
 
                 <section className="sched-panel">
                   <div className="sched-panel-head">
@@ -2793,6 +2808,54 @@ export default function TaskBoard({ mode = "view" }) {
               />
             </label>
           </div>
+
+          <div className="cfg-grid">
+            <label className="fld">
+              目標対応件数（Daily）
+              <input
+                type="text"
+                value={addForm.daily}
+                onChange={(e) => setAF("daily", e.target.value)}
+                placeholder="例：32"
+              />
+            </label>
+            <label className="fld">
+              実作業工数
+              <input
+                type="text"
+                value={addForm.effort}
+                onChange={(e) => setAF("effort", e.target.value)}
+                placeholder="例：1h 4件"
+              />
+            </label>
+          </div>
+          <label className="fld">
+            課題・遅延理由
+            <textarea
+              rows={2}
+              value={addForm.issue}
+              onChange={(e) => setAF("issue", e.target.value)}
+              placeholder="例：上位優先作業集中の為"
+            />
+          </label>
+          <label className="fld">
+            次回アクション
+            <textarea
+              rows={2}
+              value={addForm.next}
+              onChange={(e) => setAF("next", e.target.value)}
+              placeholder="例：指示待ち"
+            />
+          </label>
+          <label className="fld">
+            メモ
+            <textarea
+              rows={2}
+              value={addForm.memo}
+              onChange={(e) => setAF("memo", e.target.value)}
+              placeholder="補足があれば"
+            />
+          </label>
         </div>
         {addError && <div className="modal-err">{addError}</div>}
         <p className="modal-note">
@@ -2821,6 +2884,84 @@ export default function TaskBoard({ mode = "view" }) {
         <p className="modal-note">
           このタスクの優先順・対応者・編集した内容もあわせて削除されます。工数の入力が既にある場合、実績は残ります。
         </p>
+      </Modal>
+
+      {/* 詳細編集：管理表・Ad Hoc 表に入力欄が無い項目をここでまとめて編集する */}
+      <Modal
+        open={!!detailTask}
+        title="詳細"
+        onClose={() => setDetailTask(null)}
+        width={540}
+        footer={
+          <button className="save-btn" onClick={() => setDetailTask(null)}>
+            閉じる
+          </button>
+        }
+      >
+        {detailTask &&
+          (() => {
+            const o = ovOf("adhoc", detailTask);
+            const src = adhocByTask.get(detailTask) || {};
+            // 上書きがあればそれを、無ければ進捗シート由来の値を出す
+            const cur = (k) => (o[k] !== undefined ? o[k] : src[k] ?? "");
+            const set = (k, v) => setOvField("adhoc", detailTask, k, v);
+            return (
+              <div className="modal-fields">
+                <div className="modal-strong">「{o.name ?? detailTask}」</div>
+                <div className="cfg-grid">
+                  <label className="fld">
+                    目標対応件数（Daily）
+                    <input
+                      type="text"
+                      value={cur("daily")}
+                      onChange={(e) => set("daily", e.target.value)}
+                      placeholder="例：32"
+                    />
+                  </label>
+                  <label className="fld">
+                    実作業工数
+                    <input
+                      type="text"
+                      value={cur("effort")}
+                      onChange={(e) => set("effort", e.target.value)}
+                      placeholder="例：1h 4件"
+                    />
+                  </label>
+                </div>
+                <label className="fld">
+                  課題・遅延理由
+                  <textarea
+                    rows={2}
+                    value={cur("issue")}
+                    onChange={(e) => set("issue", e.target.value)}
+                    placeholder="例：上位優先作業集中の為"
+                  />
+                </label>
+                <label className="fld">
+                  次回アクション
+                  <textarea
+                    rows={2}
+                    value={cur("next")}
+                    onChange={(e) => set("next", e.target.value)}
+                    placeholder="例：指示待ち"
+                  />
+                </label>
+                <label className="fld">
+                  メモ
+                  <textarea
+                    rows={2}
+                    value={cur("memo")}
+                    onChange={(e) => set("memo", e.target.value)}
+                    placeholder="補足があれば"
+                  />
+                </label>
+                <p className="modal-note">
+                  入力すると自動で保存され、ダッシュボードの Ad Hoc Task 表に反映されます。
+                  空にすると上書きが消え、進捗シート取込時の値に戻ります。
+                </p>
+              </div>
+            );
+          })()}
       </Modal>
 
       {/* シート連携（受注数・完了数）の設定 */}

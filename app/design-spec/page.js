@@ -732,7 +732,7 @@ export default function DesignSpecPage() {
                   "ダッシュボード",
                   <C>/dashboard</C>,
                   <>
-                    閲覧専用。<b>スケジュール</b>（連続する2か月のカレンダーと予定一覧。月送りは2つ共通なので常に連続した月になる。予定は Ad Hoc タスクの開始日・期日で、入っている日には印と件数を出す。一覧は日／週／月で範囲を切り替えられ、週・月は日付ごとにまとめて表示する）／<b>全体</b>（Regular Task・Pending のサマリー表と Ad Hoc Task 一覧）／
+                    閲覧専用。<b>スケジュール</b>（連続する2か月を、1つの枠に並べて表示する（月送りと「今月」は枠に1組だけなので、常に連続した月になる）。予定は Ad Hoc タスクの開始日・期日で、入っている日には印と件数を出す。一覧は日／週／月で範囲を切り替えられ、週・月は日付ごとにまとめて表示する）／<b>全体</b>（Regular Task・Pending のサマリー表と Ad Hoc Task 一覧）／
                     <b>案件詳細</b>（案件タイプ別のステータス×四半期）の3タブ。選択タブは localStorage に保存。カードはドラッグで並べ替え可（localStorage）。
                   </>,
                   <><C>/api/records</C>・<C>/api/adhoc</C>・<C>/api/adhoc-counts</C>・<C>/api/priority</C>・<C>/api/assign</C>・<C>/api/override</C>・<C>/api/adhoc-tasks</C>・<C>/api/kosu?list=1</C>・<C>/api/auth/me</C></>,
@@ -743,7 +743,8 @@ export default function DesignSpecPage() {
                   <>
                     同じ <C>TaskBoard</C> を <C>mode=&quot;edit&quot;</C> で使う管理表。区分（すべて／Regular／Pending／Ad Hoc）と、
                     Ad Hoc 選択時の進捗フィルターで絞り込む。編集ボタンで編集モードに入ると、優先・タスク名・開始／期日・対応者・進捗を直接編集できる。
-                    タスク追加（区分を選択）、シート連携設定、削除、工数グルーピング（リンクマーク）もここで行う。
+                    タスク追加（必要な項目をすべて入力できるモーダル）、シート連携設定、削除、工数グルーピング（リンクマーク）もここで行う。
+                    表に列が無い項目（目標対応件数・実作業工数・課題・次回アクション・メモ）は、操作列の「詳細」モーダルで編集する。
                   </>,
                   "同上 ＋ /api/kintone-sync",
                 ],
