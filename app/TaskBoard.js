@@ -1501,7 +1501,9 @@ export default function TaskBoard({ mode = "view" }) {
               案件詳細
             </button>
             </div>
-            {years.length > 0 && (
+            {/* 対象年は「全体」「案件詳細」の集計に使うもの。
+                スケジュールは Ad Hoc の開始日・期日で表示するので出さない。 */}
+            {years.length > 0 && activeTab !== "schedule" && (
               <label className="head-year">
                 対象年
                 <select value={year ?? ""} onChange={(e) => setYear(Number(e.target.value))}>
