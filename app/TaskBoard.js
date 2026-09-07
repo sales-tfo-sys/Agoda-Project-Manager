@@ -858,6 +858,18 @@ export default function TaskBoard({ mode = "view" }) {
         .then((j) => {
           setSheetCounts(j.items || {});
           setSheetErrors(j.errors || {});
+          // 完了済みタスクでサーバーが焼き付けた件数を、こちらの上書きデータにも入れておく。
+          // 入れておかないと、次に何か編集して保存したときに消えてしまう。
+          const fz = j.frozen || {};
+          if (Object.keys(fz).length) {
+            const m = { ...ovRef.current };
+            for (const [key, v] of Object.entries(fz)) {
+              const k = `adhoc|${key}`;
+              m[k] = { ...(m[k] || {}), total: v.total, done: v.done };
+            }
+            ovRef.current = m;
+            setOv(m);
+          }
         })
         .catch(() => {});
     } catch (e) {
@@ -1076,6 +1088,16 @@ export default function TaskBoard({ mode = "view" }) {
   const setOvField = (scope, key, field, value) => {
     const k = `${scope}|${key}`;
     const next = { ...(ovRef.current[k] || {}), [field]: value };
+    // 完了にした瞬間の件数・完了数を保存しておく。
+    // 完了後もシートを読み続けると、タスクが増えるほど表示が遅くなるため
+    // （シートのURL・セルの設定はそのまま残す）。
+    if (scope === "adhoc" && field === "status" && value === "Complete") {
+      const sc = sheetCountsRef.current[key];
+      if (sc && (sc.total != null || sc.done != null)) {
+        if (sc.total != null) next.total = sc.total;
+        if (sc.done != null) next.done = sc.done;
+      }
+    }
     ovRef.current = { ...ovRef.current, [k]: next };
     setOv(ovRef.current);
     // 入力のたびに送らないよう少しまとめてから保存
@@ -1114,6 +1136,9 @@ export default function TaskBoard({ mode = "view" }) {
   const [adhocTab, setAdhocTab] = useState("active"); // active（対応中）/ done（完了）
   // 各Ad Hocタスクの受注数・完了数（登録シートのセルから取得）: { [task]: {total, done} }
   const [sheetCounts, setSheetCounts] = useState({});
+  // setOvField（毎回作り直される）から最新の値を読むための控え
+  const sheetCountsRef = useRef({});
+  sheetCountsRef.current = sheetCounts;
   // シートを読めなかったタスクの理由（連携ボタンとモーダルに出す）
   const [sheetErrors, setSheetErrors] = useState({});
   // シート連携の設定モーダル対象タスク
@@ -3230,6 +3255,10 @@ ${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めません�
                   </div>
                 )}
                 <p className="modal-note">
+                  進捗を <b>Complete</b> にすると、その時点の受注数・完了数を保存して以降はシートを読みません
+                  （完了したタスクが増えても表示が遅くならないように。URL・セルの設定はそのまま残ります）。
+                  取り直したいときは、進捗を一度 Complete 以外に戻してください。
+                  <br />
                   <b>読み取るタブを開いた状態のURL</b>を貼ってください（URL末尾の <code>gid</code> でタブを判別します）。
                   受注数・完了数は<b>同じタブ</b>にある前提です。入力は自動保存され、次回の読み込みで最新値を取得します。
                   シートはサービスアカウントに「閲覧者」で共有するか、「リンクを知っている全員が閲覧可」にしてください。

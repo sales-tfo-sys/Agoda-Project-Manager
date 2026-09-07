@@ -100,7 +100,7 @@ const API_GROUPS = [
       ["GET", "/api/adhoc-tasks", "ログイン", "サイトで追加した Ad Hoc タスク（adhoc_task）一覧。"],
       ["POST", "/api/adhoc-tasks", "editTasks", "adhoc_task に追加し、同名の kosu_task も作成する。body.board が regular なら task_type=Regular task、それ以外は Ad hoc task。"],
       ["DELETE", "/api/adhoc-tasks", "editTasks", "adhoc_task を削除し、scope=adhoc の override / assign / priority も削除。kosu_task は実績があれば active=false、無ければ削除。"],
-      ["GET", "/api/adhoc-counts", "ログイン", "task_override(scope=adhoc) の sheetUrl / orderCell / doneCell から受注数・完了数のセルを読む（各セル60秒キャッシュ）。"],
+      ["GET", "/api/adhoc-counts", "ログイン", "task_override(scope=adhoc) の sheetUrl / orderCell / doneCell から受注数・完了数のセルを読む（各セル60秒キャッシュ）。進捗が Complete のタスクはシートを読まず、task_override に焼き付けた total / done を返す（未保存なら1回だけ読んで保存）。読めなかったタスクは errors に理由を入れる。"],
     ],
   },
   {
