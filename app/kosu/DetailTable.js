@@ -4,8 +4,19 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { holidayName, dowLabel } from "../../lib/holidays";
 
-// 完了タブで作業内容の右端に置く Complete バッジの幅（列幅の計算に使う）
+// 作業内容の右端に置く進捗バッジの幅（列幅の計算に使う）
 const BADGE_W = 82;
+
+// Ad Hoc の並び順・バッジの色に使う進捗。プロジェクト管理と同じ呼び方に揃える。
+const STATUS_RANK = { "On Track": 0, Behind: 1, Onhold: 2, Complete: 3 };
+const statusClass = (st) =>
+  st === "Complete"
+    ? "st-done"
+    : st === "Onhold"
+    ? "st-hold"
+    : st === "Behind"
+    ? "st-behind"
+    : "st-ontrack";
 
 // 作業名の正規化：全角/半角（NFKC）を揃え、空白を詰めて小文字化。
 // 進捗シートと作業工数管理シートでカッコや空白が食い違っても照合できるようにする。
@@ -29,7 +40,7 @@ export default function DetailTable({ title, compact = false }) {
   const [leftOnByName, setLeftOnByName] = useState({});
 
   // ダッシュボードで編集した「作業内容（名称）」と「対応者」を反映するための対応表
-  const [link, setLink] = useState({ rename: {}, tanto: {}, tasks: {}, done: new Set(), doneNorm: new Set(), compDateByKey: {}, compDateByLink: {}, compDateByNorm: {}, order: {} });
+  const [link, setLink] = useState({ rename: {}, tanto: {}, tasks: {}, done: new Set(), doneNorm: new Set(), compDateByKey: {}, compDateByLink: {}, compDateByNorm: {}, order: {}, statusOf: {} });
 
   const load = useCallback(async () => {
     setError(null);
@@ -375,6 +386,17 @@ export default function DetailTable({ title, compact = false }) {
         }
         const tantoStr = {};
         for (const [k, v] of Object.entries(tanto)) tantoStr[k] = v.join("、");
+        // 作業内容の代表ステータス。複数タスクをまとめている場合は
+        // 動いているもの（On Track → Behind → Onhold → Complete）を優先する。
+        const statusOfContent = {};
+        for (const [content, sts] of Object.entries(statuses)) {
+          let best = null;
+          for (const st of sts) {
+            if (!st || STATUS_RANK[st] == null) continue;
+            if (best == null || STATUS_RANK[st] < STATUS_RANK[best]) best = st;
+          }
+          if (best) statusOfContent[content] = best;
+        }
         // 紐づいたタスクが全て Complete なら、その作業内容は完了とみなす
         const doneByLink = new Set();
         const compDateByLink = {};
@@ -455,6 +477,7 @@ export default function DetailTable({ title, compact = false }) {
           compDateByLink,
           compDateByNorm,
           order: orderOf,
+          statusOf: statusOfContent,
         });
       }
     } catch (e) {
@@ -602,6 +625,14 @@ export default function DetailTable({ title, compact = false }) {
         byDetail[r.detail].push(r);
       }
       const idx = new Map(dOrder.map((d, i) => [d, i]));
+      const rankOf = (d) => {
+        const st = link.statusOf?.[d] ?? link.statusOf?.[link.rename[d] || d];
+        return STATUS_RANK[st] ?? 9;
+      };
+      // 並びはプロジェクト管理の優先順が第一。
+      //   ①優先順あり（小さい番号ほど上）
+      //   ②優先順なし同士は進捗の順（On Track → Behind → Onhold → Complete）
+      //   ③それも同じなら開始日の新しい順
       const sorted = [...dOrder].sort((da, db) => {
         const a = ord[da] || {};
         const b = ord[db] || {};
@@ -610,7 +641,9 @@ export default function DetailTable({ title, compact = false }) {
         if (a.prio != null && b.prio != null) return a.prio - b.prio || ia - ib;
         if (a.prio != null) return -1;
         if (b.prio != null) return 1;
-        // 優先順なし同士は開始日の新しい順（プロジェクト管理の Complete と同じ）
+        const ra = rankOf(da);
+        const rb = rankOf(db);
+        if (ra !== rb) return ra - rb;
         const sa = a.startNum ?? null;
         const sb = b.startNum ?? null;
         if (sa != null && sb != null) return sb - sa || ia - ib;
@@ -655,8 +688,8 @@ export default function DetailTable({ title, compact = false }) {
       max = Math.max(max, ctx.measureText(label).width);
     }
     // セル余白(18) ＋ 連動マーク(20) ぶんを足す。
-    // 完了タブは右端に Complete バッジが入るのでその幅も確保する。
-    const badge = tab === "done" ? BADGE_W : 0;
+    // 右端に進捗バッジが入るのでその幅も確保する。
+    const badge = BADGE_W;
     return Math.max(
       218 + badge,
       Math.min(620 + badge, Math.ceil(max) + 38 + badge)
@@ -790,16 +823,29 @@ export default function DetailTable({ title, compact = false }) {
                           <td
                             className={
                               "l c-content" +
-                              (tab === "done" ? " has-done" : "") +
+                              (link.statusOf?.[r.detail] ?? link.statusOf?.[name] ?? (tab === "done" ? "Complete" : null)
+                                ? " has-done"
+                                : "") +
                               (srcTasks.length > 0 ? " has-link" : "")
                             }
                           >
                             {name}
-                            {tab === "done" && (
-                              <span className="done-badge" title="完了">
-                                Complete
-                              </span>
-                            )}
+                            {(() => {
+                              // 作業内容の右端に進捗バッジを出す（Ad Hoc のみ）
+                              const st =
+                                link.statusOf?.[r.detail] ??
+                                link.statusOf?.[name] ??
+                                (tab === "done" ? "Complete" : null);
+                              if (!st) return null;
+                              return (
+                                <span
+                                  className={"done-badge " + statusClass(st)}
+                                  title={`進捗：${st}`}
+                                >
+                                  {st}
+                                </span>
+                              );
+                            })()}
                             {srcTasks.length > 0 && (
                               <span
                                 className="link-dot"

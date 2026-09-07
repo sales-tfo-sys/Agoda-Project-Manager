@@ -10848,3 +10848,26 @@ button.drive-link:disabled {
   background: rgba(47, 107, 224, 0.12);
   border-color: rgba(47, 107, 224, 0.3);
 }
+
+/* 工数明細：作業内容の右端に出す進捗バッジ。プロジェクト管理の進捗ピルと同じ色。
+   グルーピングの印はバッジの左に置く。 */
+.kosu-table td.c-content .done-badge.st-ontrack {
+  color: #157f3c;
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+.kosu-table td.c-content .done-badge.st-behind {
+  color: #dc2626;
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+.kosu-table td.c-content .done-badge.st-hold {
+  color: #b45309;
+  background: rgba(234, 179, 8, 0.14);
+  border-color: rgba(234, 179, 8, 0.35);
+}
+.kosu-table td.c-content .done-badge.st-done {
+  color: #2f6be0;
+  background: rgba(47, 107, 224, 0.12);
+  border-color: rgba(47, 107, 224, 0.3);
+}
