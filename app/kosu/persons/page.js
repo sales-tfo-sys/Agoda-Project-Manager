@@ -4,6 +4,7 @@ import Link from "next/link";
 import Modal from "../../Modal";
 import PagePermModal from "./PagePermModal";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useUi } from "../../Ui";
 
 
@@ -71,26 +72,35 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
   const canEdit = !!perms?.editAccounts; // 追加・改名・退職・削除ができる
   const canGrant = !!perms?.grantPerms; // 役割・権限フラグを変更できる（オーナー）
 
-  // 検索・絞り込み・ページ送り
+  // 絞り込み：在籍タブ・キーワード・権限
   const [q, setQ] = useState("");
-  const [showRetired, setShowRetired] = useState(true); // 退職者も既定で表示する（隠さない）
-  const [filterOpen, setFilterOpen] = useState(false);
-  const filterRef = useRef(null);
-
-  // 絞り込みポップオーバーは外side クリックで閉じる
+  const [tab, setTab] = useState("all"); // all / active / retired
+  const [roleFilter, setRoleFilter] = useState("all");
+  // 操作列の「…」メニュー（表がスクロールするので body 直下に固定配置で出す）
+  const [menu, setMenu] = useState(null); // { id, top, left }
   useEffect(() => {
-    if (!filterOpen) return;
-    const onDown = (e) => {
-      if (filterRef.current && !filterRef.current.contains(e.target)) setFilterOpen(false);
-    };
-    const onKey = (e) => e.key === "Escape" && setFilterOpen(false);
-    document.addEventListener("mousedown", onDown);
+    if (!menu) return;
+    const close = () => setMenu(null);
+    const onKey = (e) => e.key === "Escape" && setMenu(null);
+    document.addEventListener("mousedown", close);
     document.addEventListener("keydown", onKey);
+    window.addEventListener("scroll", close, true);
     return () => {
-      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("mousedown", close);
       document.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", close, true);
     };
-  }, [filterOpen]);
+  }, [menu]);
+  const openMenu = (e, id) => {
+    e.stopPropagation();
+    const r = e.currentTarget.getBoundingClientRect();
+    const H = 96;
+    setMenu({
+      id,
+      left: Math.min(r.right - 150, window.innerWidth - 162),
+      top: r.bottom + H > window.innerHeight ? r.top - H - 4 : r.bottom + 6,
+    });
+  };
 
   const removePerson = async () => {
     if (!delTarget) return;
@@ -310,25 +320,36 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
 
   const activeList = persons.filter((p) => p.active);
 
-  // 検索＋在籍/退職の絞り込み → ページ分割
+  // タブ（すべて／在籍中／退職済み）の件数
+  const tabCounts = useMemo(
+    () => ({
+      all: persons.length,
+      active: persons.filter((p) => p.active).length,
+      retired: persons.filter((p) => !p.active).length,
+    }),
+    [persons]
+  );
+
+  // タブ＋キーワード＋権限で絞り込む
   const filtered = useMemo(() => {
-    const base = showRetired ? persons : activeList;
     const key = q.trim().toLowerCase();
-    if (!key) return base;
-    return base.filter((p) =>
-      [p.name, p.email, romaji(p.email)]
+    return persons.filter((p) => {
+      if (tab === "active" && !p.active) return false;
+      if (tab === "retired" && p.active) return false;
+      if (roleFilter !== "all" && (p.role || "member") !== roleFilter) return false;
+      if (!key) return true;
+      return [p.name, p.login_name, p.email, romaji(p.email)]
         .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(key))
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [persons, q, showRetired]);
+        .some((v) => String(v).toLowerCase().includes(key));
+    });
+  }, [persons, q, tab, roleFilter]);
 
   // 人数が少ないためページ分割はせず全件表示する
   const pageRows = filtered;
   // 並べ替えは絞り込みが無いときだけ（表示順と実データの順が一致しているため）
   // 退職者は常時表示だが末尾に固定。現役行だけドラッグ可（現役の表示順＝現役リストの
   // インデックスなので reorder の前提が保たれる）。
-  const canDrag = !q.trim();
+  const canDrag = !q.trim() && tab === "all" && roleFilter === "all";
 
   // 担当者を追加ボタン（通常ヘッダー／埋め込みツールバーの両方で使う）
   const addPersonBtn = canEdit ? (
@@ -542,6 +563,52 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
           <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>
         </div>
       ) : (
+        <>
+        {/* 絞り込み：在籍タブ／キーワード検索／権限 */}
+        <div className="pf-bar">
+          <div className="pf-tabs" role="tablist" aria-label="在籍で絞り込み">
+            {[
+              ["all", "すべて"],
+              ["active", "在籍中"],
+              ["retired", "退職済み"],
+            ].map(([k, label]) => (
+              <button
+                key={k}
+                type="button"
+                role="tab"
+                aria-selected={tab === k}
+                className={"pf-tab" + (tab === k ? " active" : "")}
+                onClick={() => setTab(k)}
+              >
+                {label}
+                <span className="pf-count">{tabCounts[k]}</span>
+              </button>
+            ))}
+          </div>
+          <label className="pf-search" aria-label="名前・メールで検索">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="16.5" y1="16.5" x2="21" y2="21" />
+            </svg>
+            <input
+              type="search"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="名前・メールで検索"
+            />
+          </label>
+          <select
+            className="pf-role"
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+            aria-label="権限で絞り込み"
+          >
+            <option value="all">すべての権限</option>
+            <option value="owner">オーナー</option>
+            <option value="admin">管理者</option>
+            <option value="member">メンバー</option>
+          </select>
+        </div>
         <div className="card no-pad persons-card">
           <div className="dtw">
             <table className="dtable persons-table">
@@ -808,44 +875,34 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                       </td>
                       <td className="ops-td">
                         {canEdit ? (
-                          <>
-                            {p.active ? (
+                          <span className="pf-ops">
+                            {/* 退職者は「復帰」をその場に出す（元に戻す操作が多いため） */}
+                            {!p.active && (
                               <button
-                                className="mini-btn"
-                                onClick={() =>
-                                  patch(p.id, {
-                                    active: false,
-                                    left_on: new Date().toISOString().slice(0, 10),
-                                  })
-                                }
-                                disabled={busy}
-                                title="退職・異動（過去の実績は残ります）"
-                              >
-                                退職
-                              </button>
-                            ) : (
-                              <button
-                                className="mini-btn"
+                                className="mini-btn pf-back"
                                 onClick={() => patch(p.id, { active: true, left_on: null })}
                                 disabled={busy}
                                 title="在籍に戻す"
                               >
                                 復帰
                               </button>
-                            )}{" "}
+                            )}
                             <button
-                              className="mini-btn danger"
-                              onClick={() => {
-                                setError(null);
-                                setMsg(null);
-                                setDelTarget({ id: p.id, name: p.name });
-                              }}
+                              type="button"
+                              className={"pf-more" + (menu?.id === p.id ? " on" : "")}
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onClick={(e) => openMenu(e, p.id)}
                               disabled={busy}
-                              title="担当者とログインアカウントを完全に削除（実績があるときは不可）"
+                              title="操作"
+                              aria-label="操作"
                             >
-                              削除
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <circle cx="5" cy="12" r="1.8" />
+                                <circle cx="12" cy="12" r="1.8" />
+                                <circle cx="19" cy="12" r="1.8" />
+                              </svg>
                             </button>
-                          </>
+                          </span>
                         ) : (
                           <span className="perm-note">—</span>
                         )}
@@ -858,7 +915,68 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
           </div>
 
         </div>
+        <p className="pf-foot">
+          {filtered.length > 0
+            ? `${persons.length}件中 1–${filtered.length}件を表示`
+            : `${persons.length}件中 0件を表示`}
+        </p>
+        </>
       )}
+
+      {/* 操作の「…」メニュー */}
+      {menu &&
+        typeof document !== "undefined" &&
+        (() => {
+          const p = persons.find((x) => x.id === menu.id);
+          if (!p) return null;
+          return createPortal(
+            <div
+              className="pf-menu"
+              style={{ top: menu.top, left: menu.left }}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              {p.active ? (
+                <button
+                  type="button"
+                  className="pf-menu-item"
+                  disabled={busy}
+                  onClick={() => {
+                    setMenu(null);
+                    patch(p.id, { active: false, left_on: new Date().toISOString().slice(0, 10) });
+                  }}
+                >
+                  退職にする
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="pf-menu-item"
+                  disabled={busy}
+                  onClick={() => {
+                    setMenu(null);
+                    patch(p.id, { active: true, left_on: null });
+                  }}
+                >
+                  在籍に戻す
+                </button>
+              )}
+              <button
+                type="button"
+                className="pf-menu-item danger"
+                disabled={busy}
+                onClick={() => {
+                  setMenu(null);
+                  setError(null);
+                  setMsg(null);
+                  setDelTarget({ id: p.id, name: p.name });
+                }}
+              >
+                削除する
+              </button>
+            </div>,
+            document.body
+          );
+        })()}
     </div>
   );
 }
