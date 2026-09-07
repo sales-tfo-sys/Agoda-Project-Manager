@@ -10272,3 +10272,16 @@ button.drive-link:disabled {
 .persons-page .persons-table tbody tr:has(+ tr.row-retired) td {
   border-bottom-color: #a3abb9;
 }
+
+/* スプレッドシートを開くボタンの枠だけ濃く（ブランド青そのもの）で、
+   隣のExcelダウンロード（淡い緑枠）と釣り合っていなかったので枠を淡い青に揃える */
+.forms-op.on {
+  border-color: #c2d7f7;
+}
+
+/* システムヘルスの一覧：見出しは中身の左右寄せに合わせず中央に置く */
+.sys-health .sh-table thead th,
+.sys-health .sh-table thead th.l,
+.sys-health .sh-table thead th.r {
+  text-align: center;
+}
