@@ -6,6 +6,7 @@ import Link from "next/link";
 import Modal from "./Modal";
 import Calendar from "./Calendar";
 import { holidayName, dowLabel } from "../lib/holidays";
+import UpdatedPop from "./UpdatedPop";
 
 const TYPE_CODE = "ドロップダウン_13"; // 案件名（空欄は Hotel依頼）
 const STAGE_CODE = "ドロップダウン"; // Stage（ステータス）
@@ -97,6 +98,67 @@ function DriveLinks({ note, only }) {
       </span>
       {note && <span className="drive-note">{note}</span>}
     </div>
+  );
+}
+
+// 優先順の入力欄。
+// 1文字打つたびに保存すると、その場で並べ替わって行が動き、入力欄からフォーカスが
+// 外れてしまう（「2桁目が打てない＝変更できない」状態になる）。
+// 入力中は手元の値だけ更新し、フォーカスが外れたときと Enter で保存する。
+function PrioInput({ value, onCommit, label }) {
+  const [draft, setDraft] = useState(value ?? "");
+  const [editing, setEditing] = useState(false);
+  useEffect(() => {
+    if (!editing) setDraft(value ?? "");
+  }, [value, editing]);
+  const commit = () => {
+    setEditing(false);
+    const v = String(draft).trim();
+    if (v === String(value ?? "")) return; // 変わっていなければ何もしない
+    onCommit(v);
+  };
+  return (
+    <input
+      className="prio-input"
+      type="number"
+      min="1"
+      value={draft}
+      aria-label={label}
+      onFocus={() => setEditing(true)}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") e.currentTarget.blur();
+        if (e.key === "Escape") {
+          setDraft(value ?? "");
+          setEditing(false);
+          e.currentTarget.blur();
+        }
+      }}
+    />
+  );
+}
+
+// ドラッグの取っ手（優先順のセルに出す）
+function Grip({ onDragStart, onDragEnd, title }) {
+  return (
+    <span
+      className="adhoc-grip"
+      draggable
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      title={title}
+      aria-hidden="true"
+    >
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+        <circle cx="9" cy="5" r="1.7" />
+        <circle cx="15" cy="5" r="1.7" />
+        <circle cx="9" cy="12" r="1.7" />
+        <circle cx="15" cy="12" r="1.7" />
+        <circle cx="9" cy="19" r="1.7" />
+        <circle cx="15" cy="19" r="1.7" />
+      </svg>
+    </span>
   );
 }
 
@@ -712,13 +774,10 @@ function SummaryTable({
                   {setPriority && (
                     <td className="prio-td">
                       {edit ? (
-                        <input
-                          className="prio-input"
-                          type="number"
-                          min="1"
+                        <PrioInput
                           value={prioOf(scope, t, "") ?? ""}
-                          onChange={(e) => setPriority(scope, t, e.target.value)}
-                          aria-label={`${t} の作業優先順`}
+                          onCommit={(v) => setPriority(scope, t, v)}
+                          label={`${t} の作業優先順`}
                         />
                       ) : (
                         <span className="prio-view">{prioOf(scope, t, "") ?? "—"}</span>
@@ -1605,23 +1664,6 @@ export default function TaskBoard({ mode = "view" }) {
           <span className="page-h page-h-gap">{isEdit ? "プロジェクト管理" : "ダッシュボード"}</span>
         </div>
         <div className="head-right">
-          {updatedAt && (
-            <span className="updated">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="9" />
-                <polyline points="12 7 12 12 15 14" />
-              </svg>
-              最終更新：
-              {updatedAt.toLocaleString("ja-JP", {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-              })}
-            </span>
-          )}
           {editable && (
             <button
               className="icon-btn"
@@ -1637,6 +1679,7 @@ export default function TaskBoard({ mode = "view" }) {
               </svg>
             </button>
           )}
+          <UpdatedPop />
         </div>
       </div>
 
@@ -1812,26 +1855,41 @@ export default function TaskBoard({ mode = "view" }) {
             const statusCnt = { all: adhocForStatus.length };
             for (const s of STATUS_FILTERS) statusCnt[s] = adhocForStatus.filter((r) => (r.status || "") === s).length;
             statusCnt["not-complete"] = adhocForStatus.filter((r) => (r.status || "") !== "Complete").length;
-            const onDrop = (row) => {
-              const from = mngDragKey.current;
-              if (!from || from.scope !== row.scope || from.kind !== row.kind || from.key === row.key) {
-                mngDragKey.current = null;
-                setMngOverKey(null);
-                return;
+            // 完了した作業は順位を持たない（表示も「—」）ので並べ替えの対象から外す
+            const isRanked = (r) => (r.status || "") !== "Complete";
+            // 並べ替えたあと、上から 1,2,3… を振り直す。
+            // 工数グルーピングが同じ作業は「1つの塊」として同じ番号にする
+            // （IHM_CM / IHM_Plan / IHM_Room がまとめて 3 になる、という従来の付け方に合わせる）。
+            const renumber = (scope, keys) => {
+              const numOf = new Map(); // グループ → 番号
+              let n = 0;
+              for (const k of keys) {
+                const g = ovOf(scope, k).kosuLink || k;
+                if (!numOf.has(g)) numOf.set(g, ++n);
+                setPriority(scope, k, numOf.get(g));
               }
-              const keys = rows.filter((r) => r.scope === row.scope && r.kind === row.kind).map((r) => r.key);
-              const fi = keys.indexOf(from.key);
-              const ti = keys.indexOf(row.key);
-              if (fi < 0 || ti < 0) {
-                mngDragKey.current = null;
-                setMngOverKey(null);
-                return;
-              }
-              const moved = keys.splice(fi, 1)[0];
-              keys.splice(ti, 0, moved);
-              keys.forEach((k, idx) => setPriority(row.scope, k, idx + 1));
+            };
+            const dragEnd = () => {
               mngDragKey.current = null;
               setMngOverKey(null);
+            };
+            const canDropOn = (row) => {
+              const from = mngDragKey.current;
+              return !!from && from.scope === row.scope && from.kind === row.kind && from.key !== row.key;
+            };
+            const onDrop = (row) => {
+              if (!canDropOn(row) || !isRanked(row)) return dragEnd();
+              const from = mngDragKey.current;
+              const keys = rows
+                .filter((r) => r.scope === row.scope && r.kind === row.kind && isRanked(r))
+                .map((r) => r.key);
+              const fi = keys.indexOf(from.key);
+              const ti = keys.indexOf(row.key);
+              if (fi < 0 || ti < 0) return dragEnd();
+              const moved = keys.splice(fi, 1)[0];
+              keys.splice(ti, 0, moved);
+              renumber(row.scope, keys);
+              dragEnd();
             };
             const kindBadge = { Regular: "mng-b-reg", Pending: "mng-b-pen", "Ad Hoc": "mng-b-adhoc" };
             // 日付は自前表示（曜日の括弧を出さない）＋カレンダーだけ標準ピッカーを開く
@@ -1929,11 +1987,45 @@ export default function TaskBoard({ mode = "view" }) {
                         const o = ovOf(row.scope, row.key);
                         const ids = assignOf(row.scope, row.key);
                         const rk = row.scope + "|" + row.key;
+                        const ranked = isRanked(row);
+                        const dragOn = editable && ranked;
                         return (
                           <tr
                             key={rk}
+                            className={mngOverKey === rk ? "row-dragover" : undefined}
+                            onDragOver={
+                              dragOn
+                                ? (e) => {
+                                    if (!canDropOn(row)) return;
+                                    e.preventDefault();
+                                    if (mngOverKey !== rk) setMngOverKey(rk);
+                                  }
+                                : undefined
+                            }
+                            onDrop={dragOn ? () => onDrop(row) : undefined}
                           >
-                            <td>{editable ? (<input className="prio-input" type="number" value={effPrio(row.scope, row.key, row.no) ?? ""} onChange={(e) => setPriority(row.scope, row.key, e.target.value)} />) : (effPrio(row.scope, row.key, row.no) ?? "—")}</td>
+                            <td className="prio-td">
+                              {editable ? (
+                                <span className="prio-edit">
+                                  {ranked && (
+                                    <Grip
+                                      onDragStart={() => {
+                                        mngDragKey.current = { scope: row.scope, key: row.key, kind: row.kind };
+                                      }}
+                                      onDragEnd={dragEnd}
+                                      title="ドラッグで並べ替え（離すと上から順に番号を付け直します）"
+                                    />
+                                  )}
+                                  <PrioInput
+                                    value={effPrio(row.scope, row.key, row.no) ?? ""}
+                                    onCommit={(v) => setPriority(row.scope, row.key, v)}
+                                    label={`${row.key} の作業優先順`}
+                                  />
+                                </span>
+                              ) : (
+                                effPrio(row.scope, row.key, row.no) ?? "—"
+                              )}
+                            </td>
                             <td><span className={"mng-badge " + kindBadge[row.kind]}>{row.kind}</span></td>
                             <td className="l">
                               <span className="mng-task-cell">
@@ -2523,13 +2615,10 @@ ${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めません�
                                       <circle cx="15" cy="19" r="1.7" />
                                     </svg>
                                   </span>
-                                  <input
-                                    className="prio-input"
-                                    type="number"
-                                    min="1"
+                                  <PrioInput
                                     value={prioOf("adhoc", t.task, t.no) ?? ""}
-                                    onChange={(e) => setPriority("adhoc", t.task, e.target.value)}
-                                    aria-label={`${t.task} の作業優先順`}
+                                    onCommit={(v) => setPriority("adhoc", t.task, v)}
+                                    label={`${t.task} の作業優先順`}
                                   />
                                 </span>
                               ) : (

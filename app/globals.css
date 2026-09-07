@@ -10291,15 +10291,11 @@ button.drive-link:disabled {
    ・章ごとのカード（枠・影・角丸）をやめ、1本の文書として続ける
    ・左は目次だけの細い列。区切りは縦の細線1本
    ・先頭に「最終更新」「タイトル」「要旨」を置く
-   ・表は見出しだけ淡い地色。一覧の青ヘッダーはここでは使わない
+   色は他ページと同じ（背景グレー・一覧ヘッダーは青）のまま。
    ═════════════════════════════════════════════════════════ */
 .spec-page {
   min-height: 100vh;
-  background: #f7f4f0;
-}
-.spec-page .head {
-  background: #f7f4f0;
-  border-bottom: 1px solid #e5ded5;
+  background: var(--surface);
 }
 .spec-layout {
   grid-template-columns: 248px minmax(0, 1fr);
@@ -10315,7 +10311,7 @@ button.drive-link:disabled {
   padding: 22px 20px 40px 2px;
   background: transparent;
   border: 0;
-  border-right: 1px solid #e5ded5;
+  border-right: 1px solid var(--border);
   border-radius: 0;
   box-shadow: none;
 }
@@ -10324,7 +10320,7 @@ button.drive-link:disabled {
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.02em;
-  color: #6b6157;
+  color: var(--ink-3);
   border-bottom: 0;
   margin-bottom: 2px;
 }
@@ -10337,16 +10333,16 @@ button.drive-link:disabled {
   font-size: 12.5px;
   font-weight: 600;
   line-height: 1.5;
-  color: #3f3a34;
+  color: var(--ink-2);
   border-radius: 0;
 }
 .spec-toc-item:hover {
   background: transparent;
-  color: #b3543f;
+  color: var(--accent);
   text-decoration: underline;
 }
 .spec-toc-item.active {
-  color: #b3543f;
+  color: var(--accent);
   background: transparent;
   font-weight: 800;
 }
@@ -10358,7 +10354,7 @@ button.drive-link:disabled {
   padding-left: 14px;
   font-size: 11.5px;
   font-weight: 500;
-  color: #6b6157;
+  color: var(--ink-3);
 }
 
 /* ── 本文 ── */
@@ -10375,8 +10371,8 @@ button.drive-link:disabled {
   padding: 4px 12px;
   font-size: 11.5px;
   font-weight: 700;
-  color: #6b6157;
-  background: #ece6de;
+  color: var(--ink-2);
+  background: var(--accent-soft);
   border-radius: 999px;
 }
 .spec-title {
@@ -10385,21 +10381,21 @@ button.drive-link:disabled {
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.35;
-  color: #2b2721;
+  color: var(--ink);
 }
 /* 要旨：この文書が何のためにあるかを最初に置く */
 .spec-abstract {
   padding: 16px 20px;
   font-size: 13px;
   line-height: 1.95;
-  color: #4a3f36;
-  background: #f6e9e6;
-  border-left: 3px solid #c4705c;
+  color: var(--ink);
+  background: var(--accent-soft);
+  border-left: 3px solid var(--accent);
   border-radius: 0 8px 8px 0;
 }
 .spec-abstract b {
   font-weight: 800;
-  color: #2b2721;
+  color: var(--ink);
 }
 
 /* 章：カードをやめて見出しの罫線で区切る */
@@ -10416,65 +10412,47 @@ button.drive-link:disabled {
   padding-bottom: 10px;
   font-size: 20px;
   font-weight: 800;
-  color: #2b2721;
-  border-bottom: 1px solid #e0d8ce;
+  color: var(--ink);
+  border-bottom: 1px solid var(--border);
 }
 .spec-lead {
   font-size: 13px;
-  color: #4a3f36;
+  color: var(--ink-2);
 }
 .spec-h3 {
   margin: 24px 0 10px;
   font-size: 14.5px;
-  color: #2b2721;
+  color: var(--ink);
 }
 .spec-h3::before {
   width: 3px;
   height: 14px;
-  background: #c4705c;
+  background: var(--accent);
 }
 .spec-p,
 .spec-ul {
   font-size: 13px;
-  color: #3f3a34;
-}
-.spec-note {
-  font-size: 12.5px;
-  color: #4a3f36;
-  background: #f1ece5;
-  border: 1px solid #e0d8ce;
-  border-left: 3px solid #c4705c;
-}
-.spec-code {
-  font-size: 11.5px;
-  color: #7a4b3a;
-  background: #efe9e1;
-  border-color: #e0d8ce;
+  color: var(--ink);
 }
 
-/* ── 表：見出しは淡い地色。本文は白 ── */
+/* ── 表：一覧と同じく見出しは青・本文は白 ── */
 .spec-tw {
   margin: 4px 0 10px;
-  border: 1px solid #e0d8ce;
+  border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
   overflow-x: auto;
-  background: #ffffff;
+  background: var(--surface);
 }
 .spec-table {
   border: 0;
 }
-.spec-page .spec-table th,
 .spec-table th {
-  padding: 9px 14px;
+  padding: 8px 14px;
   font-size: 12.5px;
   font-weight: 800;
   text-align: left;
-  color: #3f3a34;
-  background: #f1ece5;
-  background-image: none;
-  border-bottom: 1px solid #e0d8ce;
-  border-right: 1px solid #e0d8ce;
+  border-right: 1px solid rgba(255, 255, 255, 0.22);
   white-space: nowrap;
 }
 .spec-table th:last-child {
@@ -10486,10 +10464,10 @@ button.drive-link:disabled {
   line-height: 1.8;
   /* 文書の表なので中央寄せにはしない（既定の中央寄せを打ち消す） */
   text-align: left;
-  color: #3f3a34;
-  background: #ffffff;
-  border-bottom: 1px solid #ece6de;
-  border-right: 1px solid #ece6de;
+  color: var(--ink);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
 }
 .spec-table td:last-child {
   border-right: 0;
@@ -10499,29 +10477,26 @@ button.drive-link:disabled {
 }
 .spec-table td:first-child {
   font-weight: 700;
-  color: #2b2721;
+  color: var(--ink);
 }
 
 /* 処理の流れ（番号つきの箱） */
 .spec-flow-step {
-  background: #ffffff;
-  border: 1px solid #e0d8ce;
-}
-.spec-flow-n {
-  background: #c4705c;
+  background: var(--surface);
+  border: 1px solid var(--border);
 }
 .spec-foot {
   margin-top: 40px;
   padding-top: 16px;
   font-size: 11.5px;
-  color: #8a8078;
-  border-top: 1px solid #e0d8ce;
+  color: var(--ink-3);
+  border-top: 1px solid var(--border);
 }
 
 @media (max-width: 1000px) {
   .spec-toc {
     border-right: 0;
-    border-bottom: 1px solid #e5ded5;
+    border-bottom: 1px solid var(--border);
   }
   .spec-body {
     padding-left: 8px;
@@ -10584,4 +10559,126 @@ button.drive-link:disabled {
 .manage-table .klink-btn {
   width: 20px;
   height: 20px;
+}
+
+/* ══════════════ ヘッダー右端「最終更新日時」 ══════════════ */
+/* 帯に日時をベタ書きすると幅を食うので、時計ボタンの中に畳んでいる */
+.upop {
+  position: relative;
+  display: inline-flex;
+}
+.icon-btn.upop-btn.on {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.upop-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 60;
+  width: 340px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(20, 28, 44, 0.16);
+}
+.upop-h {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.upop-sec {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.upop-sec-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 11px;
+  background: var(--surface-soft, #f1f3f6);
+  border-bottom: 1px solid var(--border);
+}
+.upop-sec-t {
+  margin-right: auto;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink-2);
+}
+.upop-pill {
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.upop-pill.ok {
+  color: #1c8a4e;
+  background: #e9f7ef;
+  border: 1px solid #bde3cd;
+}
+.upop-pill.warn {
+  color: #a9631a;
+  background: var(--warn-bg, #fdf3e6);
+  border: 1px solid #f0d6ae;
+}
+.upop-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.upop-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 11px;
+  border-bottom: 1px solid var(--border);
+}
+.upop-row:last-child {
+  border-bottom: 0;
+}
+/* 状態の丸。緑＝最近取り込めている／橙＝古い・取れていない */
+.upop-dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+}
+.upop-dot.ok {
+  background: #34a853;
+}
+.upop-dot.warn {
+  background: #e8912a;
+}
+.upop-name {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-right: auto;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.upop-note {
+  font-size: 11px;
+  font-weight: 600;
+  font-style: normal;
+  color: var(--ink-3);
+}
+.upop-at {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }

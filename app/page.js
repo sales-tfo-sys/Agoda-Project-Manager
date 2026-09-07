@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import UpdatedPop from "./UpdatedPop";
 
 const TYPE_ORDER = ["Hotel", "ACQ", "Liberty", "Temairazu", "IHM"];
 
@@ -532,15 +533,6 @@ export default function Page() {
           <span className="page-h page-h-gap">施設一覧</span>
         </div>
         <div className="head-right">
-          {updatedAt && (
-            <span className="updated">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="9" />
-                <polyline points="12 7 12 12 15 14" />
-              </svg>
-              最終更新：{formatDateTime(updatedAt)}
-            </span>
-          )}
           {canSync && (
             <button
               className="icon-btn"
@@ -556,10 +548,11 @@ export default function Page() {
               </svg>
             </button>
           )}
+          <UpdatedPop />
         </div>
       </div>
 
-      {/* 絞り込みは表の直前に置く（ヘッダーはアイコンと更新だけにする） */}
+      {/* 絞り込みは表の直前に置く */}
       {data && !error && (
         <div className="detail-tools list-tools">
           {records.length > 0 && (

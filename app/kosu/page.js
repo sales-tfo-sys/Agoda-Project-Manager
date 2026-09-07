@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import DetailTable from "./DetailTable";
+import UpdatedPop from "../UpdatedPop";
 
 const REGULAR_COLOR = "#8fb4e3";
 const ADHOC_COLOR = "#e79a9a";
@@ -222,23 +223,7 @@ export default function KosuPage() {
           <span className="page-h page-h-gap">工数管理</span>
         </div>
         <div className="head-right">
-          {updatedAt && (
-            <span className="updated">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="9" />
-                <polyline points="12 7 12 12 15 14" />
-              </svg>
-              最終更新：
-              {updatedAt.toLocaleString("ja-JP", {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-              })}
-            </span>
-          )}
+          <UpdatedPop />
         </div>
       </div>
 
