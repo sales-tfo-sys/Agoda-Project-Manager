@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import Modal from "./Modal";
 import Calendar from "./Calendar";
+import { holidayName, dowLabel } from "../lib/holidays";
 
 const TYPE_CODE = "ドロップダウン_13"; // 案件名（空欄は Hotel依頼）
 const STAGE_CODE = "ドロップダウン"; // Stage（ステータス）
@@ -1211,6 +1212,38 @@ export default function TaskBoard({ mode = "view" }) {
     return () => window.removeEventListener("resize", fit);
   }, [subEl, mngStatus, mngFilter]);
 
+  // スケジュールタブで選択中の日付（既定は今日）
+  const [schedDate, setSchedDate] = useState(() => {
+    const d = new Date();
+    const p = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  });
+  // Ad Hoc タスクの開始日・期日を日付ごとにまとめてカレンダーの予定にする
+  const schedEvents = useMemo(() => {
+    const seen = new Set((adhoc || []).map((a) => a.task));
+    const list = [
+      ...(adhoc || []),
+      ...(customAdhoc || []).filter((c) => !seen.has(c.task)).map((c) => ({ task: c.task })),
+    ];
+    const map = {};
+    const push = (iso, item) => {
+      if (!iso) return;
+      (map[iso] = map[iso] || []).push(item);
+    };
+    for (const t of list) {
+      const o = ov[`adhoc|${t.task}`] || EMPTY_OV;
+      const name = o.name ?? t.task;
+      const status = o.status ?? t.status ?? "";
+      push(toDateInput(o.start ?? t.start), { task: name, status, kind: "start" });
+      push(toDateInput(o.end ?? t.end), { task: name, status, kind: "end" });
+    }
+    // 同じ日は「期日」を先に出す（締め切りの方が目に入るように）
+    for (const k of Object.keys(map)) {
+      map[k].sort((a, b) => (a.kind === b.kind ? 0 : a.kind === "end" ? -1 : 1));
+    }
+    return map;
+  }, [adhoc, customAdhoc, ov]);
+
   // 表示制御：0件ステータスを隠す／カードの折りたたみ
   const [hideZero, setHideZero] = useState(false);
   const [collapsed, setCollapsed] = useState({});
@@ -1790,13 +1823,49 @@ export default function TaskBoard({ mode = "view" }) {
           </div>
           )}
 
-          {/* スケジュール：当月と翌月のカレンダーを並べて表示 */}
-          {activeTab === "schedule" && !isEdit && (
-            <div className="tab-panel sched-row">
-              <Calendar />
-              <Calendar offset={1} />
-            </div>
-          )}
+          {/* スケジュール：カレンダーは1つ。選んだ日の予定を下に出す */}
+          {activeTab === "schedule" && !isEdit && (() => {
+            const items = schedEvents[schedDate] || [];
+            const md = String(schedDate).match(/(\d{4})-(\d{2})-(\d{2})/);
+            const y = md ? Number(md[1]) : null;
+            const mo = md ? Number(md[2]) : null;
+            const dd = md ? Number(md[3]) : null;
+            const hol = md ? holidayName(y, mo, dd) : null;
+            const dw = md ? dowLabel(y, mo, dd) : "";
+            return (
+              <div className="tab-panel sched-wrap">
+                <Calendar events={schedEvents} selected={schedDate} onSelect={setSchedDate} />
+                <section className="sched-panel">
+                  <div className="sched-panel-head">
+                    <span className={"sched-date" + (dw === "日" || hol ? " sun" : dw === "土" ? " sat" : "")}>
+                      {md ? `${y}年${mo}月${dd}日（${dw}）` : "—"}
+                    </span>
+                    {hol && <span className="sched-hol">{hol}</span>}
+                    <span className="sched-count">{items.length} 件</span>
+                  </div>
+                  {items.length === 0 ? (
+                    <div className="sched-empty">この日の予定はありません</div>
+                  ) : (
+                    <ul className="sched-items">
+                      {items.map((e, i) => (
+                        <li key={e.task + e.kind + i} className="sched-item">
+                          <span className={"sched-kind " + e.kind}>
+                            {e.kind === "start" ? "開始" : "期日"}
+                          </span>
+                          <span className="sched-task" title={e.task}>
+                            {e.task}
+                          </span>
+                          <span className={"st-pill " + statusClass(e.status)}>
+                            {e.status || "—"}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              </div>
+            );
+          })()}
 
           {activeTab === "overview" && !isEdit && adhoc && (adhoc.length > 0 || customAdhoc.length > 0) && (() => {
             // シート由来のタスク＋サイトで追加したタスクを結合

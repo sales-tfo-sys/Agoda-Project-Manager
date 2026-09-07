@@ -4,14 +4,15 @@ import { useMemo, useState } from "react";
 import { holidaysForYear } from "../lib/holidays";
 
 const DOW = ["日", "月", "火", "水", "木", "金", "土"];
+const pad2 = (n) => String(n).padStart(2, "0");
+const isoOf = (y, m, d) => `${y}-${pad2(m)}-${pad2(d)}`;
 
-// ダッシュボード用の月間カレンダー。日本の祝日（振替休日・国民の休日含む）を表示する。
-// offset: 表示を何ヶ月ずらすか（0=当月 / 1=翌月）。「今月」ボタンもこの基準に戻す。
-export default function Calendar({ offset = 0 }) {
+// ダッシュボードのスケジュール用カレンダー。日本の祝日（振替休日・国民の休日含む）を表示する。
+//   events   … { "YYYY-MM-DD": [...] }。件数のぶんだけ日付に印を出す。
+//   selected … 選択中の日付（ISO）。クリックで onSelect(iso) を呼ぶ。
+export default function Calendar({ events = null, selected = null, onSelect = null }) {
   const today = new Date();
-  // offset ぶんずらした基準の年月（月の繰り上がりは Date に任せる）
-  const base = new Date(today.getFullYear(), today.getMonth() + offset, 1);
-  const baseYm = { y: base.getFullYear(), m: base.getMonth() + 1 };
+  const baseYm = { y: today.getFullYear(), m: today.getMonth() + 1 };
   const [ym, setYm] = useState(baseYm);
   const holidays = useMemo(() => holidaysForYear(ym.y), [ym.y]);
 
@@ -27,7 +28,10 @@ export default function Calendar({ offset = 0 }) {
 
   const prev = () => setYm(({ y, m }) => (m === 1 ? { y: y - 1, m: 12 } : { y, m: m - 1 }));
   const next = () => setYm(({ y, m }) => (m === 12 ? { y: y + 1, m: 1 } : { y, m: m + 1 }));
-  const toToday = () => setYm(baseYm);
+  const toToday = () => {
+    setYm(baseYm);
+    onSelect?.(isoOf(today.getFullYear(), today.getMonth() + 1, today.getDate()));
+  };
 
   const isToday = (d) =>
     d &&
@@ -75,19 +79,46 @@ export default function Calendar({ offset = 0 }) {
         {cells.map((d, idx) => {
           const dow = idx % 7;
           const name = holOf(d);
+          const iso = d ? isoOf(ym.y, ym.m, d) : null;
+          const list = iso && events ? events[iso] || null : null;
           const cls =
             "cal-cell" +
             (d == null ? " empty" : "") +
             (name || dow === 0 ? " sun" : dow === 6 ? " sat" : "") +
-            (isToday(d) ? " today" : "");
+            (isToday(d) ? " today" : "") +
+            (iso && selected === iso ? " selected" : "");
+          const inner =
+            d != null ? (
+              <>
+                <span className="cal-d">{d}</span>
+                {name && <span className="cal-hol">{name}</span>}
+                {list && list.length > 0 && (
+                  <span className="cal-mark" aria-label={`予定 ${list.length} 件`}>
+                    <span className="cal-dot" />
+                    {list.length > 1 && <span className="cal-n">{list.length}</span>}
+                  </span>
+                )}
+              </>
+            ) : null;
+
+          // 選択できるときはボタンにする（キーボードでも日付を選べるように）
+          if (d != null && onSelect) {
+            return (
+              <button
+                type="button"
+                key={idx}
+                className={cls}
+                title={name || undefined}
+                onClick={() => onSelect(iso)}
+                aria-pressed={selected === iso}
+              >
+                {inner}
+              </button>
+            );
+          }
           return (
             <span key={idx} className={cls} title={name || undefined}>
-              {d != null && (
-                <>
-                  <span className="cal-d">{d}</span>
-                  {name && <span className="cal-hol">{name}</span>}
-                </>
-              )}
+              {inner}
             </span>
           );
         })}

@@ -6349,6 +6349,157 @@ th.hid-opcol {
   align-items: flex-start;
   gap: 14px;
 }
+/* スケジュール：カレンダー1つ＋その下に選んだ日の予定 */
+.sched-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+  max-width: 620px;
+}
+.sched-wrap .cal-card {
+  width: 100%;
+}
+/* 日付セルはクリックで選べる（button になる） */
+button.cal-cell {
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+button.cal-cell:hover {
+  border-color: var(--accent);
+}
+.cal-cell.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.cal-cell.today.selected {
+  box-shadow: 0 0 0 2px rgba(59, 108, 246, 0.28), 0 4px 10px rgba(59, 108, 246, 0.32);
+}
+/* 予定がある日の印 */
+.cal-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: auto;
+  padding-top: 3px;
+}
+.cal-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.cal-n {
+  font-size: 8.5px;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1;
+}
+.cal-cell.today .cal-dot {
+  background: #ffffff;
+}
+.cal-cell.today .cal-n {
+  color: #ffffff;
+}
+
+/* 予定リスト */
+.sched-panel {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 14px 16px 16px;
+  box-shadow: 0 6px 20px rgba(52, 84, 170, 0.07);
+}
+.sched-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.sched-date {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.sched-date.sun {
+  color: #e5484d;
+}
+.sched-date.sat {
+  color: #3b82f6;
+}
+.sched-hol {
+  padding: 1px 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #e5484d;
+  background: #fdeaee;
+  border: 1px solid #f0c6d0;
+  border-radius: 999px;
+}
+.sched-count {
+  margin-left: auto;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+.sched-empty {
+  padding: 14px 2px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.sched-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sched-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.sched-kind {
+  flex: none;
+  width: 42px;
+  text-align: center;
+  padding: 1px 0;
+  font-size: 10.5px;
+  font-weight: 800;
+  border-radius: 999px;
+}
+.sched-kind.start {
+  color: #1c6b46;
+  background: #e3f5ea;
+  border: 1px solid #bde3cd;
+}
+.sched-kind.end {
+  color: #8a5a12;
+  background: var(--warn-bg);
+  border: 1px solid #ecd8a8;
+}
+.sched-task {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sched-item .st-pill {
+  flex: none;
+}
 .cal-card {
   width: 460px;
   max-width: 100%;
