@@ -6,8 +6,8 @@ import { holidayName, dowLabel } from "../../lib/holidays";
 
 // 作業内容の右端に置く進捗バッジの幅（列幅の計算に使う）
 const BADGE_W = 82;
-// 日付1列の幅。日付を（）で囲うぶん少し広くしている
-const DAY_W = 48;
+// 日付1列の幅。曜日を（）で囲うぶん少し広くしている
+const DAY_W = 46;
 
 // Ad Hoc の並び順・バッジの色に使う進捗。プロジェクト管理と同じ呼び方に揃える。
 const STATUS_RANK = { "On Track": 0, Behind: 1, Onhold: 2, Complete: 3 };
@@ -794,8 +794,8 @@ export default function DetailTable({ title, compact = false }) {
                     }
                     title={d.holiday ? `${d.label}（${d.dow}）${d.holiday}` : undefined}
                   >
-                    <span className="d-date">（{d.label}）</span>
-                    <span className="d-dow">{d.dow}</span>
+                    <span className="d-date">{d.label}</span>
+                    <span className="d-dow">（{d.dow}）</span>
                   </th>
                 ))}
               </tr>
