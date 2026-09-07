@@ -9664,3 +9664,44 @@ th,
   height: 58px;
   margin-bottom: 8px;
 }
+
+/* ドライブのフォルダ移動ボタン（詳細モーダル）と Excel アップロード欄 */
+button.drive-link {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+button.drive-link:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.up-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.up-row input[type="file"] {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.up-busy {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.up-ok {
+  margin-top: 4px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #1c8a4e;
+}
+.up-err {
+  margin-top: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.6;
+  color: #b02a37;
+}

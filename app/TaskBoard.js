@@ -1113,6 +1113,60 @@ export default function TaskBoard({ mode = "view" }) {
   const [cfgTask, setCfgTask] = useState(null);
   // 詳細編集モーダル（管理表に列が無い項目）の対象タスク
   const [detailTask, setDetailTask] = useState(null);
+  // Google ドライブ連携（未設定なら関連UIを出さない）
+  const [driveCfg, setDriveCfg] = useState(null);
+  useEffect(() => {
+    fetch("/api/drive-upload", { cache: "no-store" })
+      .then((r) => r.json())
+      .then(setDriveCfg)
+      .catch(() => setDriveCfg({ configured: false }));
+  }, []);
+  // タスク追加モーダルでの Excel アップロード
+  const [upBusy, setUpBusy] = useState(false);
+  const [upErr, setUpErr] = useState(null);
+  const [upDone, setUpDone] = useState(null);
+  const uploadExcel = async (file) => {
+    if (!file) return;
+    setUpErr(null);
+    setUpDone(null);
+    setUpBusy(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      // 入力済みならタスク名でシートを作る（未入力なら元のファイル名）
+      if (newTask.trim()) fd.append("name", newTask.trim());
+      const j = await fetch("/api/drive-upload", { method: "POST", body: fd }).then((r) => r.json());
+      if (j.error) setUpErr(j.error);
+      else {
+        setAF("sheetUrl", j.url);
+        setUpDone(j.name);
+        if (!newTask.trim() && j.name) setNewTask(j.name);
+      }
+    } catch (e) {
+      setUpErr(String(e?.message || e));
+    } finally {
+      setUpBusy(false);
+    }
+  };
+  // 作業シートをフォルダ間で移動する
+  const [moveMsg, setMoveMsg] = useState(null);
+  const [moveBusy, setMoveBusy] = useState(false);
+  const moveSheet = async (url, to) => {
+    setMoveMsg(null);
+    setMoveBusy(true);
+    try {
+      const j = await fetch("/api/drive-move", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, to }),
+      }).then((r) => r.json());
+      setMoveMsg(j.error ? `エラー：${j.error}` : `「${j.label}」フォルダへ移動しました`);
+    } catch (e) {
+      setMoveMsg(`エラー：${String(e?.message || e)}`);
+    } finally {
+      setMoveBusy(false);
+    }
+  };
   // Ad Hoc の手動並べ替え（同一優先度内の順番）
   const adhocDragIndex = useRef(null);
   const [adhocDragOver, setAdhocDragOver] = useState(null);
@@ -1190,6 +1244,8 @@ export default function TaskBoard({ mode = "view" }) {
     setNewBoard("adhoc");
     setAddForm(ADD_FORM_INIT);
     setAddError(null);
+    setUpErr(null);
+    setUpDone(null);
     setAdding(true);
   };
   const closeAdd = () => {
@@ -1918,7 +1974,7 @@ export default function TaskBoard({ mode = "view" }) {
                               <span className="mng-ops-wrap">
                                 {/* 表に列が無い項目（目標対応件数・実作業工数・課題・次回アクション・メモ） */}
                                 {editable && (
-                                  <button type="button" className="forms-op" title="詳細を編集（目標対応件数・実作業工数・課題・遅延理由・次回アクション・メモ）" aria-label="詳細を編集" onClick={() => setDetailTask(row.key)}>
+                                  <button type="button" className="forms-op" title="詳細を編集（目標対応件数・実作業工数・課題・遅延理由・次回アクション・メモ）" aria-label="詳細を編集" onClick={() => { setMoveMsg(null); setDetailTask(row.key); }}>
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="7" x2="21" y2="7" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="17" x2="16" y2="17" /><line x1="3.5" y1="7" x2="3.51" y2="7" /><line x1="3.5" y1="12" x2="3.51" y2="12" /><line x1="3.5" y1="17" x2="3.51" y2="17" /></svg>
                                   </button>
                                 )}
@@ -2890,6 +2946,26 @@ export default function TaskBoard({ mode = "view" }) {
             </select>
           </label>
 
+          {driveCfg?.configured ? (
+            <div className="fld">
+              Agoda から届いた Excel をアップロード
+              <span className="up-row">
+                <input
+                  type="file"
+                  accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"
+                  disabled={upBusy}
+                  onChange={(e) => uploadExcel(e.target.files?.[0])}
+                />
+                {upBusy && <span className="up-busy">アップロード中…</span>}
+              </span>
+              <span className="drive-note">
+                「アップ先」フォルダに置いて、そのままスプレッドシートに変換します。
+                変換後のURLは下の欄に自動で入ります。
+              </span>
+              {upDone && <span className="up-ok">「{upDone}」を作成しました</span>}
+              {upErr && <span className="up-err">{upErr}</span>}
+            </div>
+          ) : null}
           <DriveLinks note="Agoda から届いた Excel は「アップ先」に置いてスプレッドシートに変換し、そのURLを下に貼ってください。" />
           <label className="fld">
             スプレッドシートURL（受注数・完了数の自動取得。対象のタブを開いた状態でコピー）
@@ -3062,6 +3138,29 @@ export default function TaskBoard({ mode = "view" }) {
                     placeholder="補足があれば"
                   />
                 </label>
+                {driveCfg?.configured && o.sheetUrl && (
+                  <div className="fld">
+                    作業シートの保管先
+                    <span className="drive-links">
+                      {[
+                        ["done", "完了フォルダへ移動"],
+                        ["hold", "保留フォルダへ移動"],
+                        ["new", "アップ先へ戻す"],
+                      ].map(([k, label]) => (
+                        <button
+                          key={k}
+                          type="button"
+                          className={"drive-link drive-" + k}
+                          disabled={moveBusy}
+                          onClick={() => moveSheet(o.sheetUrl, k)}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </span>
+                    {moveMsg && <span className="drive-note">{moveMsg}</span>}
+                  </div>
+                )}
                 <p className="modal-note">
                   入力すると自動で保存され、ダッシュボードの Ad Hoc Task 表に反映されます。
                   空にすると上書きが消え、進捗シート取込時の値に戻ります。
