@@ -10871,3 +10871,13 @@ button.drive-link:disabled {
   background: rgba(47, 107, 224, 0.12);
   border-color: rgba(47, 107, 224, 0.3);
 }
+
+/* 工数明細の日付ヘッダー：平日（月〜金・祝日を除く）は緑地にする。
+   土曜=青・日曜/祝日=赤の色分けはそのまま。 */
+.dtable thead th.day-th.is-weekday {
+  background: linear-gradient(180deg, #4fbf82, #2b9a5f);
+  color: #ffffff;
+}
+.dtable th.day-th.is-weekday .d-dow {
+  color: rgba(255, 255, 255, 0.82);
+}
