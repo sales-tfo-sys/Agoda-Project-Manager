@@ -11317,3 +11317,8 @@ button.drive-link:disabled {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* 進捗グラフ：タブ行とグラフのあいだを詰める */
+.tab-panel > .sec-row + .pchart-grid {
+  margin-top: 2px;
+}

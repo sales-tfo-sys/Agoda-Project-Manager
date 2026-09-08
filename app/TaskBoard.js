@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import ProgressChart from "./ProgressChart";
+import ProgressChart, { CopyChartsBtn } from "./ProgressChart";
 import Modal from "./Modal";
 import Calendar from "./Calendar";
 import { holidayName, dowLabel } from "../lib/holidays";
@@ -1844,6 +1844,21 @@ export default function TaskBoard({ mode = "view" }) {
     "※[受注数]は、[事前登録施設（依頼前）]の件数を除外しています。",
   ];
 
+  // 進捗表の中の切り替え（Regular Task / Ad Hoc Task）
+  const [tableTab, setTableTab] = useState("regular");
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("agoda-table-tab");
+      if (v === "regular" || v === "adhoc") setTableTab(v);
+    } catch {}
+  }, []);
+  const switchTableTab = (v) => {
+    setTableTab(v);
+    try {
+      localStorage.setItem("agoda-table-tab", v);
+    } catch {}
+  };
+
   // 進捗グラフの中の切り替え（Regular Task / Ad Hoc Task）
   const [graphTab, setGraphTab] = useState("regular");
   useEffect(() => {
@@ -1861,6 +1876,8 @@ export default function TaskBoard({ mode = "view" }) {
 
   // Ad Hoc 表のコピー用（表の DOM をそのまま読むため）
   const adhocCardRef = useRef(null);
+  // 進捗グラフのコピー用（グラフの入れ物を指す）
+  const graphGridRef = useRef(null);
 
   // 予定の追加・編集モーダル（null = 閉じている）
   const [evForm, setEvForm] = useState(null); // { id, title, start, end, memo, isNew }
@@ -2592,6 +2609,36 @@ ${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めません�
           })()}
 
           {activeTab === "progress" && !isEdit && (
+            <div className="sec-row">
+              <div className="segbar segbar-sm" role="tablist" aria-label="進捗表の表示切替">
+                <span
+                  className="segbar-thumb"
+                  style={{ transform: `translateX(${tableTab === "adhoc" ? "100%" : "0%"})` }}
+                  aria-hidden="true"
+                />
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={tableTab === "regular"}
+                  className={"segbar-btn" + (tableTab === "regular" ? " active" : "")}
+                  onClick={() => switchTableTab("regular")}
+                >
+                  Regular Task
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={tableTab === "adhoc"}
+                  className={"segbar-btn" + (tableTab === "adhoc" ? " active" : "")}
+                  onClick={() => switchTableTab("adhoc")}
+                >
+                  Ad Hoc Task
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "progress" && !isEdit && tableTab === "regular" && (
           <div className="tab-panel overview-row">
             <div className="summary-row overview-tables">
             {summary && renderTypes.length > 0 && (
@@ -2806,7 +2853,7 @@ ${e.memo}` : e.task}>
             );
           })()}
 
-          {activeTab === "progress" && !isEdit && adhoc && (adhoc.length > 0 || customAdhoc.length > 0) && (() => {
+          {activeTab === "progress" && !isEdit && tableTab === "adhoc" && adhoc && (adhoc.length > 0 || customAdhoc.length > 0) && (() => {
             // シート由来のタスク＋サイトで追加したタスクを結合
             const merged = [
               ...adhoc,
@@ -3319,9 +3366,10 @@ ${e.memo}` : e.task}>
                     Ad Hoc Task
                   </button>
                 </div>
+                {graphTab === "regular" && <CopyChartsBtn targetRef={graphGridRef} />}
               </div>
               {graphTab === "regular" ? (
-                <ProgressChart year={year} dateCode={dateCode} types={regularTypes} />
+                <ProgressChart year={year} dateCode={dateCode} types={regularTypes} gridRef={graphGridRef} />
               ) : (
                 <div className="card">
                   <div className="notice">Ad Hoc Task のグラフはこれから作ります。</div>
@@ -3331,7 +3379,7 @@ ${e.memo}` : e.task}>
           )}
 
           {/* プロジェクト進捗：案件タイプ別のステータス×四半期（全ステータスを0件でも表示） */}
-          {activeTab === "progress" && (renderTypes.length === 0 ? (
+          {activeTab === "progress" && tableTab === "regular" && (renderTypes.length === 0 ? (
             <div className="card">
               <div className="notice">案件がありません。</div>
             </div>
@@ -3446,7 +3494,7 @@ ${e.memo}` : e.task}>
             </>
           ))}
 
-          {activeTab === "progress" && yearAgg && yearAgg.noDate > 0 && (
+          {activeTab === "progress" && tableTab === "regular" && yearAgg && yearAgg.noDate > 0 && (
             <p className="note-line">
               ※「{dateLabel}」が空欄で四半期に振り分けられない案件が {fmt(yearAgg.noDate)} 件あります（別の基準日に切り替えると変わります）。
             </p>

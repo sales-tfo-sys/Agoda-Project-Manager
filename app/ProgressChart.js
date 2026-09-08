@@ -16,8 +16,7 @@ const RECENT_DAYS = 22;
 
 const pad2 = (n) => String(n).padStart(2, "0");
 // "2026-09-08" → "2026/09/08"
-// 年はタイトルに出ているので、軸は「月/日」だけにして詰める
-const fmtDay = (d) => String(d).slice(5).replace("-", "/");
+const fmtDay = (d) => String(d).replaceAll("-", "/");
 
 // 目盛りの間隔（0 と最大値のあいだを、きりのいい数で割る）
 function niceStep(max) {
@@ -112,11 +111,11 @@ export async function chartsToBlob(root) {
 function Chart({ title, days, rows }) {
   // 描画領域（viewBox の座標）。実際の大きさは CSS の幅に追従する。
   const W = Math.max(680, 62 + days.length * 26 + 126);
-  const H = 320;
+  const H = 340;
   const L = 62; // 左の目盛りぶん（数値が線と重ならないよう広めに取る）
   const R = W - 126; // 右は凡例ぶん空ける
   const T = 26;
-  const B = H - 66; // 下は日付ラベルぶん
+  const B = H - 88; // 下は日付ラベルぶん（YYYY/MM/DD を斜めに置くので広めに取る）
 
   const max = Math.max(1, ...rows.map((r) => Math.max(r.total, r.done, r.rest)));
   const step = niceStep(max);
@@ -222,10 +221,11 @@ function Chart({ title, days, rows }) {
   );
 }
 
-export default function ProgressChart({ year, dateCode, types }) {
+export default function ProgressChart({ year, dateCode, types, gridRef: outerRef }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
-  const gridRef = useRef(null);
+  const innerRef = useRef(null);
+  const gridRef = outerRef || innerRef;
 
   useEffect(() => {
     if (!year) return;
@@ -287,9 +287,6 @@ export default function ProgressChart({ year, dateCode, types }) {
 
   return (
     <>
-      <div className="sec-row">
-        <CopyChartsBtn targetRef={gridRef} />
-      </div>
       {shown.length === 0 ? (
         <div className="card">
           <div className="notice">この年のデータがありません。</div>
@@ -307,8 +304,8 @@ export default function ProgressChart({ year, dateCode, types }) {
   );
 }
 
-// グラフをまとめて画像でコピーするボタン
-function CopyChartsBtn({ targetRef }) {
+// グラフをまとめて画像でコピーするボタン（タブ行に置くので外から使う）
+export function CopyChartsBtn({ targetRef }) {
   const [state, setState] = useState("");
   useEffect(() => {
     if (state !== "done" && state !== "err") return;
