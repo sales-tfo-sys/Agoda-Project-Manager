@@ -1878,7 +1878,8 @@ export default function TaskBoard({ mode = "view" }) {
     try {
       const v = localStorage.getItem("agoda-dash-tab");
       if (v === "schedule") setTab("schedule");
-      // 旧「全体 / 案件詳細」の保存値は進捗に読み替える
+      else if (v === "graph") setTab("graph");
+      // 旧「全体 / 案件詳細」の保存値は進捗表に読み替える
       else if (v === "overview" || v === "cases" || v === "progress") setTab("progress");
     } catch {}
   }, []);
@@ -2141,7 +2142,17 @@ export default function TaskBoard({ mode = "view" }) {
               className={"segbar-btn" + (tab === "progress" ? " active" : "")}
               onClick={() => switchTab("progress")}
             >
-              進捗
+              進捗表
+            </button>
+            <button
+              type="button"
+              role="tab"
+              data-tab="graph"
+              aria-selected={tab === "graph"}
+              className={"segbar-btn" + (tab === "graph" ? " active" : "")}
+              onClick={() => switchTab("graph")}
+            >
+              進捗グラフ
             </button>
             </div>
             {/* 対象年は「進捗」の集計に使うもの。
@@ -3253,6 +3264,14 @@ ${e.memo}` : e.task}>
               </div>
             );
           })()}
+
+          {activeTab === "graph" && !isEdit && (
+            <div className="tab-panel">
+              <div className="card">
+                <div className="notice">進捗グラフはこれから作ります。</div>
+              </div>
+            </div>
+          )}
 
           {/* プロジェクト進捗：案件タイプ別のステータス×四半期（全ステータスを0件でも表示） */}
           {activeTab === "progress" && (renderTypes.length === 0 ? (
