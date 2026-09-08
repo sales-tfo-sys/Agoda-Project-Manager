@@ -99,13 +99,13 @@ export async function GET(req) {
       const byDay = new Map();
       for (const row of saved) byDay.set(row.key, row.data || {});
       const carry = {}; // タスク → 直前の値
-      const seen = {}; // タスク → 最初に記録があった位置
       days.forEach((day, i) => {
         const rec = byDay.get(day);
         if (rec) {
           for (const [task, v] of Object.entries(rec)) {
-            carry[task] = { total: v?.t ?? 0, done: v?.d ?? 0, target: v?.g ?? null };
-            if (seen[task] == null) seen[task] = i;
+            // 目標は画面からの記録には入らないので、無ければ前の日の値を引き継ぐ
+            const g = v?.g ?? carry[task]?.target ?? null;
+            carry[task] = { total: v?.t ?? 0, done: v?.d ?? 0, target: g };
           }
         }
         for (const [task, v] of Object.entries(carry)) {

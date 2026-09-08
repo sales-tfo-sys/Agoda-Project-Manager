@@ -12,7 +12,7 @@ import { Chart, RECENT_DAYS } from "./ProgressChart";
 
 export const ONGOING = ["On Track", "Behind", "Onhold"];
 
-export default function AdhocChart({ year, dateCode, tasks, gridRef: outerRef }) {
+export default function AdhocChart({ year, dateCode, tasks, known, gridRef: outerRef }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const innerRef = useRef(null);
@@ -43,8 +43,17 @@ export default function AdhocChart({ year, dateCode, tasks, gridRef: outerRef })
     if (!data?.days?.length) return [];
     const from = Math.max(0, data.days.length - RECENT_DAYS);
     const days = data.days.slice(from);
+    // 表の対応中タスクに加えて、表の行には無いけれど記録があるもの（担当が
+    // プロジェクト単位で付けていた記録）も後ろに並べる。
+    const list = [...(tasks || [])];
+    const inList = new Set(list.map((t) => t.key));
+    for (const key of Object.keys(data.series || {})) {
+      if (inList.has(key) || known?.has?.(key)) continue;
+      list.push({ key, label: key });
+    }
+
     const out = [];
-    for (const t of tasks || []) {
+    for (const t of list) {
       const all = data.series?.[t.key];
       if (!all) continue;
       const part = all.slice(from);
@@ -58,11 +67,12 @@ export default function AdhocChart({ year, dateCode, tasks, gridRef: outerRef })
           total: v.total,
           done: v.done,
           rest: Math.max(0, v.total - v.done),
+          target: v.target,
         })),
       });
     }
     return out;
-  }, [data, tasks]);
+  }, [data, tasks, known]);
 
   if (error) {
     return (

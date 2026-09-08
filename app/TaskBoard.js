@@ -2127,6 +2127,14 @@ export default function TaskBoard({ mode = "view" }) {
       });
   }, [adhoc, customAdhoc, ov, prio]);
 
+  // Ad Hoc 表にある全タスク名（完了ぶんも含む）。
+  // グラフ側で「表には無いがプロジェクト単位で記録が残っているもの」を見分けるのに使う。
+  const adhocKnown = useMemo(() => {
+    const s = new Set((adhoc || []).map((a) => a.task));
+    for (const c of customAdhoc || []) s.add(c.task);
+    return s;
+  }, [adhoc, customAdhoc]);
+
   // その日の受注数・完了数を1日1回だけ記録する。
   // Ad Hoc の件数はシートの「今の値」しか読めず、後から遡って数え直せないため。
   // シートの読み込みは表示より遅れて届くので、一度きりではなく
@@ -3429,6 +3437,7 @@ ${e.memo}` : e.task}>
                   year={year}
                   dateCode={dateCode}
                   tasks={adhocOngoing}
+                  known={adhocKnown}
                   gridRef={adhocGridRef}
                 />
               )}
