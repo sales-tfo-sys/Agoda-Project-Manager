@@ -568,17 +568,38 @@ export default function DetailTable({ title, compact = false }) {
   // 完了したものが対応中に居座って分かりにくいのでやめた。
   // タブは表示の切り替えだけで、工数の集計（作業リソース詳細・担当者別内訳）や
   // 工数入力の表示には影響しない。
+  // 表示中の月（"YYYY-MM"）。全月表示のときは今月を使う。
+  const viewMonth = useMemo(() => {
+    const ym = monthIdx == null ? null : monthYM[monthIdx];
+    if (ym) return `${ym.y}-${String(ym.m).padStart(2, "0")}`;
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  }, [monthIdx, monthYM]);
+
+  // Complete でも「完了した月のあいだ」は対応中に残す。
+  // 例：9/8 に Complete → 9月の表では対応中のまま、10月の表からは完了に移る。
+  // その月の工数入力がまだ続くため、月内は対応中で見えていた方が扱いやすい。
   const isDone = useCallback(
     (r) => {
       const key = `${r.type}|${r.detail}`;
-      if (completedKeys?.has(key)) return true;
       const name = link.rename[r.detail] || r.detail;
-      if (link.done?.has(r.detail)) return true;
-      if (link.done?.has(name)) return true;
-      if (link.doneNorm?.has(normName(name))) return true;
-      return false;
+      let completedDate = null;
+      if (completedKeys?.has(key)) {
+        completedDate = link.compDateByKey?.[key];
+      } else if (link.done?.has(r.detail)) {
+        completedDate = link.compDateByLink?.[r.detail];
+      } else if (link.done?.has(name)) {
+        completedDate = link.compDateByLink?.[name];
+      } else if (link.doneNorm?.has(normName(name))) {
+        completedDate = link.compDateByNorm?.[normName(name)];
+      } else {
+        return false; // 完了していない
+      }
+      // 完了日が分からないものは、そのまま完了として扱う
+      if (!completedDate) return true;
+      return viewMonth > String(completedDate).slice(0, 7);
     },
-    [completedKeys, link]
+    [completedKeys, link, viewMonth]
   );
 
   // シート由来の行＋サイト側で追加した行。
