@@ -118,12 +118,16 @@ export async function GET(req) {
     // ② IHM は Kintone から数え直す（記録より前も線が出る）
     const snap = await readSnapshot().catch(() => null);
     const records = snap?.data?.records || [];
+    const kintone = []; // Kintone から数え直したタスク（画面で年を付けて出す）
     if (records.length) {
       const ihm = fromKintone(records, dateCode, days);
-      for (const [task, list] of Object.entries(ihm)) series[task] = list;
+      for (const [task, list] of Object.entries(ihm)) {
+        series[task] = list;
+        kintone.push(task);
+      }
     }
 
-    return Response.json({ days, series });
+    return Response.json({ days, series, kintone });
   } catch (e) {
     return Response.json({ days: [], series: {}, error: String(e?.message || e) }, { status: 200 });
   }

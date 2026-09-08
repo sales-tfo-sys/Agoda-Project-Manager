@@ -52,6 +52,8 @@ export default function AdhocChart({ year, dateCode, tasks, known, gridRef: oute
       list.push({ key, label: key });
     }
 
+    // Kintone から数え直しているもの（IHM）は Regular と同じく年単位なので、年を付ける
+    const kintone = new Set(data.kintone || []);
     const out = [];
     for (const t of list) {
       const all = data.series?.[t.key];
@@ -61,7 +63,7 @@ export default function AdhocChart({ year, dateCode, tasks, known, gridRef: oute
       if (start < 0) continue; // この期間はまだ記録がない
       out.push({
         key: t.key,
-        label: t.label,
+        label: kintone.has(t.key) ? `${year}年_${t.label}` : t.label,
         days: days.slice(start),
         rows: part.slice(start).map((v) => ({
           total: v.total,
@@ -72,7 +74,7 @@ export default function AdhocChart({ year, dateCode, tasks, known, gridRef: oute
       });
     }
     return out;
-  }, [data, tasks, known]);
+  }, [data, tasks, known, year]);
 
   if (error) {
     return (
