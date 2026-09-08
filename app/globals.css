@@ -11170,17 +11170,37 @@ button.drive-link:disabled {
   color: rgba(255, 255, 255, 0.88);
 }
 
-/* 表のコピーボタン */
-.mini-btn.copy-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  white-space: nowrap;
+/* 表のコピーボタン。表の右上（見出し行の右端）に置く */
+.sec-row .icon-btn.copy-btn {
+  margin-left: auto;
 }
-.mini-btn.copy-btn.done {
+.sec-actions .icon-btn.copy-btn {
+  margin-left: 0;
+}
+.icon-btn.copy-btn.done {
   color: #1c8a4e;
   border-color: #bde3cd;
   background: #e9f7ef;
+}
+.icon-btn.copy-btn.err {
+  color: #c0392b;
+  border-color: #f0b7b9;
+  background: #fdecea;
+}
+.icon-btn.copy-btn.busy {
+  opacity: 0.6;
+}
+/* 画像に写す範囲（表＋赤い注記）。ボタンは filter で除外している。
+   囲いを1枚挟んだぶん幅の決まり方が変わるので、元の表と同じ広がり方に戻す */
+.copy-area {
+  background: #ffffff;
+}
+.summary-block .copy-area {
+  width: max-content;
+  max-width: 100%;
+}
+.tab-panel > .copy-area {
+  width: 100%;
 }
 
 /* 表に添える注記（赤文字） */

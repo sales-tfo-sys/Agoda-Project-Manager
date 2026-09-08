@@ -827,109 +827,213 @@ function EditToggle({ on, onToggle }) {
   );
 }
 
-// 表をそのままコピーするボタン。
-// Gmail などに貼ったとき「表のまま」貼り付くよう、見た目を各セルに直接書き込んだ
-// HTML を作ってクリップボードに入れる（メールソフトは外部のCSSを捨てるため）。
-// 併せて、素のテキストとしてタブ区切りも入れておく（メモ帳や Excel 用）。
-function tableToClipboard(table) {
-  const clone = table.cloneNode(true);
-  // 入力欄・ボタン類は文字に置き換える（コピー先で操作できても意味がないため）
-  clone.querySelectorAll("input, select, textarea").forEach((el) => {
-    const v = el.value ?? "";
-    el.replaceWith(document.createTextNode(v));
-  });
-  clone.querySelectorAll("button, svg, .grip, .drag-handle").forEach((el) => el.remove());
+// 表と注記を canvas に描いて画像にする。
+// 外部ライブラリ（html-to-image）はこのページのCSS量だと固まってしまうため、
+// 表という決まった形を活かして自前で描く。速くて結果も安定する。
+const IMG_PAD = 14;
+const IMG_SCALE = 2; // 貼り付け先で粗く見えないよう2倍で描く
 
-  const HEAD = "background:#2f6be0;color:#ffffff;font-weight:700;";
-  const CELL = "border:1px solid #c9d1e0;padding:6px 10px;font-size:13px;";
-  clone.querySelectorAll("th").forEach((th) => {
-    th.setAttribute("style", CELL + HEAD + "text-align:center;white-space:nowrap;");
-  });
-  clone.querySelectorAll("td").forEach((td, i) => {
-    const src = table.querySelectorAll("td")[i];
-    const align = src ? getComputedStyle(src).textAlign : "center";
-    td.setAttribute(
-      "style",
-      CELL + `text-align:${align === "start" ? "left" : align};color:#1a2540;`
-    );
-  });
-  clone.setAttribute(
-    "style",
-    "border-collapse:collapse;font-family:'Hiragino Kaku Gothic ProN','Yu Gothic',Meiryo,sans-serif;"
-  );
-
-  const html = clone.outerHTML;
-  const text = [...clone.querySelectorAll("tr")]
-    .map((tr) =>
-      [...tr.querySelectorAll("th,td")]
-        .map((c) => c.textContent.replace(/\s+/g, " ").trim())
-        .join("\t")
-    )
-    .join("\n");
-  return { html, text };
+function cssColor(v, fallback) {
+  if (!v || v === "transparent" || v === "rgba(0, 0, 0, 0)") return fallback;
+  return v;
 }
 
-// コピーボタン。押すと少しのあいだ「コピーしました」に変わる
-function CopyTableBtn({ targetRef, label = "表をコピー" }) {
-  const [done, setDone] = useState(false);
+// セルの中の進捗ピル（On Track など）を丸角で描く
+function drawPill(ctx, pill, x, y, w, h) {
+  const cs = getComputedStyle(pill);
+  const r = pill.getBoundingClientRect();
+  const pw = r.width;
+  const ph = r.height;
+  const px = x + (w - pw) / 2;
+  const py = y + (h - ph) / 2;
+  const rad = Math.min(ph / 2, 999);
+  ctx.beginPath();
+  ctx.moveTo(px + rad, py);
+  ctx.arcTo(px + pw, py, px + pw, py + ph, rad);
+  ctx.arcTo(px + pw, py + ph, px, py + ph, rad);
+  ctx.arcTo(px, py + ph, px, py, rad);
+  ctx.arcTo(px, py, px + pw, py, rad);
+  ctx.closePath();
+  ctx.fillStyle = cssColor(cs.backgroundColor, "#ffffff");
+  ctx.fill();
+  const bc = cssColor(cs.borderColor, null);
+  if (bc) {
+    ctx.strokeStyle = bc;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+  ctx.fillStyle = cs.color;
+  ctx.font = cs.fontWeight + " " + cs.fontSize + " " + cs.fontFamily;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(pill.textContent.trim(), px + pw / 2, py + ph / 2 + 0.5);
+}
+
+// 表を1つ描く。左上の位置と、描いた高さを返す
+function drawTable(ctx, table, ox, oy) {
+  const t = table.getBoundingClientRect();
+  for (const tr of table.querySelectorAll("tr")) {
+    for (const cell of tr.children) {
+      const r = cell.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) continue;
+      const x = ox + (r.left - t.left);
+      const y = oy + (r.top - t.top);
+      const cs = getComputedStyle(cell);
+      const isHead = cell.tagName === "TH";
+      // 背景（見出しはグラデーションなので代表色で塗る）
+      ctx.fillStyle = isHead ? "#2f6be0" : cssColor(cs.backgroundColor, "#ffffff");
+      ctx.fillRect(x, y, r.width, r.height);
+      // 罫線
+      ctx.strokeStyle = isHead ? "rgba(255,255,255,0.35)" : "#d7deea";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x + 0.5, y + 0.5, r.width - 1, r.height - 1);
+      // 中身
+      const pill = cell.querySelector(".st-pill");
+      if (pill) {
+        drawPill(ctx, pill, x, y, r.width, r.height);
+        continue;
+      }
+      const txt = cell.textContent.replace(/\s+/g, " ").trim();
+      if (!txt) continue;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, r.width, r.height);
+      ctx.clip();
+      ctx.fillStyle = isHead ? "#ffffff" : cs.color;
+      ctx.font = cs.fontWeight + " " + cs.fontSize + " " + cs.fontFamily;
+      ctx.textBaseline = "middle";
+      const padL = parseFloat(cs.paddingLeft) || 8;
+      const padR = parseFloat(cs.paddingRight) || 8;
+      const align = cs.textAlign;
+      if (align === "left" || align === "start") {
+        ctx.textAlign = "left";
+        ctx.fillText(txt, x + padL, y + r.height / 2 + 0.5);
+      } else if (align === "right" || align === "end") {
+        ctx.textAlign = "right";
+        ctx.fillText(txt, x + r.width - padR, y + r.height / 2 + 0.5);
+      } else {
+        ctx.textAlign = "center";
+        ctx.fillText(txt, x + r.width / 2, y + r.height / 2 + 0.5);
+      }
+      ctx.restore();
+    }
+  }
+  return t.height;
+}
+
+// 表＋注記のかたまりを画像にする
+async function areaToBlob(area) {
+  const table = area.querySelector("table");
+  if (!table) throw new Error("表が見つかりません");
+  const notes = [...area.querySelectorAll(".table-note, .summary-notes li")];
+  const noteStyle = notes[0] ? getComputedStyle(notes[0]) : null;
+  const noteH = noteStyle ? Math.ceil(parseFloat(noteStyle.lineHeight) || 20) : 0;
+  const tw = Math.ceil(table.getBoundingClientRect().width);
+  // 注記が表より長いこともあるので、幅は広い方に合わせる
+  let noteW = 0;
+  const probe = document.createElement("canvas").getContext("2d");
+  if (noteStyle) {
+    probe.font = noteStyle.fontWeight + " " + noteStyle.fontSize + " " + noteStyle.fontFamily;
+    for (const n of notes) noteW = Math.max(noteW, probe.measureText(n.textContent.trim()).width);
+  }
+  const W = Math.ceil(Math.max(tw, noteW)) + IMG_PAD * 2;
+  const H = Math.ceil(table.getBoundingClientRect().height) + notes.length * noteH + IMG_PAD * 2 + (notes.length ? 8 : 0);
+
+  const cv = document.createElement("canvas");
+  cv.width = W * IMG_SCALE;
+  cv.height = H * IMG_SCALE;
+  const ctx = cv.getContext("2d");
+  ctx.scale(IMG_SCALE, IMG_SCALE);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, W, H);
+
+  // 画面と同じ並び（注記が上か下か）で描く
+  let y = IMG_PAD;
+  const noteBefore = notes.length > 0 && notes[0].compareDocumentPosition(table) & Node.DOCUMENT_POSITION_FOLLOWING;
+  const drawNotes = () => {
+    if (!notes.length) return;
+    ctx.font = noteStyle.fontWeight + " " + noteStyle.fontSize + " " + noteStyle.fontFamily;
+    ctx.fillStyle = noteStyle.color;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    for (const n of notes) {
+      ctx.fillText(n.textContent.trim(), IMG_PAD, y + noteH / 2);
+      y += noteH;
+    }
+    y += 8;
+  };
+  if (noteBefore) drawNotes();
+  y += drawTable(ctx, table, IMG_PAD, y);
+  if (!noteBefore) {
+    y += 8;
+    drawNotes();
+  }
+
+  return new Promise((resolve, reject) =>
+    cv.toBlob((b) => (b ? resolve(b) : reject(new Error("画像を作れませんでした"))), "image/png")
+  );
+}
+
+// 表を画像にしてコピーするボタン。
+// メールに貼ったときに画面と同じ見た目（赤い注記も含む）になるよう、
+// 表と注記をまとめた範囲を PNG にしてクリップボードへ入れる。
+function CopyTableBtn({ targetRef, label = "表を画像でコピー" }) {
+  const [state, setState] = useState(""); // "" / "busy" / "done" / "err"
   useEffect(() => {
-    if (!done) return;
-    const t = setTimeout(() => setDone(false), 1600);
+    if (state !== "done" && state !== "err") return;
+    const t = setTimeout(() => setState(""), 1800);
     return () => clearTimeout(t);
-  }, [done]);
+  }, [state]);
+
   const copy = async () => {
-    const table = targetRef.current?.querySelector("table");
-    if (!table) return;
-    const { html, text } = tableToClipboard(table);
+    const node = targetRef.current;
+    if (!node || state === "busy") return;
+    setState("busy");
+    // 横スクロールしている表は見えている分しか測れないので、
+    // 描くあいだだけ全幅に広げる（終わったら元に戻す）。
+    const scroller = node.querySelector(".dtw, .tw2");
+    const undo = [];
+    if (scroller && scroller.scrollWidth > scroller.clientWidth) {
+      undo.push([scroller, scroller.getAttribute("style") || ""]);
+      scroller.style.overflow = "visible";
+      scroller.style.width = scroller.scrollWidth + "px";
+    }
     try {
-      await navigator.clipboard.write([
-        new ClipboardItem({
-          "text/html": new Blob([html], { type: "text/html" }),
-          "text/plain": new Blob([text], { type: "text/plain" }),
-        }),
-      ]);
-      setDone(true);
-    } catch {
-      // 古いブラウザ向け：一時的に選択してコピーする
-      try {
-        const box = document.createElement("div");
-        box.style.cssText = "position:fixed;left:-9999px;top:0";
-        box.innerHTML = html;
-        document.body.appendChild(box);
-        const range = document.createRange();
-        range.selectNode(box);
-        const sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(range);
-        document.execCommand("copy");
-        sel.removeAllRanges();
-        box.remove();
-        setDone(true);
-      } catch {}
+      const blob = await areaToBlob(node);
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+      setState("done");
+    } catch (e) {
+      console.error("[copy]", e);
+      setState("err");
+    } finally {
+      for (const [el, style] of undo) el.setAttribute("style", style);
     }
   };
+
+  const title =
+    state === "done"
+      ? "コピーしました"
+      : state === "err"
+      ? "コピーできませんでした"
+      : label;
   return (
     <button
       type="button"
-      className={"mini-btn copy-btn" + (done ? " done" : "")}
+      className={"icon-btn copy-btn" + (state ? " " + state : "")}
       onClick={copy}
-      title="表をコピー（メールにそのまま貼り付けられます）"
+      title={title}
+      aria-label={label}
+      disabled={state === "busy"}
     >
-      {done ? (
-        <>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-          コピーしました
-        </>
+      {state === "done" ? (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
       ) : (
-        <>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <rect x="9" y="9" width="12" height="12" rx="2" />
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-          </svg>
-          {label}
-        </>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="9" y="9" width="12" height="12" rx="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
       )}
     </button>
   );
@@ -972,10 +1076,11 @@ function SummaryTable({
     <div className="summary-block">
       <div className="sec-row">
         <div className="sec-head">{title}</div>
-        <CopyTableBtn targetRef={cardRef} />
         {onToggleEdit && <EditToggle on={edit} onToggle={onToggleEdit} />}
+        <CopyTableBtn targetRef={cardRef} />
       </div>
-      <div className="qcard summary-card" ref={cardRef}>
+      <div className="copy-area" ref={cardRef}>
+      <div className="qcard summary-card">
         <div className="tw2">
         <table className="qtable summary-table">
           <thead>
@@ -1108,6 +1213,7 @@ function SummaryTable({
           ))}
         </ul>
       )}
+      </div>
     </div>
   );
 }
@@ -2781,10 +2887,11 @@ ${e.memo}` : e.task}>
                   )}
                   </span>
                 </div>
+                <div className="copy-area" ref={adhocCardRef}>
                 <p className="table-note">
                   ※作業工数が５営業日以上かかるプロジェクトについては、グラフ化を行っております。
                 </p>
-                <div className="qcard adhoc-card" ref={adhocCardRef}>
+                <div className="qcard adhoc-card">
                   <div className="dtw adhoc-tw">
                     {/* 幅は100%。指定のない最終列（メモ）が余白を全部吸収する */}
                     <table
@@ -3141,6 +3248,7 @@ ${e.memo}` : e.task}>
                       </tbody>
                     </table>
                   </div>
+                </div>
                 </div>
               </div>
             );
