@@ -1777,8 +1777,18 @@ export default function TaskBoard({ mode = "view" }) {
   const [collapsed, setCollapsed] = useState({});
   const toggleCard = (t) => setCollapsed((p) => ({ ...p, [t]: !p[t] }));
 
-  // プロジェクト進捗のカードは並べ替えない（案件タイプの既定の順で出す）
+  // プロジェクト進捗のカードは並べ替えない（案件タイプの既定の順で出す）。
+  // 並びは2列固定で、Stage の体系ごとに縦に並べる。
+  //   左：Hotel・Temairazu（1〜7の番号付きStage＝A群）
+  //   右：ACQ・Liberty・IHM（YCS作成中〜完了のStage＝B群）
+  // 体系の分からない案件タイプは右に置く。
   const displayTypes = renderTypes;
+  const typeColumns = useMemo(() => {
+    const left = [];
+    const right = [];
+    for (const t of displayTypes) (TYPE_GROUP[t] === "A" ? left : right).push(t);
+    return [left, right];
+  }, [displayTypes]);
 
   // タスク別サマリー（当年 Regular ／ 前年 Pending）
   const summary = useMemo(
@@ -3014,7 +3024,9 @@ ${e.memo}` : e.task}>
               <span className="sec-head inline">プロジェクト進捗</span>
             </div>
             <div className="qgrid">
-            {displayTypes.map((t, idx) => {
+            {typeColumns.map((col, ci) => (
+            <div className="qcol" key={"col" + ci}>
+            {col.map((t, idx) => {
               const e = yearAgg?.byType[t] || {
                 stages: {},
                 cols: [0, 0, 0, 0],
@@ -3031,12 +3043,6 @@ ${e.memo}` : e.task}>
               });
               const rows = hideZero ? allRows.filter((r) => r.total > 0) : allRows;
               const hiddenCount = allRows.length - rows.length;
-              // カード見出しのKPI（サマリー表と同一ロジック）
-              const s = summary?.[t] || { total: 0, pre: 0, lost: 0, na: 0, done: 0 };
-              const juchu = s.total - s.pre - s.lost - s.na;
-              const kDone = s.done;
-              const kOpen = juchu - kDone;
-              const kRate = juchu > 0 ? Math.round((kDone / juchu) * 100) : 0;
               const accent = TYPE_ACCENT[t] || ACCENT_FALLBACK;
               const isOpen = !collapsed[t];
               return (
@@ -3060,28 +3066,6 @@ ${e.memo}` : e.task}>
                     title={isOpen ? "クリックで折りたたむ" : "クリックで展開"}
                   >
                     <span className="case-name">{t}</span>
-                    <span className="kpi-strip">
-                      <span className="kpi-mini">
-                        <i>受注</i>
-                        <b>{juchu}</b>
-                      </span>
-                      <span className="kpi-mini">
-                        <i>完了</i>
-                        <b className="ok">{kDone}</b>
-                      </span>
-                      <span className="kpi-mini">
-                        <i>対応中</i>
-                        <b className="warn">{kOpen}</b>
-                      </span>
-                      <span
-                        className={
-                          "rate-pill " +
-                          (kRate >= 90 ? "r-high" : kRate >= 60 ? "r-mid" : "r-low")
-                        }
-                      >
-                        {kRate}%
-                      </span>
-                    </span>
                     <span className={"chev" + (isOpen ? " open" : "")} aria-hidden="true">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="6 9 12 15 18 9" />
@@ -3139,6 +3123,8 @@ ${e.memo}` : e.task}>
                 </div>
               );
             })}
+            </div>
+            ))}
             </div>
             </>
           ))}

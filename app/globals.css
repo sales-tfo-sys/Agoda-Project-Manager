@@ -11122,3 +11122,21 @@ button.drive-link:disabled {
 .qcard:active {
   cursor: default;
 }
+
+/* プロジェクト進捗：Stage の体系ごとに2列で並べる（左=Hotel系／右=ACQ系）。
+   段組み（column-count）だと列の割り振りがブラウザ任せになるため、列を明示する。 */
+.qgrid {
+  column-count: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 10px;
+  align-items: start;
+}
+.qcol {
+  min-width: 0;
+}
+@media (max-width: 900px) {
+  .qgrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
