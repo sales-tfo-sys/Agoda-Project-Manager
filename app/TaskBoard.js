@@ -159,9 +159,9 @@ function timeInZone(date, tz) {
   return { h: get("hour") % 24, m: get("minute"), s: get("second") };
 }
 
-// 文字盤。12・3・6・9 は数字、それ以外の時刻位置は目盛りにする。
+// 文字盤。分の目盛りを60本入れ、針は先を細くした多角形にして輪郭をはっきりさせる。
 function ClockFace({ h, m, s, accent }) {
-  const R = 50; // 中心
+  const R = 50;
   const pt = (deg, r) => {
     const a = ((deg - 90) * Math.PI) / 180;
     return [R + r * Math.cos(a), R + r * Math.sin(a)];
@@ -169,10 +169,6 @@ function ClockFace({ h, m, s, accent }) {
   const hourDeg = ((h % 12) + m / 60) * 30;
   const minDeg = (m + s / 60) * 6;
   const secDeg = s * 6;
-  const [hx, hy] = pt(hourDeg, 25);
-  const [mx, my] = pt(minDeg, 34);
-  const [sx, sy] = pt(secDeg, 36);
-  const [tx, ty] = pt(secDeg + 180, 9);
   const nums = [
     [12, 0],
     [3, 90],
@@ -180,24 +176,44 @@ function ClockFace({ h, m, s, accent }) {
     [9, 270],
   ];
   return (
-    <svg viewBox="0 0 100 100" className="clock-face" aria-hidden="true">
-      <circle cx="50" cy="50" r="46" fill="#f7f8fa" stroke="#dfe3ea" strokeWidth="1.5" />
-      {Array.from({ length: 12 }, (_, i) => i * 30).map((deg) =>
-        deg % 90 === 0 ? null : (
+    <svg
+      viewBox="0 0 100 100"
+      className="clock-face"
+      shapeRendering="geometricPrecision"
+      aria-hidden="true"
+    >
+      <circle cx="50" cy="50" r="47" fill="#ffffff" stroke="#c9d1e0" strokeWidth="1" />
+      {/* 分の目盛り（細い） */}
+      {Array.from({ length: 60 }, (_, i) => i * 6).map((deg) =>
+        deg % 30 === 0 ? null : (
           <line
-            key={deg}
-            x1={pt(deg, 38)[0]}
-            y1={pt(deg, 38)[1]}
-            x2={pt(deg, 43)[0]}
-            y2={pt(deg, 43)[1]}
-            stroke="#9aa4b8"
-            strokeWidth="1.6"
-            strokeLinecap="round"
+            key={"m" + deg}
+            x1={pt(deg, 43.5)[0]}
+            y1={pt(deg, 43.5)[1]}
+            x2={pt(deg, 46)[0]}
+            y2={pt(deg, 46)[1]}
+            stroke="#c2cad9"
+            strokeWidth="0.6"
           />
         )
       )}
+      {/* 時の目盛り（太い）。数字を置く 12/3/6/9 は短くする */}
+      {Array.from({ length: 12 }, (_, i) => i * 30).map((deg) => {
+        const big = deg % 90 !== 0;
+        return (
+          <line
+            key={"h" + deg}
+            x1={pt(deg, big ? 39.5 : 43)[0]}
+            y1={pt(deg, big ? 39.5 : 43)[1]}
+            x2={pt(deg, 46)[0]}
+            y2={pt(deg, 46)[1]}
+            stroke="#2b3550"
+            strokeWidth={big ? 1.7 : 1.2}
+          />
+        );
+      })}
       {nums.map(([n, deg]) => {
-        const [x, y] = pt(deg, 34);
+        const [x, y] = pt(deg, 33);
         return (
           <text
             key={n}
@@ -205,19 +221,27 @@ function ClockFace({ h, m, s, accent }) {
             y={y}
             textAnchor="middle"
             dominantBaseline="central"
-            fontSize="12"
-            fontWeight="600"
-            fill="#7b8598"
+            fontSize="11"
+            fontWeight="700"
+            fill="#2b3550"
           >
             {n}
           </text>
         );
       })}
-      <line x1="50" y1="50" x2={hx} y2={hy} stroke="#1a2540" strokeWidth="4.6" strokeLinecap="round" />
-      <line x1="50" y1="50" x2={mx} y2={my} stroke="#1a2540" strokeWidth="3.2" strokeLinecap="round" />
-      <line x1={tx} y1={ty} x2={sx} y2={sy} stroke={accent} strokeWidth="1.4" strokeLinecap="round" />
-      <circle cx="50" cy="50" r="3.2" fill="#1a2540" />
-      <circle cx="50" cy="50" r="1.4" fill={accent} />
+      {/* 針は先細りの多角形。角を丸めないことで輪郭をはっきりさせる */}
+      <g transform={`rotate(${hourDeg} 50 50)`}>
+        <polygon points="48.3,56 51.7,56 50.8,26 49.2,26" fill="#10192e" />
+      </g>
+      <g transform={`rotate(${minDeg} 50 50)`}>
+        <polygon points="48.9,58 51.1,58 50.5,15 49.5,15" fill="#10192e" />
+      </g>
+      <g transform={`rotate(${secDeg} 50 50)`}>
+        <line x1="50" y1="62" x2="50" y2="13" stroke={accent} strokeWidth="0.8" />
+        <circle cx="50" cy="62" r="2" fill={accent} />
+      </g>
+      <circle cx="50" cy="50" r="2.6" fill="#10192e" />
+      <circle cx="50" cy="50" r="1" fill="#ffffff" />
     </svg>
   );
 }
