@@ -11404,3 +11404,11 @@ button.drive-link:disabled {
 .summary-notes {
   padding: 6px 10px;
 }
+
+/* 注記のまわりに白が残っていたのを消す。
+   コピー範囲(.copy-area)に白を敷いていたため、注記の余白ぶんだけ白が見えていた。
+   表は .qcard 側が白いので、コピー範囲そのものは下地の色でよい
+   （コピー画像は canvas 側で白地に描くので影響なし）。 */
+.copy-area {
+  background: transparent;
+}
