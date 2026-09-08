@@ -3434,6 +3434,14 @@ ${e.memo}` : e.task}>
       <Modal
         open={!!evForm}
         title={evForm?.isNew ? "予定を追加" : "予定を編集"}
+        icon={
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4.5" width="18" height="17" rx="2" />
+            <line x1="3" y1="9.5" x2="21" y2="9.5" />
+            <line x1="8" y1="2.5" x2="8" y2="6.5" />
+            <line x1="16" y1="2.5" x2="16" y2="6.5" />
+          </svg>
+        }
         onClose={() => setEvForm(null)}
         footer={
           <>
@@ -3456,7 +3464,7 @@ ${e.memo}` : e.task}>
               onClick={submitEvent}
               disabled={!String(evForm?.title || "").trim() || !evForm?.start}
             >
-              保存する
+              保存
             </button>
           </>
         }
@@ -3479,7 +3487,7 @@ ${e.memo}` : e.task}>
                 onChange={(v) => setEvForm({ ...evForm, start: v })}
               />
               <ModalDateField
-                label="終了日（続く場合）"
+                label="終了日"
                 value={evForm.end}
                 onChange={(v) => setEvForm({ ...evForm, end: v })}
               />
@@ -3493,9 +3501,6 @@ ${e.memo}` : e.task}>
                 placeholder="任意"
               />
             </label>
-            <p className="modal-note">
-              終了日を入れると、その日まで毎日カレンダーに出ます。
-            </p>
           </div>
         )}
       </Modal>

@@ -5,7 +5,8 @@ import { createPortal } from "react-dom";
 
 // 画面共通のモーダル。ブラウザ標準のダイアログ（confirm/alert）の代わりに使う。
 // Esc・背景クリックで閉じ、開いている間は背面のスクロールを止める。
-export default function Modal({ open, title, onClose, children, footer, width = 460 }) {
+// icon: 見出しの左に置くアイコン（任意）。title は読み上げにも使うので文字列のまま渡す。
+export default function Modal({ open, title, icon, onClose, children, footer, width = 460 }) {
   const bodyRef = useRef(null);
   // onClose は毎回新しい関数で渡ってくるため、副作用の依存に入れない（入力のたびに
   // 効果が張り直されてフォーカスが奪われるのを防ぐ）
@@ -45,7 +46,10 @@ export default function Modal({ open, title, onClose, children, footer, width = 
     >
       <div className="modal-box" style={{ width }} role="dialog" aria-modal="true" aria-label={title}>
         <div className="modal-head">
-          <span className="modal-title">{title}</span>
+          <span className="modal-title">
+            {icon && <span className="modal-title-ico" aria-hidden="true">{icon}</span>}
+            {title}
+          </span>
           <button type="button" className="modal-x" onClick={onClose} aria-label="閉じる">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
               <line x1="5" y1="5" x2="19" y2="19" />

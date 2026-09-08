@@ -11056,3 +11056,31 @@ button.drive-link:disabled {
     flex-direction: row;
   }
 }
+
+/* モーダルの見出しアイコン */
+.modal-title-ico {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 7px;
+  vertical-align: -3px;
+  color: var(--accent);
+}
+
+/* 削除ボタンは赤（グレーだと押していいのか分かりにくい） */
+.mini-btn.danger {
+  color: #c0392b;
+  border-color: #f0b7b9;
+  background: #fdecea;
+}
+.mini-btn.danger:hover:not(:disabled) {
+  color: #ffffff;
+  border-color: #c0392b;
+  background: #c0392b;
+}
+/* 確認モーダルの「削除する」も同じく赤に揃える */
+.save-btn.danger-btn {
+  background: linear-gradient(140deg, #c0392b, #e05a4a);
+}
+.save-btn.danger-btn:hover:not(:disabled) {
+  background: linear-gradient(140deg, #a93226, #cf4c3d);
+}
