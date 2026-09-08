@@ -3059,9 +3059,6 @@ ${e.memo}` : e.task}>
                     }}
                     title={isOpen ? "クリックで折りたたむ" : "クリックで展開"}
                   >
-                    <span className="drag-handle" aria-hidden="true">
-                      ⠿
-                    </span>
                     <span className="case-name">{t}</span>
                     <span className="kpi-strip">
                       <span className="kpi-mini">
