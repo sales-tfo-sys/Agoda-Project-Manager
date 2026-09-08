@@ -12,7 +12,7 @@ const SERIES = [
 ];
 
 // 出すのは直近1か月ぶん（土日を除いた平日22日）
-const RECENT_DAYS = 22;
+export const RECENT_DAYS = 22;
 
 const pad2 = (n) => String(n).padStart(2, "0");
 // "2026-09-08" → "2026/09/08"
@@ -123,7 +123,7 @@ export async function chartsToBlob(root) {
   );
 }
 
-function Chart({ title, days, rows }) {
+export function Chart({ title, days, rows }) {
   // 描画領域（viewBox の座標）。実際の大きさは CSS の幅に追従する。
   const W = Math.max(680, 62 + days.length * 26 + 126);
   const H = 340;

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import ProgressChart, { CopyChartsBtn } from "./ProgressChart";
+import AdhocChart, { ONGOING } from "./AdhocChart";
 import Modal from "./Modal";
 import Calendar from "./Calendar";
 import { holidayName, dowLabel } from "../lib/holidays";
@@ -1878,6 +1879,7 @@ export default function TaskBoard({ mode = "view" }) {
   const adhocCardRef = useRef(null);
   // 進捗グラフのコピー用（グラフの入れ物を指す）
   const graphGridRef = useRef(null);
+  const adhocGridRef = useRef(null);
 
   // 予定の追加・編集モーダル（null = 閉じている）
   const [evForm, setEvForm] = useState(null); // { id, title, start, end, memo, isNew }
@@ -2102,6 +2104,58 @@ export default function TaskBoard({ mode = "view" }) {
     }
     return map;
   }, [records]);
+
+  // 進捗グラフに出す Ad Hoc タスク（対応中のもの＝On Track / Behind / Onhold）。
+  // 並びは表と同じ「優先」順。
+  const adhocOngoing = useMemo(() => {
+    const seen = new Set((adhoc || []).map((a) => a.task));
+    const all = [
+      ...(adhoc || []),
+      ...(customAdhoc || []).filter((c) => !seen.has(c.task)).map((c) => ({ task: c.task })),
+    ];
+    return all
+      .map((t, i) => {
+        const o = ov[`adhoc|${t.task}`] || EMPTY_OV;
+        return { key: t.task, label: t.task, status: o.status ?? t.status, no: t.no, i };
+      })
+      .filter((r) => ONGOING.includes(r.status))
+      .map((r) => ({ ...r, p: prio[`adhoc|${r.key}`] ?? r.no }))
+      .sort((a, b) => {
+        const na = a.p == null ? Infinity : a.p;
+        const nb = b.p == null ? Infinity : b.p;
+        return na - nb || a.i - b.i;
+      });
+  }, [adhoc, customAdhoc, ov, prio]);
+
+  // その日の受注数・完了数を1日1回だけ記録する。
+  // Ad Hoc の件数はシートの「今の値」しか読めず、後から遡って数え直せないため。
+  // シートの読み込みは表示より遅れて届くので、一度きりではなく
+  // 「送る中身が変わったら送り直す」（同じ日への保存は上書きなので何度でも安全）。
+  const savedSigRef = useRef(null);
+  useEffect(() => {
+    if (!adhocOngoing.length) return;
+    const p = (n) => String(n).padStart(2, "0");
+    const d = new Date();
+    const today = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+    const items = {};
+    for (const t of adhocOngoing) {
+      const o = ov[`adhoc|${t.key}`] || EMPTY_OV;
+      const sc = sheetCounts[t.key] || kintoneCounts[t.key];
+      const total = sc?.total != null ? sc.total : o.total;
+      const done = sc?.done != null ? sc.done : o.done;
+      if (total == null && done == null) continue;
+      items[t.key] = { total, done };
+    }
+    if (!Object.keys(items).length) return;
+    const sig = today + "|" + JSON.stringify(items);
+    if (savedSigRef.current === sig) return;
+    savedSigRef.current = sig;
+    fetch("/api/adhoc-daily", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date: today, items }),
+    }).catch(() => {});
+  }, [adhocOngoing, sheetCounts, kintoneCounts, ov]);
 
   // Regular Task サマリーの対象（IHM は Ad Hoc 扱いのため除外）
   const REGULAR_EXCLUDE = new Set(["IHM"]);
@@ -3366,14 +3420,17 @@ ${e.memo}` : e.task}>
                     Ad Hoc Task
                   </button>
                 </div>
-                {graphTab === "regular" && <CopyChartsBtn targetRef={graphGridRef} />}
+                <CopyChartsBtn targetRef={graphTab === "regular" ? graphGridRef : adhocGridRef} />
               </div>
               {graphTab === "regular" ? (
                 <ProgressChart year={year} dateCode={dateCode} types={regularTypes} gridRef={graphGridRef} />
               ) : (
-                <div className="card">
-                  <div className="notice">Ad Hoc Task のグラフはこれから作ります。</div>
-                </div>
+                <AdhocChart
+                  year={year}
+                  dateCode={dateCode}
+                  tasks={adhocOngoing}
+                  gridRef={adhocGridRef}
+                />
               )}
             </div>
           )}
