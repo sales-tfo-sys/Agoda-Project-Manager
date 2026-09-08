@@ -1434,12 +1434,15 @@ export default function TaskBoard({ mode = "view" }) {
     };
   }, [menuOpen]);
 
-  // 表示タブ（スケジュール / 全体 / 案件詳細）
-  const [tab, setTab] = useState("overview");
+  // 表示タブ（スケジュール / 進捗）。
+  // 「全体」と「案件詳細」は1ページにまとめて「進捗」にした。
+  const [tab, setTab] = useState("progress");
   useEffect(() => {
     try {
       const v = localStorage.getItem("agoda-dash-tab");
-      if (v === "schedule" || v === "overview" || v === "cases") setTab(v);
+      if (v === "schedule") setTab("schedule");
+      // 旧「全体 / 案件詳細」の保存値は進捗に読み替える
+      else if (v === "overview" || v === "cases" || v === "progress") setTab("progress");
     } catch {}
   }, []);
   const switchTab = (v) => {
@@ -1646,8 +1649,8 @@ export default function TaskBoard({ mode = "view" }) {
   const dateLabel =
     dateOptions.find((o) => o.code === dateCode)?.label || dateCode;
   // 編集モード（プロジェクト管理）は Regular ＋ Ad Hoc の編集に集中するため
-  // 「案件詳細」タブは出さず常に overview を表示する。
-  const activeTab = isEdit ? "overview" : tab;
+  // 編集画面（プロジェクト管理）はタブを使わない。
+  const activeTab = isEdit ? "edit" : tab;
 
   return (
     <div className="wrap">
@@ -1714,25 +1717,15 @@ export default function TaskBoard({ mode = "view" }) {
             <button
               type="button"
               role="tab"
-              data-tab="overview"
-              aria-selected={tab === "overview"}
-              className={"segbar-btn" + (tab === "overview" ? " active" : "")}
-              onClick={() => switchTab("overview")}
+              data-tab="progress"
+              aria-selected={tab === "progress"}
+              className={"segbar-btn" + (tab === "progress" ? " active" : "")}
+              onClick={() => switchTab("progress")}
             >
-              全体
-            </button>
-            <button
-              type="button"
-              role="tab"
-              data-tab="cases"
-              aria-selected={tab === "cases"}
-              className={"segbar-btn" + (tab === "cases" ? " active" : "")}
-              onClick={() => switchTab("cases")}
-            >
-              案件詳細
+              進捗
             </button>
             </div>
-            {/* 対象年は「全体」「案件詳細」の集計に使うもの。
+            {/* 対象年は「進捗」の集計に使うもの。
                 スケジュールは Ad Hoc の開始日・期日で表示するので出さない。 */}
             {years.length > 0 && activeTab !== "schedule" && (
               <label className="head-year head-year-bare">
@@ -2143,7 +2136,7 @@ ${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めません�
             );
           })()}
 
-          {activeTab === "overview" && !isEdit && (
+          {activeTab === "progress" && !isEdit && (
           <div className="tab-panel overview-row">
             <div className="summary-row overview-tables">
             {summary && renderTypes.length > 0 && (
@@ -2324,7 +2317,7 @@ ${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めません�
             );
           })()}
 
-          {activeTab === "overview" && !isEdit && adhoc && (adhoc.length > 0 || customAdhoc.length > 0) && (() => {
+          {activeTab === "progress" && !isEdit && adhoc && (adhoc.length > 0 || customAdhoc.length > 0) && (() => {
             // シート由来のタスク＋サイトで追加したタスクを結合
             const merged = [
               ...adhoc,
@@ -2803,7 +2796,7 @@ ${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めません�
           })()}
 
           {/* 案件タイプ別 ステータス×四半期（全ステータスを0件でも表示） */}
-          {activeTab === "cases" && (renderTypes.length === 0 ? (
+          {activeTab === "progress" && (renderTypes.length === 0 ? (
             <div className="card">
               <div className="notice">案件がありません。</div>
             </div>
@@ -2965,7 +2958,7 @@ ${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めません�
             </>
           ))}
 
-          {activeTab === "cases" && yearAgg && yearAgg.noDate > 0 && (
+          {activeTab === "progress" && yearAgg && yearAgg.noDate > 0 && (
             <p className="note-line">
               ※「{dateLabel}」が空欄で四半期に振り分けられない案件が {fmt(yearAgg.noDate)} 件あります（別の基準日に切り替えると変わります）。
             </p>
