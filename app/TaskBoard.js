@@ -2671,7 +2671,7 @@ ${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めません�
           })()}
 
           {activeTab === "progress" && !isEdit && (
-            <div className="sec-row">
+            <div className="sec-row sub-tabs">
               <div className="segbar segbar-sm" role="tablist" aria-label="進捗表の表示切替">
                 <span
                   className="segbar-thumb"
@@ -3402,7 +3402,7 @@ ${e.memo}` : e.task}>
 
           {activeTab === "graph" && !isEdit && (
             <div className="tab-panel">
-              <div className="sec-row">
+              <div className="sec-row sub-tabs">
                 <div className="segbar segbar-sm" role="tablist" aria-label="進捗グラフの表示切替">
                   <span
                     className="segbar-thumb"

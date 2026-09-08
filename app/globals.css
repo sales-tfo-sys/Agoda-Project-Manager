@@ -11343,3 +11343,14 @@ button.drive-link:disabled {
 .chart-head .icon-btn.copy-btn {
   margin-left: auto;
 }
+
+/* 進捗表・進捗グラフの中の切替（Regular Task / Ad Hoc Task）は、
+   上のタブ行（スケジュール／進捗表／進捗グラフ）の続きに見えるよう間隔を詰める */
+.sec-row.sub-tabs {
+  margin-top: -10px;
+}
+/* 進捗表の切替はタブ行の直後に置いているので余白の相殺のされ方が違う。
+   進捗グラフ側と同じ 12px になるよう合わせる */
+.tabbar-row + .sec-row.sub-tabs {
+  margin-top: -6px;
+}
