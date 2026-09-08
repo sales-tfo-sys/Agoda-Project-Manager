@@ -12,6 +12,16 @@ import { Chart, RECENT_DAYS } from "./ProgressChart";
 
 export const ONGOING = ["On Track", "Behind", "Onhold"];
 
+// グラフに出さないタスク。
+// Tier 1〜4 は「正しいホテル担当者名、連絡先 (not managed)」1枚にまとめて見るため。
+// 記録自体は続けている（表の値はそのまま）。
+const HIDDEN = new Set([
+  "not managed list as of 13 June 2026（Tier 1）",
+  "not managed list as of 13 June 2026（Tier 2）",
+  "not managed list as of 13 June 2026（Tier 3）",
+  "not managed list as of 13 June 2026（Tier 4）",
+]);
+
 export default function AdhocChart({ year, dateCode, tasks, known, gridRef: outerRef }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
@@ -56,6 +66,7 @@ export default function AdhocChart({ year, dateCode, tasks, known, gridRef: oute
     const kintone = new Set(data.kintone || []);
     const out = [];
     for (const t of list) {
+      if (HIDDEN.has(t.key)) continue;
       const all = data.series?.[t.key];
       if (!all) continue;
       const part = all.slice(from);
