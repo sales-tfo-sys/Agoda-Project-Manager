@@ -1455,9 +1455,12 @@ export default function TaskBoard({ mode = "view" }) {
       body: JSON.stringify({ scope, key, priority: v }),
     }).catch(() => {});
   };
+  // 一度も設定していない（行が無い）ときだけ fallback（シートの#など）を使う。
+  // 空にして保存したもの（null）は「優先なし」のまま扱う。
+  // そうしないと、シートに#が入っている行は優先を消しても#が戻ってきて消せない。
   const prioOf = (scope, key, fallback) => {
     const v = prio[`${scope}|${key}`];
-    return v === undefined || v === null ? fallback : v;
+    return v === undefined ? fallback : v;
   };
 
   // 作業ごとの担当アサイン（Supabaseに保存）
@@ -2134,7 +2137,7 @@ export default function TaskBoard({ mode = "view" }) {
         return { key: t.task, label: t.task, status: o.status ?? t.status, no: t.no, i };
       })
       .filter((r) => ONGOING.includes(r.status))
-      .map((r) => ({ ...r, p: prio[`adhoc|${r.key}`] ?? r.no }))
+      .map((r) => ({ ...r, p: prioOf("adhoc", r.key, r.no) }))
       .sort((a, b) => {
         const na = a.p == null ? Infinity : a.p;
         const nb = b.p == null ? Infinity : b.p;
