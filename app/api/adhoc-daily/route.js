@@ -21,6 +21,16 @@ const STAGE_CODE = "ドロップダウン"; // Stage
 const STAGE_DATE = "日付"; // ★Stage変更日
 const IHM_SUBTASKS = { IHM_Room: "Room", IHM_Plan: "Plan", IHM_CM: "CM" };
 
+// 複数の行をまとめて1本にするグラフ（担当がプロジェクト単位で見ているもの）。
+// 日ごとに受注数・完了数を足し合わせる。Tier 4 は対応不要なので数に入れない。
+const GROUPS = {
+  "正しいホテル担当者名、連絡先 (not managed)": [
+    "not managed list as of 13 June 2026（Tier 1）",
+    "not managed list as of 13 June 2026（Tier 2）",
+    "not managed list as of 13 June 2026（Tier 3）",
+  ],
+};
+
 const pad2 = (n) => String(n).padStart(2, "0");
 const iso = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 
@@ -115,7 +125,22 @@ export async function GET(req) {
       });
     }
 
-    // ② IHM は Kintone から数え直す（記録より前も線が出る）
+    // ② まとめグラフ：メンバー全部に値がある日だけ足し合わせる
+    for (const [name, members] of Object.entries(GROUPS)) {
+      const lists = members.map((m) => series[m]);
+      if (lists.some((l) => !l)) continue;
+      series[name] = days.map((_, i) => {
+        const vs = lists.map((l) => l[i]);
+        if (vs.some((v) => !v)) return null;
+        return {
+          total: vs.reduce((a, v) => a + v.total, 0),
+          done: vs.reduce((a, v) => a + v.done, 0),
+          target: null,
+        };
+      });
+    }
+
+    // ③ IHM は Kintone から数え直す（記録より前も線が出る）
     const snap = await readSnapshot().catch(() => null);
     const records = snap?.data?.records || [];
     const kintone = []; // Kintone から数え直したタスク（画面で年を付けて出す）
