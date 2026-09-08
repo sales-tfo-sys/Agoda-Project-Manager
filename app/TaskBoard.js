@@ -1009,7 +1009,9 @@ async function areaToBlob(area, maxCols) {
   const drawNotes = () => {
     if (!notes.length) return;
     ctx.font = noteStyle.fontWeight + " " + noteStyle.fontSize + " " + noteStyle.fontFamily;
-    ctx.fillStyle = noteStyle.color;
+    // 画面の下地は黒っぽいので注記の赤を明るくしているが、
+    // 画像は白地に描くので、こちらは元の濃い赤で描く
+    ctx.fillStyle = "#c0392b";
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
     for (const n of notes) {
@@ -3082,8 +3084,6 @@ ${e.memo}` : e.task}>
                     </button>
                   </div>
                   <span className="sec-actions">
-                  {/* コピーする画像は「優先〜実作業工数」まで（11列） */}
-                  <CopyTableBtn targetRef={adhocCardRef} maxCols={11} />
                   {editable && (
                     <button
                       type="button"
@@ -3097,9 +3097,15 @@ ${e.memo}` : e.task}>
                   </span>
                 </div>
                 <div className="copy-area" ref={adhocCardRef}>
-                <p className="table-note">
-                  ※作業工数が５営業日以上かかるプロジェクトについては、グラフ化を行っております。
-                </p>
+                {/* コピーボタンは表のすぐ上（注記の行の右端）に置く。
+                    画像は表と注記の文字だけを描くので、ボタンは写らない。
+                    コピーする画像は「優先〜実作業工数」まで（11列） */}
+                <div className="note-row">
+                  <p className="table-note">
+                    ※作業工数が５営業日以上かかるプロジェクトについては、グラフ化を行っております。
+                  </p>
+                  <CopyTableBtn targetRef={adhocCardRef} maxCols={11} />
+                </div>
                 <div className="qcard adhoc-card">
                   <div className="dtw adhoc-tw">
                     {/* 幅は100%。指定のない最終列（メモ）が余白を全部吸収する */}

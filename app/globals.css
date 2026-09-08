@@ -11429,3 +11429,92 @@ button.drive-link:disabled {
   margin-bottom: 0;
   padding-bottom: 12px;
 }
+
+/* ══════════════ ページの下地を「優しい黒」にする ══════════════
+   真っ黒ではなく、青みを少し残した炭色。カード・表・モーダルは白のままなので、
+   メールに貼る画像（表・グラフのコピー）は今までどおり白地で出る。
+   下地の上に直接置いている文字だけ、明るい色にして読めるようにする。 */
+:root {
+  --bg: #23262e;
+}
+body {
+  background: radial-gradient(80% 55% at 88% -10%, rgba(96, 142, 240, 0.16) 0%, transparent 60%),
+    radial-gradient(70% 50% at -8% 104%, rgba(96, 142, 240, 0.12) 0%, transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+}
+
+/* 下地に直接のっている文字（セクション見出し・プルダウンのラベル） */
+.sec-head,
+.sec-head.inline,
+.head-year {
+  color: #e7eaf2;
+}
+/* 赤い注記は下地と同じ色の帯にのっているので、暗い赤だと沈む。
+   画面では明るい赤にする（コピーした画像は白地なので、そちらは元の赤のまま）。 */
+.table-note,
+.summary-notes {
+  color: #ff9184;
+}
+
+/* 上の帯（ヘッダー）と左メニューも下地に合わせる。
+   下地よりひと段だけ明るい炭色にして、帯として浮かせる。文字は明るく。 */
+.head {
+  background: linear-gradient(#2c303a 0%, #282c35 100%);
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+  color: #e7eaf2;
+}
+.head .page-h {
+  color: #f2f4f9;
+}
+.head .icon-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #cfd6e6;
+}
+.head .icon-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
+.sidebar {
+  background: linear-gradient(168deg, #2c303a 0%, #24272f 100%);
+  border-right-color: rgba(255, 255, 255, 0.1);
+}
+.sidebar-brand {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+.brand-line,
+.side-user-name {
+  color: #f2f4f9;
+}
+.side-user-mail {
+  color: #a7b0c4;
+}
+.side-tab,
+.logout-tab {
+  color: #c2cadb;
+}
+.side-tab:hover,
+.logout-tab:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+.side-div {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* Ad Hoc 表：コピーボタンを注記と同じ行の右端に置き、表のすぐ上に来るようにする */
+.note-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.note-row .table-note {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.note-row .icon-btn.copy-btn {
+  flex: 0 0 auto;
+  margin-bottom: 12px; /* 注記の下余白と高さを合わせる */
+}
