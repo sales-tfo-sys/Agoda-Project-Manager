@@ -827,6 +827,114 @@ function EditToggle({ on, onToggle }) {
   );
 }
 
+// 表をそのままコピーするボタン。
+// Gmail などに貼ったとき「表のまま」貼り付くよう、見た目を各セルに直接書き込んだ
+// HTML を作ってクリップボードに入れる（メールソフトは外部のCSSを捨てるため）。
+// 併せて、素のテキストとしてタブ区切りも入れておく（メモ帳や Excel 用）。
+function tableToClipboard(table) {
+  const clone = table.cloneNode(true);
+  // 入力欄・ボタン類は文字に置き換える（コピー先で操作できても意味がないため）
+  clone.querySelectorAll("input, select, textarea").forEach((el) => {
+    const v = el.value ?? "";
+    el.replaceWith(document.createTextNode(v));
+  });
+  clone.querySelectorAll("button, svg, .grip, .drag-handle").forEach((el) => el.remove());
+
+  const HEAD = "background:#2f6be0;color:#ffffff;font-weight:700;";
+  const CELL = "border:1px solid #c9d1e0;padding:6px 10px;font-size:13px;";
+  clone.querySelectorAll("th").forEach((th) => {
+    th.setAttribute("style", CELL + HEAD + "text-align:center;white-space:nowrap;");
+  });
+  clone.querySelectorAll("td").forEach((td, i) => {
+    const src = table.querySelectorAll("td")[i];
+    const align = src ? getComputedStyle(src).textAlign : "center";
+    td.setAttribute(
+      "style",
+      CELL + `text-align:${align === "start" ? "left" : align};color:#1a2540;`
+    );
+  });
+  clone.setAttribute(
+    "style",
+    "border-collapse:collapse;font-family:'Hiragino Kaku Gothic ProN','Yu Gothic',Meiryo,sans-serif;"
+  );
+
+  const html = clone.outerHTML;
+  const text = [...clone.querySelectorAll("tr")]
+    .map((tr) =>
+      [...tr.querySelectorAll("th,td")]
+        .map((c) => c.textContent.replace(/\s+/g, " ").trim())
+        .join("\t")
+    )
+    .join("\n");
+  return { html, text };
+}
+
+// コピーボタン。押すと少しのあいだ「コピーしました」に変わる
+function CopyTableBtn({ targetRef, label = "表をコピー" }) {
+  const [done, setDone] = useState(false);
+  useEffect(() => {
+    if (!done) return;
+    const t = setTimeout(() => setDone(false), 1600);
+    return () => clearTimeout(t);
+  }, [done]);
+  const copy = async () => {
+    const table = targetRef.current?.querySelector("table");
+    if (!table) return;
+    const { html, text } = tableToClipboard(table);
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "text/html": new Blob([html], { type: "text/html" }),
+          "text/plain": new Blob([text], { type: "text/plain" }),
+        }),
+      ]);
+      setDone(true);
+    } catch {
+      // 古いブラウザ向け：一時的に選択してコピーする
+      try {
+        const box = document.createElement("div");
+        box.style.cssText = "position:fixed;left:-9999px;top:0";
+        box.innerHTML = html;
+        document.body.appendChild(box);
+        const range = document.createRange();
+        range.selectNode(box);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        document.execCommand("copy");
+        sel.removeAllRanges();
+        box.remove();
+        setDone(true);
+      } catch {}
+    }
+  };
+  return (
+    <button
+      type="button"
+      className={"mini-btn copy-btn" + (done ? " done" : "")}
+      onClick={copy}
+      title="表をコピー（メールにそのまま貼り付けられます）"
+    >
+      {done ? (
+        <>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          コピーしました
+        </>
+      ) : (
+        <>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="9" y="9" width="12" height="12" rx="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+          {label}
+        </>
+      )}
+    </button>
+  );
+}
+
 function SummaryTable({
   title,
   data,
@@ -844,6 +952,7 @@ function SummaryTable({
   setOvField,
   edit = false,
   onToggleEdit,
+  notes = [],
 }) {
   const ordered = prioOf
     ? [...types].sort((a, b) => {
@@ -858,13 +967,15 @@ function SummaryTable({
   // 退職者も名前を引けるようにする（当時の担当者を「?」にしない）
   const nameOf = (id) =>
     persons.find((p) => p.id === id)?.name || retired.find((p) => p.id === id)?.name || "?";
+  const cardRef = useRef(null);
   return (
     <div className="summary-block">
       <div className="sec-row">
         <div className="sec-head">{title}</div>
+        <CopyTableBtn targetRef={cardRef} />
         {onToggleEdit && <EditToggle on={edit} onToggle={onToggleEdit} />}
       </div>
-      <div className="qcard summary-card">
+      <div className="qcard summary-card" ref={cardRef}>
         <div className="tw2">
         <table className="qtable summary-table">
           <thead>
@@ -990,6 +1101,13 @@ function SummaryTable({
           </table>
         </div>
       </div>
+      {notes.length > 0 && (
+        <ul className="summary-notes">
+          {notes.map((n, i) => (
+            <li key={i}>{n}</li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -1603,6 +1721,15 @@ export default function TaskBoard({ mode = "view" }) {
       document.removeEventListener("keydown", onEsc);
     };
   }, [menuOpen]);
+
+  // Regular Task の表の下に出す注記（受注数の数え方の断り書き）
+  const REGULAR_NOTES = [
+    "※[受注数]は、[対応不要]及び[失注]の件数を除外しています。",
+    "※[受注数]は、[事前登録施設（依頼前）]の件数を除外しています。",
+  ];
+
+  // Ad Hoc 表のコピー用（表の DOM をそのまま読むため）
+  const adhocCardRef = useRef(null);
 
   // 予定の追加・編集モーダル（null = 閉じている）
   const [evForm, setEvForm] = useState(null); // { id, title, start, end, memo, isNew }
@@ -2340,6 +2467,7 @@ ${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めません�
                 setOvField={setOvField}
                 edit={editable}
                 onToggleEdit={undefined}
+                notes={REGULAR_NOTES}
               />
             )}
             {pending &&
@@ -2365,6 +2493,7 @@ ${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めません�
                     setOvField={setOvField}
                     edit={editable}
                     onToggleEdit={undefined}
+                    notes={REGULAR_NOTES}
                   />
                 ) : null;
               })()}
@@ -2639,6 +2768,7 @@ ${e.memo}` : e.task}>
                     </button>
                   </div>
                   <span className="sec-actions">
+                  <CopyTableBtn targetRef={adhocCardRef} />
                   {editable && (
                     <button
                       type="button"
@@ -2651,7 +2781,10 @@ ${e.memo}` : e.task}>
                   )}
                   </span>
                 </div>
-                <div className="qcard adhoc-card">
+                <p className="table-note">
+                  ※作業工数が５営業日以上かかるプロジェクトについては、グラフ化を行っております。
+                </p>
+                <div className="qcard adhoc-card" ref={adhocCardRef}>
                   <div className="dtw adhoc-tw">
                     {/* 幅は100%。指定のない最終列（メモ）が余白を全部吸収する */}
                     <table

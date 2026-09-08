@@ -11169,3 +11169,31 @@ button.drive-link:disabled {
 .adhoc-table th small {
   color: rgba(255, 255, 255, 0.88);
 }
+
+/* 表のコピーボタン */
+.mini-btn.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.mini-btn.copy-btn.done {
+  color: #1c8a4e;
+  border-color: #bde3cd;
+  background: #e9f7ef;
+}
+
+/* 表に添える注記（赤文字） */
+.table-note,
+.summary-notes {
+  margin: 0 2px 6px;
+  color: #c0392b;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+.summary-notes {
+  margin: 6px 2px 0;
+  padding: 0;
+  list-style: none;
+}
