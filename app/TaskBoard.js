@@ -3023,15 +3023,15 @@ ${e.memo}` : e.task}>
             );
           })()}
 
-          {/* 案件タイプ別 ステータス×四半期（全ステータスを0件でも表示） */}
+          {/* プロジェクト進捗：案件タイプ別のステータス×四半期（全ステータスを0件でも表示） */}
           {activeTab === "progress" && (renderTypes.length === 0 ? (
             <div className="card">
               <div className="notice">案件がありません。</div>
             </div>
           ) : (
             <>
-            <div className="dash-toolbar">
-              <span className="sec-head inline">案件タイプ別　ステータス×四半期</span>
+            <div className="dash-toolbar dash-toolbar-gap">
+              <span className="sec-head inline">プロジェクト進捗</span>
             </div>
             <div className="qgrid">
             {displayTypes.map((t, idx) => {

@@ -11095,3 +11095,8 @@ button.drive-link:disabled {
 .sched-wrap {
   max-width: 1134px;
 }
+
+/* 進捗ページ：Ad Hoc の表とプロジェクト進捗のあいだに区切りの余白を置く */
+.dash-toolbar.dash-toolbar-gap {
+  margin-top: 34px;
+}
