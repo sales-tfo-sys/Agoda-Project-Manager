@@ -281,7 +281,6 @@ export default function ProgressChart({ year, dateCode, types }) {
   return (
     <>
       <div className="sec-row">
-        <span className="pchart-note">※直近1か月（土日を除いた平日）を表示しています。</span>
         <CopyChartsBtn targetRef={gridRef} />
       </div>
       {shown.length === 0 ? (
