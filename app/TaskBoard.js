@@ -3531,10 +3531,8 @@ ${e.memo}` : e.task}>
             </div>
           ) : (
             <>
-            <div className="dash-toolbar dash-toolbar-gap">
-              <span className="sec-head inline">プロジェクト進捗</span>
-            </div>
-            <div className="qgrid">
+            {/* 見出し（プロジェクト進捗）は各カードに案件タイプ名が出ているので置かない */}
+            <div className="qgrid qgrid-top">
             {typeColumns.map((col, ci) => (
             <div className="qcol" key={"col" + ci}>
             {col.map((t, idx) => {

@@ -11518,3 +11518,19 @@ body {
   flex: 0 0 auto;
   margin-bottom: 12px; /* 注記の下余白と高さを合わせる */
 }
+
+/* 赤い注記は表にもう少し寄せる（表との隙間を 12px → 4px に） */
+.summary-notes {
+  padding-top: 4px;
+}
+.table-note {
+  padding-bottom: 4px;
+}
+.note-row .icon-btn.copy-btn {
+  margin-bottom: 4px;
+}
+
+/* 「プロジェクト進捗」の見出しを外したぶん、上の表との間隔をここで取る */
+.qgrid.qgrid-top {
+  margin-top: 18px;
+}
