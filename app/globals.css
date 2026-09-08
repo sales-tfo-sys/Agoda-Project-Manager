@@ -10896,3 +10896,10 @@ button.drive-link:disabled {
 .tabbar-row .head-year select {
   height: 30px;
 }
+
+/* 作業リソース詳細の3枚：タイトルの帯も一覧のヘッダーと同じブランド青にする */
+.res-row > .chart-card > .chart-title {
+  color: #ffffff;
+  background: linear-gradient(180deg, var(--brand-1), var(--brand-2));
+  border-bottom-color: rgba(255, 255, 255, 0.3);
+}
