@@ -1144,6 +1144,42 @@ export default function TaskBoard({ mode = "view" }) {
     })();
   }, []);
   const ovOf = (scope, key) => ov[`${scope}|${key}`] || EMPTY_OV;
+
+  // ── スケジュールの予定（タスクとは別に自由に入れるもの）──
+  // 置き場所は task_override の scope="event"。key は作ったときの通し番号。
+  // 専用テーブルを増やさずに済み、保存も既存の /api/override をそのまま使える。
+  const eventList = useMemo(
+    () =>
+      Object.entries(ov)
+        .filter(([k, v]) => k.startsWith("event|") && v && v.title)
+        .map(([k, v]) => ({ id: k.slice(6), ...v }))
+        .sort((a, b) => String(a.start || "").localeCompare(String(b.start || ""))),
+    [ov]
+  );
+  // 予定の保存（新規・更新とも）。data を丸ごと送る
+  const saveEvent = (id, data) => {
+    const k = `event|${id}`;
+    ovRef.current = { ...ovRef.current, [k]: data };
+    setOv(ovRef.current);
+    fetch("/api/override", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ scope: "event", key: id, data }),
+    }).catch(() => {});
+  };
+  // 予定の削除（全項目を空にすると行ごと消える仕様に合わせる）
+  const removeEvent = (id) => {
+    const k = `event|${id}`;
+    const m = { ...ovRef.current };
+    delete m[k];
+    ovRef.current = m;
+    setOv(m);
+    fetch("/api/override", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ scope: "event", key: id, data: {} }),
+    }).catch(() => {});
+  };
   const setOvField = (scope, key, field, value) => {
     const k = `${scope}|${key}`;
     const next = { ...(ovRef.current[k] || {}), [field]: value };
@@ -1434,6 +1470,40 @@ export default function TaskBoard({ mode = "view" }) {
     };
   }, [menuOpen]);
 
+  // 予定の追加・編集モーダル（null = 閉じている）
+  const [evForm, setEvForm] = useState(null); // { id, title, start, end, memo, isNew }
+  const openNewEvent = (iso) =>
+    setEvForm({
+      id: `e${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+      title: "",
+      start: iso || "",
+      end: "",
+      memo: "",
+      isNew: true,
+    });
+  const openEditEvent = (id) => {
+    const ev = eventList.find((x) => x.id === id);
+    if (!ev) return;
+    setEvForm({
+      id,
+      title: ev.title || "",
+      start: toDateInput(ev.start) || "",
+      end: toDateInput(ev.end) || "",
+      memo: ev.memo || "",
+      isNew: false,
+    });
+  };
+  const submitEvent = () => {
+    if (!evForm) return;
+    const title = String(evForm.title || "").trim();
+    if (!title || !evForm.start) return;
+    const data = { title, start: evForm.start };
+    if (evForm.end) data.end = evForm.end;
+    if (String(evForm.memo || "").trim()) data.memo = String(evForm.memo).trim();
+    saveEvent(evForm.id, data);
+    setEvForm(null);
+  };
+
   // 表示タブ（スケジュール / 進捗）。
   // 「全体」と「案件詳細」は1ページにまとめて「進捗」にした。
   const [tab, setTab] = useState("progress");
@@ -1548,12 +1618,25 @@ export default function TaskBoard({ mode = "view" }) {
       push(toDateInput(o.start ?? t.start), { task: name, status, kind: "start" });
       push(toDateInput(o.end ?? t.end), { task: name, status, kind: "end" });
     }
-    // 同じ日は「期日」を先に出す（締め切りの方が目に入るように）
+    // 自由に入れた予定。期間があれば開始日から終了日まで毎日出す
+    for (const ev of eventList) {
+      const from = toDateInput(ev.start);
+      if (!from) continue;
+      const to = toDateInput(ev.end) || from;
+      let d = from;
+      // 期間が長すぎるデータでも止まらないように上限を付ける
+      for (let i = 0; i < 400 && d <= to; i++) {
+        push(d, { task: ev.title, kind: "event", id: ev.id, memo: ev.memo || "" });
+        d = addDaysIso(d, 1);
+      }
+    }
+    // 同じ日は「予定 → 期日 → 開始」の順に出す（自分で入れたものを上に）
+    const rank = { event: 0, end: 1, start: 2 };
     for (const k of Object.keys(map)) {
-      map[k].sort((a, b) => (a.kind === b.kind ? 0 : a.kind === "end" ? -1 : 1));
+      map[k].sort((a, b) => (rank[a.kind] ?? 9) - (rank[b.kind] ?? 9));
     }
     return map;
-  }, [adhoc, customAdhoc, ov]);
+  }, [adhoc, customAdhoc, ov, eventList]);
 
   // 表示制御：0件ステータスを隠す／カードの折りたたみ
   const [hideZero, setHideZero] = useState(false);
@@ -2269,6 +2352,20 @@ ${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めません�
                       ))}
                     </span>
                     <span className="sched-count">{total} 件</span>
+                    {canEditTasks && (
+                      <button
+                        type="button"
+                        className="icon-btn sched-add"
+                        onClick={() => openNewEvent(schedDate)}
+                        title="予定を追加"
+                        aria-label="予定を追加"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <line x1="12" y1="5" x2="12" y2="19" />
+                          <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                   {total === 0 ? (
                     <div className="sched-empty">
@@ -2295,16 +2392,31 @@ ${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めません�
                           )}
                           <ul className="sched-items">
                             {schedEvents[iso].map((e, i) => (
-                              <li key={e.task + e.kind + i} className="sched-item">
+                              <li key={e.task + e.kind + i} className={"sched-item" + (e.kind === "event" ? " is-event" : "")}>
                                 <span className={"sched-kind " + e.kind}>
-                                  {e.kind === "start" ? "開始" : "期日"}
+                                  {e.kind === "start" ? "開始" : e.kind === "end" ? "期日" : "予定"}
                                 </span>
-                                <span className="sched-task" title={e.task}>
+                                <span className="sched-task" title={e.memo ? `${e.task}
+${e.memo}` : e.task}>
                                   {e.task}
                                 </span>
-                                <span className={"st-pill " + statusClass(e.status)}>
-                                  {e.status || "—"}
-                                </span>
+                                {e.kind === "event" ? (
+                                  canEditTasks ? (
+                                    <button
+                                      type="button"
+                                      className="mini-btn sched-edit"
+                                      onClick={() => openEditEvent(e.id)}
+                                    >
+                                      編集
+                                    </button>
+                                  ) : (
+                                    <span className="sched-memo">{e.memo}</span>
+                                  )
+                                ) : (
+                                  <span className={"st-pill " + statusClass(e.status)}>
+                                    {e.status || "—"}
+                                  </span>
+                                )}
                               </li>
                             ))}
                           </ul>
@@ -3281,6 +3393,76 @@ ${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めません�
               </div>
             );
           })()}
+      </Modal>
+
+      {/* スケジュールの予定（タスクとは別に自由に入れるもの） */}
+      <Modal
+        open={!!evForm}
+        title={evForm?.isNew ? "予定を追加" : "予定を編集"}
+        onClose={() => setEvForm(null)}
+        footer={
+          <>
+            {!evForm?.isNew && (
+              <button
+                className="mini-btn danger"
+                onClick={() => {
+                  removeEvent(evForm.id);
+                  setEvForm(null);
+                }}
+              >
+                削除
+              </button>
+            )}
+            <button className="mini-btn" onClick={() => setEvForm(null)}>
+              キャンセル
+            </button>
+            <button
+              className="save-btn"
+              onClick={submitEvent}
+              disabled={!String(evForm?.title || "").trim() || !evForm?.start}
+            >
+              保存する
+            </button>
+          </>
+        }
+      >
+        {evForm && (
+          <div className="modal-fields">
+            <label className="fld">
+              予定名
+              <input
+                value={evForm.title}
+                onChange={(e) => setEvForm({ ...evForm, title: e.target.value })}
+                onKeyDown={(e) => e.key === "Enter" && submitEvent()}
+                placeholder="例：定例会"
+              />
+            </label>
+            <div className="cfg-grid">
+              <ModalDateField
+                label="日付"
+                value={evForm.start}
+                onChange={(v) => setEvForm({ ...evForm, start: v })}
+              />
+              <ModalDateField
+                label="終了日（続く場合）"
+                value={evForm.end}
+                onChange={(v) => setEvForm({ ...evForm, end: v })}
+              />
+            </div>
+            <label className="fld">
+              メモ
+              <textarea
+                rows={3}
+                value={evForm.memo}
+                onChange={(e) => setEvForm({ ...evForm, memo: e.target.value })}
+                placeholder="任意"
+              />
+            </label>
+            <p className="modal-note">
+              終了日を入れると、その日まで毎日カレンダーに出ます。
+            </p>
+          </div>
+        )}
       </Modal>
 
       {/* シート連携（受注数・完了数）の設定 */}
