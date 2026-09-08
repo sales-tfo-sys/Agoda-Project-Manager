@@ -1009,9 +1009,7 @@ async function areaToBlob(area, maxCols) {
   const drawNotes = () => {
     if (!notes.length) return;
     ctx.font = noteStyle.fontWeight + " " + noteStyle.fontSize + " " + noteStyle.fontFamily;
-    // 画面の下地は黒っぽいので注記の赤を明るくしているが、
-    // 画像は白地に描くので、こちらは元の濃い赤で描く
-    ctx.fillStyle = "#c0392b";
+    ctx.fillStyle = noteStyle.color;
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
     for (const n of notes) {
