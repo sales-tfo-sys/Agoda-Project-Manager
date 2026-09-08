@@ -11142,17 +11142,17 @@ button.drive-link:disabled {
 }
 
 /* プロジェクト進捗：画面が広いとステータス列だけが間延びするので、
-   表全体の幅に上限を付けて数値列とのバランスを取る。数値列も少し広げる。 */
+   表全体の幅に上限を付けて数値列とのバランスを取る。数値列は余裕をもたせる。 */
 .qgrid {
   max-width: 1180px;
 }
 .qtable th:not(.l),
 .qtable td:not(.l) {
-  width: 52px;
+  width: 62px;
 }
 .qtable th.sum,
 .qtable td.sum {
-  width: 62px;
+  width: 74px;
 }
 
 /* 見出しの高さを揃える。
@@ -11163,4 +11163,9 @@ button.drive-link:disabled {
   align-items: center;
   min-height: 24px;
   line-height: 1.2;
+}
+
+/* 見出しが青地になったので、(Daily) のような補足もグレーではなく白系にする */
+.adhoc-table th small {
+  color: rgba(255, 255, 255, 0.88);
 }
