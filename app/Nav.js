@@ -230,24 +230,24 @@ function HealthIcon() {
   );
 }
 
-// ユーザー用（全員に表示）
-const USER_TABS = [
+// メニューの並び。
+//   admin: true  … 閲覧権限のある人（オーナー・管理者）だけに出す
+//   admin なし   … 全員に出す（ページ単位で閲覧不可にされている場合だけ隠す）
+// 作業工数管理はプロジェクト管理の下に置くが、見られる人は今までどおり全員。
+const TABS = [
   { href: "/dashboard", label: "ダッシュボード", Icon: GridIcon },
   { href: "/", label: "施設一覧", Icon: ListIcon },
   // グラフページは一旦削除（app/graphs を除去）
-  { href: "/kosu", label: "工数管理", Icon: ClockIcon },
   { href: "/kosu/input", label: "工数入力", Icon: InputIcon },
   { href: "/hid-requests", label: "HID新規発行依頼", Icon: HidIcon },
   { href: "/work-requests", label: "新規作業依頼", Icon: WorkReqIcon },
   { href: "/forms", label: "フォーム回答", Icon: FormIcon },
-];
-
-// 管理者用（閲覧権限のある人＝オーナー・管理者のみ表示）
-const ADMIN_TABS = [
-  { href: "/design-spec", label: "設計仕様書", Icon: SpecIcon },
-  { href: "/system-health", label: "システムヘルス", Icon: HealthIcon },
-  { href: "/kosu/persons", label: "アカウント管理", Icon: PersonIcon },
-  { href: "/project", label: "プロジェクト管理", Icon: BoardIcon },
+  { divider: true },
+  { href: "/design-spec", label: "設計仕様書", Icon: SpecIcon, admin: true },
+  { href: "/system-health", label: "システムヘルス", Icon: HealthIcon, admin: true },
+  { href: "/kosu/persons", label: "アカウント管理", Icon: PersonIcon, admin: true },
+  { href: "/project", label: "プロジェクト管理", Icon: BoardIcon, admin: true },
+  { href: "/kosu", label: "作業工数管理", Icon: ClockIcon },
 ];
 
 export default function Sidebar() {
@@ -274,8 +274,13 @@ export default function Sidebar() {
     const key = pageKeyForPath(href);
     return key ? !!pages[key]?.view : true;
   };
-  const userTabs = USER_TABS.filter((t) => canView(t.href) !== false);
-  const adminTabs = ADMIN_TABS.filter((t) => canView(t.href) === true);
+  const visible = TABS.filter((t) =>
+    t.divider ? true : t.admin ? canView(t.href) === true : canView(t.href) !== false
+  );
+  // 区切り線は、その下に出すものが1つも無ければ引かない
+  const tabs = visible.filter(
+    (t, i) => !t.divider || visible.slice(i + 1).some((x) => !x.divider)
+  );
 
   const renderTab = ({ href, label, Icon }) => (
     <Link
@@ -342,12 +347,12 @@ export default function Sidebar() {
         </span>
       </div>
       <nav className="side-nav">
-        {userTabs.map(renderTab)}
-        {adminTabs.length > 0 && (
-          <>
-            <div className="side-div" role="separator" aria-label="管理者メニュー" />
-            {adminTabs.map(renderTab)}
-          </>
+        {tabs.map((t, i) =>
+          t.divider ? (
+            <div key={"div" + i} className="side-div" role="separator" aria-label="管理者メニュー" />
+          ) : (
+            renderTab(t)
+          )
         )}
       </nav>
 

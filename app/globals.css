@@ -11412,3 +11412,20 @@ button.drive-link:disabled {
 .copy-area {
   background: transparent;
 }
+
+/* 注記の帯を表にぴったり付ける。
+   左右の 2px と表とのあいだの 6px が隙間として残り、そこが白く見えていたので、
+   隙間ぶんを帯の内側（padding）に付け替えて、切れ目が出ないようにする。 */
+.table-note,
+.summary-notes {
+  margin-left: 0;
+  margin-right: 0;
+}
+.summary-notes {
+  margin-top: 0;
+  padding-top: 12px;
+}
+.table-note {
+  margin-bottom: 0;
+  padding-bottom: 12px;
+}
