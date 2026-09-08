@@ -139,12 +139,89 @@ function PrioInput({ value, onCommit, label }) {
   );
 }
 
-// 日本とベトナムの現在時刻。1秒ごとに書き換える。
+// 日本とベトナムの現在時刻（アナログ＋デジタル）。1秒ごとに書き換える。
 // サーバー側では時刻を出さない（描画がズレるため）。画面に出てから動き出す。
 const CLOCKS = [
-  { key: "jp", label: "日本", tz: "Asia/Tokyo" },
-  { key: "vn", label: "ベトナム", tz: "Asia/Ho_Chi_Minh" },
+  { key: "jp", label: "日本", tz: "Asia/Tokyo", accent: "#2f6be0" },
+  { key: "vn", label: "ベトナム", tz: "Asia/Ho_Chi_Minh", accent: "#d33a2c" },
 ];
+
+// 指定タイムゾーンの時・分・秒を取り出す
+function timeInZone(date, tz) {
+  const p = new Intl.DateTimeFormat("en-GB", {
+    timeZone: tz,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+  const get = (t) => Number(p.find((x) => x.type === t)?.value || 0);
+  return { h: get("hour") % 24, m: get("minute"), s: get("second") };
+}
+
+// 文字盤。12・3・6・9 は数字、それ以外の時刻位置は目盛りにする。
+function ClockFace({ h, m, s, accent }) {
+  const R = 50; // 中心
+  const pt = (deg, r) => {
+    const a = ((deg - 90) * Math.PI) / 180;
+    return [R + r * Math.cos(a), R + r * Math.sin(a)];
+  };
+  const hourDeg = ((h % 12) + m / 60) * 30;
+  const minDeg = (m + s / 60) * 6;
+  const secDeg = s * 6;
+  const [hx, hy] = pt(hourDeg, 25);
+  const [mx, my] = pt(minDeg, 34);
+  const [sx, sy] = pt(secDeg, 36);
+  const [tx, ty] = pt(secDeg + 180, 9);
+  const nums = [
+    [12, 0],
+    [3, 90],
+    [6, 180],
+    [9, 270],
+  ];
+  return (
+    <svg viewBox="0 0 100 100" className="clock-face" aria-hidden="true">
+      <circle cx="50" cy="50" r="46" fill="#f7f8fa" stroke="#dfe3ea" strokeWidth="1.5" />
+      {Array.from({ length: 12 }, (_, i) => i * 30).map((deg) =>
+        deg % 90 === 0 ? null : (
+          <line
+            key={deg}
+            x1={pt(deg, 38)[0]}
+            y1={pt(deg, 38)[1]}
+            x2={pt(deg, 43)[0]}
+            y2={pt(deg, 43)[1]}
+            stroke="#9aa4b8"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
+        )
+      )}
+      {nums.map(([n, deg]) => {
+        const [x, y] = pt(deg, 34);
+        return (
+          <text
+            key={n}
+            x={x}
+            y={y}
+            textAnchor="middle"
+            dominantBaseline="central"
+            fontSize="12"
+            fontWeight="600"
+            fill="#7b8598"
+          >
+            {n}
+          </text>
+        );
+      })}
+      <line x1="50" y1="50" x2={hx} y2={hy} stroke="#1a2540" strokeWidth="4.6" strokeLinecap="round" />
+      <line x1="50" y1="50" x2={mx} y2={my} stroke="#1a2540" strokeWidth="3.2" strokeLinecap="round" />
+      <line x1={tx} y1={ty} x2={sx} y2={sy} stroke={accent} strokeWidth="1.4" strokeLinecap="round" />
+      <circle cx="50" cy="50" r="3.2" fill="#1a2540" />
+      <circle cx="50" cy="50" r="1.4" fill={accent} />
+    </svg>
+  );
+}
+
 function Clocks() {
   const [now, setNow] = useState(null);
   useEffect(() => {
@@ -156,17 +233,21 @@ function Clocks() {
     now ? new Intl.DateTimeFormat("ja-JP", { timeZone: tz, ...opts }).format(now) : "--";
   return (
     <aside className="clocks" aria-label="現在時刻">
-      {CLOCKS.map((c) => (
-        <div key={c.key} className={"clock clock-" + c.key}>
-          <span className="clock-label">{c.label}</span>
-          <span className="clock-time">
-            {fmt(c.tz, { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })}
-          </span>
-          <span className="clock-date">
-            {fmt(c.tz, { month: "numeric", day: "numeric", weekday: "short" })}
-          </span>
-        </div>
-      ))}
+      {CLOCKS.map((c) => {
+        const t = now ? timeInZone(now, c.tz) : { h: 0, m: 0, s: 0 };
+        return (
+          <div key={c.key} className={"clock clock-" + c.key}>
+            <span className="clock-label">{c.label}</span>
+            <ClockFace h={t.h} m={t.m} s={t.s} accent={c.accent} />
+            <span className="clock-time">
+              {fmt(c.tz, { hour: "2-digit", minute: "2-digit", hour12: false })}
+            </span>
+            <span className="clock-date">
+              {fmt(c.tz, { month: "numeric", day: "numeric", weekday: "short" })}
+            </span>
+          </div>
+        );
+      })}
     </aside>
   );
 }
