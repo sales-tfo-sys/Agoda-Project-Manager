@@ -878,9 +878,7 @@ export default function DetailTable({ title, compact = false }) {
                                   (linked ? `\n対応者：${linked}` : "")
                                 }
                               >
-                                {srcTasks.length > 1 && (
-                                  <span className="link-n">{srcTasks.length}</span>
-                                )}
+                                {/* まとめている件数は出さずに印だけ揃える（件数は title に出る） */}
                               </span>
                             )}
                           </td>

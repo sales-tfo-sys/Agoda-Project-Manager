@@ -10874,14 +10874,23 @@ button.drive-link:disabled {
 
 /* 工数明細の日付ヘッダー：平日（月〜金・祝日を除く）は緑地にする。
    土曜=青・日曜/祝日=赤の色分けはそのまま。 */
+/* 平日は白地・黒文字。土（水色）日祝（赤）は地色を残して文字だけ黒にする。
+   日付の帯だけ白くして、休日の色が読み取りやすいようにする。 */
 .dtable thead th.day-th.is-weekday {
-  /* 明るい緑だと帯の中で平日だけ浮くので、隣のブランド青と同じくらいの
-     濃さの緑にして、土（水色）・日祝（赤）だけが目立つようにする */
-  background: linear-gradient(180deg, #3f9468, #22704a);
-  color: #ffffff;
+  background: #ffffff;
+  background-image: none;
+  color: #1a2540;
 }
 .dtable th.day-th.is-weekday .d-dow {
-  color: rgba(255, 255, 255, 0.82);
+  color: #5a6478;
+}
+.dtable thead th.day-th.is-sat,
+.dtable thead th.day-th.is-holiday {
+  color: #1a2540;
+}
+.dtable th.day-th.is-sat .d-dow,
+.dtable th.day-th.is-holiday .d-dow {
+  color: #1a2540;
 }
 
 /* ダッシュボード／プロジェクト管理の上部タブ（スケジュール・全体・案件詳細）と
@@ -10908,4 +10917,12 @@ button.drive-link:disabled {
    （太字指定と一緒に濃色を当てていたのが後勝ちしていた） */
 .res-card .res-table thead th {
   color: #ffffff;
+}
+
+/* グルーピングの印は件数を出さず、どの行でも同じ大きさの丸にする */
+.kosu-table .link-dot:has(.link-n),
+.kosu-table .link-dot {
+  min-width: 5px;
+  height: 5px;
+  padding: 0;
 }
