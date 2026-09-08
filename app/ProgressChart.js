@@ -201,11 +201,10 @@ export function Grip(props) {
 export function Chart({ title, days, rows, grip }) {
   // 描画領域（viewBox の座標）。実際の大きさは CSS の幅に追従する。
   // 横幅は常に「直近1か月ぶん（22日）」の枠で取る。
-  // 日数が少ないグラフも同じ縦横比になって隣と高さが揃い、
-  // 点は右端（最新日）に寄せるので日付の位置も隣のグラフと重なる。
-  const n = Math.max(days.length, RECENT_DAYS);
-  const offset = n - days.length;
-  const W = 62 + n * 26 + 126;
+  // 日数が少ないグラフも同じ縦横比になって隣と高さが揃う。
+  // 日数が少ないときは、その日数を幅いっぱいに広げて置く（右に寄せない）。
+  const W = 62 + Math.max(days.length, RECENT_DAYS) * 26 + 126;
+  const n = Math.max(1, days.length);
   const H = 340;
   const L = 62; // 左の目盛りぶん（数値が線と重ならないよう広めに取る）
   const R = W - 126; // 右は凡例ぶん空ける
@@ -218,8 +217,7 @@ export function Chart({ title, days, rows, grip }) {
   // 棒の幅ぶん内側に寄せて、左端の目盛りと重ならないようにする
   const barW = Math.min(20, ((R - L) / n) * 0.6);
   const inset = barW / 2 + 4;
-  const slotX = (s) => L + inset + ((R - L - inset * 2) * s) / (n - 1);
-  const x = (i) => slotX(i + offset);
+  const x = (i) => (n === 1 ? (L + R) / 2 : L + inset + ((R - L - inset * 2) * i) / (n - 1));
   const y = (v) => B - ((B - T) * v) / top;
 
   const ticks = [];
@@ -230,7 +228,7 @@ export function Chart({ title, days, rows, grip }) {
   // 数値も桁が多い（Ad Hoc は5桁もある）と隣と重なるので、幅に入らないぶんは間引く。
   // 最後の日は必ず出す（今の値が読めるように）。
   const digits = String(Math.round(max)).length;
-  const spacing = (R - L - inset * 2) / (n - 1);
+  const spacing = n > 1 ? (R - L - inset * 2) / (n - 1) : Infinity;
   const valEvery = Math.max(1, Math.ceil((digits * 6.8 + 6) / spacing));
   const showVal = (i) => i === rows.length - 1 || (rows.length - 1 - i) % valEvery === 0;
 
