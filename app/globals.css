@@ -10875,7 +10875,9 @@ button.drive-link:disabled {
 /* 工数明細の日付ヘッダー：平日（月〜金・祝日を除く）は緑地にする。
    土曜=青・日曜/祝日=赤の色分けはそのまま。 */
 .dtable thead th.day-th.is-weekday {
-  background: linear-gradient(180deg, #4fbf82, #2b9a5f);
+  /* 明るい緑だと帯の中で平日だけ浮くので、隣のブランド青と同じくらいの
+     濃さの緑にして、土（水色）・日祝（赤）だけが目立つようにする */
+  background: linear-gradient(180deg, #3f9468, #22704a);
   color: #ffffff;
 }
 .dtable th.day-th.is-weekday .d-dow {
