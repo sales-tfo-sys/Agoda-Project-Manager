@@ -57,27 +57,42 @@ function svgToImage(svg) {
 
 // 画面に出ているグラフを全部まとめて1枚の画像にする（2列に並べる）
 export async function chartsToBlob(root) {
-  const blocks = [...root.querySelectorAll(".pchart")];
+  // 当年ぶんと Pending ぶんは別のかたまり。かたまりごとに行を改める。
+  const grids = [...root.querySelectorAll(".pchart-grid")];
+  const groups = (grids.length ? grids : [root]).map((g) => [...g.querySelectorAll(".pchart")]);
+  const blocks = groups.flat();
   if (!blocks.length) throw new Error("グラフが見つかりません");
   const PAD = 16;
   const GAP = 16;
+  const GROUP_GAP = 28; // かたまりのあいだは少し広く空ける
   const TITLE_H = 30;
   const CELL_W = 900; // 1枚あたりの幅（読みやすさ優先で大きめ）
   const COLS = blocks.length > 1 ? 2 : 1;
 
-  const items = [];
-  for (const b of blocks) {
+  const toItem = (b) => {
     const svg = b.querySelector("svg");
     const vb = svg.viewBox.baseVal;
-    const h = Math.round((CELL_W * vb.height) / vb.width);
-    items.push({ title: b.querySelector(".pchart-title")?.textContent.trim() || "", svg, h });
-  }
-  const rowH = [];
-  for (let i = 0; i < items.length; i += COLS) {
-    rowH.push(Math.max(...items.slice(i, i + COLS).map((it) => it.h)) + TITLE_H);
-  }
+    return {
+      title: b.querySelector(".pchart-title")?.textContent.trim() || "",
+      svg,
+      h: Math.round((CELL_W * vb.height) / vb.width),
+    };
+  };
+  // 行に割り付ける（かたまりをまたがない）
+  const rows = [];
+  groups.forEach((g, gi) => {
+    const items = g.map(toItem);
+    for (let i = 0; i < items.length; i += COLS) {
+      rows.push({ items: items.slice(i, i + COLS), top: gi > 0 && i === 0 ? GROUP_GAP : GAP });
+    }
+  });
+  const rowH = rows.map((r) => Math.max(...r.items.map((it) => it.h)) + TITLE_H);
+
   const W = PAD * 2 + CELL_W * COLS + GAP * (COLS - 1);
-  const H = PAD * 2 + rowH.reduce((a, b) => a + b, 0) + GAP * (rowH.length - 1);
+  const H =
+    PAD * 2 +
+    rowH.reduce((a, b) => a + b, 0) +
+    rows.slice(1).reduce((a, r) => a + r.top, 0);
 
   const cv = document.createElement("canvas");
   cv.width = W * 2;
@@ -88,10 +103,10 @@ export async function chartsToBlob(root) {
   ctx.fillRect(0, 0, W, H);
 
   let y = PAD;
-  for (let i = 0; i < items.length; i += COLS) {
-    const row = items.slice(i, i + COLS);
-    for (let c = 0; c < row.length; c++) {
-      const it = row[c];
+  for (let ri = 0; ri < rows.length; ri++) {
+    if (ri > 0) y += rows[ri].top;
+    for (let c = 0; c < rows[ri].items.length; c++) {
+      const it = rows[ri].items[c];
       const x = PAD + c * (CELL_W + GAP);
       ctx.fillStyle = "#1a2540";
       ctx.font = "800 21px system-ui, sans-serif";
@@ -101,7 +116,7 @@ export async function chartsToBlob(root) {
       const img = await svgToImage(it.svg);
       ctx.drawImage(img, x, y + TITLE_H, CELL_W, it.h);
     }
-    y += rowH[i / COLS] + GAP;
+    y += rowH[ri];
   }
   return new Promise((resolve, reject) =>
     cv.toBlob((b) => (b ? resolve(b) : reject(new Error("画像を作れませんでした"))), "image/png")
@@ -250,15 +265,24 @@ export default function ProgressChart({ year, dateCode, types, gridRef: outerRef
     if (!data?.days?.length) return null;
     const from = Math.max(0, data.days.length - RECENT_DAYS);
     const days = data.days.slice(from);
-    const byType = {};
-    for (const t of data.types || []) {
-      byType[t] = (data.series[t] || []).slice(from).map((v) => ({
-        total: v.total,
-        done: v.done,
-        rest: Math.max(0, v.total - v.done),
-      }));
-    }
-    return { days, byType };
+    const cut = (series, list) => {
+      const out = {};
+      for (const t of list || []) {
+        out[t] = (series[t] || []).slice(from).map((v) => ({
+          total: v.total,
+          done: v.done,
+          rest: Math.max(0, v.total - v.done),
+        }));
+      }
+      return out;
+    };
+    return {
+      days,
+      byType: cut(data.series || {}, data.types),
+      penYear: data.pending?.year ?? null,
+      penTypes: data.pending?.types || [],
+      penByType: cut(data.pending?.series || {}, data.pending?.types),
+    };
   }, [data]);
 
   // 表示する案件タイプ（進捗表と同じ並び。IHM は Ad Hoc 扱いなので出さない）
@@ -266,6 +290,14 @@ export default function ProgressChart({ year, dateCode, types, gridRef: outerRef
     const all = view ? Object.keys(view.byType) : [];
     const order = (types || []).filter((t) => all.includes(t));
     return order.length ? order : all.filter((t) => t !== "IHM");
+  }, [view, types]);
+
+  // Pending も同じ並びで。母数が 0 の案件タイプは出さない（進捗表と合わせる）
+  const shownPen = useMemo(() => {
+    if (!view) return [];
+    const has = view.penTypes.filter((t) => (view.penByType[t] || []).some((r) => r.total > 0));
+    const order = (types || []).filter((t) => has.includes(t));
+    return order.length ? order : has.filter((t) => t !== "IHM");
   }, [view, types]);
 
   if (error) {
@@ -292,12 +324,27 @@ export default function ProgressChart({ year, dateCode, types, gridRef: outerRef
           <div className="notice">この年のデータがありません。</div>
         </div>
       ) : (
-        <div className="pchart-grid" ref={gridRef}>
-          {shown.map((t) => (
-            <div className="card pchart-card" key={t}>
-              <Chart title={`${year}年_${t}`} days={view.days} rows={view.byType[t]} />
+        <div className="pchart-wrap" ref={gridRef}>
+          <div className="pchart-grid">
+            {shown.map((t) => (
+              <div className="card pchart-card" key={t}>
+                <Chart title={`${year}年_${t}`} days={view.days} rows={view.byType[t]} />
+              </div>
+            ))}
+          </div>
+          {shownPen.length > 0 && (
+            <div className="pchart-grid pchart-grid-pen">
+              {shownPen.map((t) => (
+                <div className="card pchart-card" key={"p" + t}>
+                  <Chart
+                    title={`Pending_${view.penYear}年_${t}`}
+                    days={view.days}
+                    rows={view.penByType[t]}
+                  />
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       )}
     </>

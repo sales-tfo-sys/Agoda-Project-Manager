@@ -11319,6 +11319,12 @@ button.drive-link:disabled {
 }
 
 /* 進捗グラフ：タブ行とグラフのあいだを詰める */
-.tab-panel > .sec-row + .pchart-grid {
+.tab-panel > .sec-row + .pchart-grid,
+.tab-panel > .sec-row + .pchart-wrap {
   margin-top: 2px;
+}
+
+/* 当年ぶんと Pending ぶんのあいだは、区切りが分かるよう広めに空ける */
+.pchart-grid-pen {
+  margin-top: 28px;
 }

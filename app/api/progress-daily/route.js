@@ -36,6 +36,20 @@ function toIso(v) {
   return m ? `${m[1]}-${pad2(m[2])}-${pad2(m[3])}` : null;
 }
 
+// 年だけ取り出す。作成日時は UTC の日時なので、画面と揃うよう日本時間に直してから見る。
+function fieldYear(v) {
+  const s = typeof v === "object" && v ? v.value : v;
+  if (!s) return null;
+  const str = String(s);
+  if (str.includes("T")) {
+    const d = new Date(str);
+    if (Number.isNaN(d.getTime())) return null;
+    return new Date(d.getTime() + 9 * 3600 * 1000).getUTCFullYear();
+  }
+  const m = str.match(/^(\d{4})/);
+  return m ? Number(m[1]) : null;
+}
+
 // 土日を除いた日付の並び（対象年の1/1から、今日か年末の早い方まで）
 function businessDays(year) {
   const out = [];
@@ -85,6 +99,50 @@ function reconstruct(records, dateCode, year, days) {
   return { types: [...types], series: out };
 }
 
+// 前年からの繰り越し（Pending）の推移。
+// 進捗表の Pending と同じ数え方で「y-1 年に作成され、年をまたいで残っていた案件」を集め、
+// その母数は動かないものとして、完了だけを日ごとに数え上げる。
+function reconstructPending(records, year, days) {
+  const prev = year - 1;
+  const rows = [];
+  const types = new Set();
+  for (const r of records) {
+    if (fieldYear(r?.["作成日時"]) !== prev) continue;
+    const t = caseType(r);
+    const stage = r?.[STAGE_CODE]?.value || "";
+    const doneStage = TYPE_GROUP[t] === "A" ? "7.販売開始確認（完了）" : "完了";
+    const isDone = stage === doneStage;
+    const changeIso = toIso(r?.[STAGE_DATE]); // ★Stage変更日
+    let doneOn = null;
+    if (isDone) {
+      // 翌年以降に完了＝繰り越し。年内に終わっていれば Pending ではない。
+      if (!changeIso || fieldYear(changeIso) < year) continue;
+      doneOn = changeIso;
+    } else if (
+      stage.includes("事前登録") ||
+      stage.includes("失注") ||
+      stage.includes("対応不要")
+    ) {
+      continue; // まだ対応中とは見なさない
+    }
+    types.add(t);
+    rows.push({ t, doneOn });
+  }
+
+  const out = {};
+  for (const t of types) out[t] = [];
+  for (const day of days) {
+    const acc = {};
+    for (const t of types) acc[t] = { total: 0, done: 0 };
+    for (const r of rows) {
+      acc[r.t].total += 1; // 母数は年初に確定しているので日によらない
+      if (r.doneOn && r.doneOn <= day) acc[r.t].done += 1;
+    }
+    for (const t of types) out[t].push(acc[t]);
+  }
+  return { types: [...types], series: out };
+}
+
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const year = Number(searchParams.get("year")) || new Date().getFullYear();
@@ -96,6 +154,7 @@ export async function GET(req) {
 
     const days = businessDays(year);
     const built = cachedKey(year, dateCode, records, days);
+    const pend = cachedPending(year, records, days);
 
     // 保存済みの日は、そちらを正として上書きする
     let saved = [];
@@ -112,6 +171,13 @@ export async function GET(req) {
       for (const t of built.types) {
         if (rec[t]) built.series[t][i] = { total: rec[t].t ?? 0, done: rec[t].d ?? 0 };
       }
+      // Pending は同じ行の "_p" にまとめて入れている（日ごとに行を増やさないため）
+      const p = rec._p;
+      if (p) {
+        for (const t of pend.types) {
+          if (p[t]) pend.series[t][i] = { total: p[t].t ?? 0, done: p[t].d ?? 0 };
+        }
+      }
     });
 
     // 今日ぶんを保存しておく（次からはこの値が正になる）
@@ -123,6 +189,12 @@ export async function GET(req) {
         const v = built.series[t][i];
         data[t] = { t: v.total, d: v.done };
       }
+      const p = {};
+      for (const t of pend.types) {
+        const v = pend.series[t][i];
+        p[t] = { t: v.total, d: v.done };
+      }
+      data._p = p;
       sb("task_override?on_conflict=scope,key", {
         method: "POST",
         body: [{ scope: SCOPE, key: today, data, updated_at: new Date().toISOString() }],
@@ -130,7 +202,12 @@ export async function GET(req) {
       }).catch(() => {});
     }
 
-    return Response.json({ days, types: built.types, series: built.series });
+    return Response.json({
+      days,
+      types: built.types,
+      series: built.series,
+      pending: { year: year - 1, types: pend.types, series: pend.series },
+    });
   } catch (e) {
     return Response.json(
       { days: [], types: [], series: {}, error: String(e?.message || e) },
@@ -143,6 +220,11 @@ export async function GET(req) {
 function cachedKey(year, dateCode, records, days) {
   return cachedSync(`pdaily:${year}:${dateCode}:${records.length}:${days.length}`, () =>
     reconstruct(records, dateCode, year, days)
+  );
+}
+function cachedPending(year, records, days) {
+  return cachedSync(`pdaily-pen:${year}:${records.length}:${days.length}`, () =>
+    reconstructPending(records, year, days)
   );
 }
 const memo = new Map();
