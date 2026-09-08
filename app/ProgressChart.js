@@ -123,7 +123,82 @@ export async function chartsToBlob(root) {
   );
 }
 
-export function Chart({ title, days, rows }) {
+// ── グラフの並べ替え（ドラッグ）──
+// 保存した並び（キーの配列）を既定の並びに当てる。保存に無いものは既定の順で後ろに続ける。
+export function applyOrder(keys, order) {
+  if (!Array.isArray(order) || !order.length) return keys;
+  const have = new Set(keys);
+  const head = order.filter((k) => have.has(k));
+  const rest = keys.filter((k) => !order.includes(k));
+  return [...head, ...rest];
+}
+
+// カードのドラッグ用のハンドラ一式。取っ手（Grip）でつかみ、カードの上で放す。
+export function useCardDrag(keys, onReorder) {
+  const fromRef = useRef(null);
+  const [dragging, setDragging] = useState(null);
+  const [over, setOver] = useState(null);
+  const enabled = typeof onReorder === "function";
+  const gripProps = (key) =>
+    enabled
+      ? {
+          draggable: true,
+          onDragStart: (e) => {
+            fromRef.current = key;
+            setDragging(key);
+            e.dataTransfer.effectAllowed = "move";
+            try {
+              e.dataTransfer.setData("text/plain", key);
+            } catch {}
+          },
+          onDragEnd: () => {
+            fromRef.current = null;
+            setDragging(null);
+            setOver(null);
+          },
+        }
+      : {};
+  const cardProps = (key) =>
+    enabled
+      ? {
+          onDragOver: (e) => {
+            if (fromRef.current == null || fromRef.current === key) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            if (over !== key) setOver(key);
+          },
+          onDragLeave: () => over === key && setOver(null),
+          onDrop: (e) => {
+            e.preventDefault();
+            const from = fromRef.current;
+            fromRef.current = null;
+            setDragging(null);
+            setOver(null);
+            if (from == null || from === key) return;
+            const arr = keys.filter((k) => k !== from);
+            arr.splice(arr.indexOf(key), 0, from);
+            onReorder(arr);
+          },
+        }
+      : {};
+  const cardClass = (key) =>
+    (dragging === key ? " dragging" : "") + (over === key ? " drop-target" : "");
+  return { enabled, gripProps, cardProps, cardClass };
+}
+
+export function Grip(props) {
+  return (
+    <span className="pchart-grip" title="ドラッグで並べ替え" aria-label="ドラッグで並べ替え" {...props}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <circle cx="9" cy="5" r="2" /><circle cx="15" cy="5" r="2" />
+        <circle cx="9" cy="12" r="2" /><circle cx="15" cy="12" r="2" />
+        <circle cx="9" cy="19" r="2" /><circle cx="15" cy="19" r="2" />
+      </svg>
+    </span>
+  );
+}
+
+export function Chart({ title, days, rows, grip }) {
   // 描画領域（viewBox の座標）。実際の大きさは CSS の幅に追従する。
   // 横幅は常に「直近1か月ぶん（22日）」の枠で取る。
   // 日数が少ないグラフも同じ縦横比になって隣と高さが揃い、
@@ -161,7 +236,10 @@ export function Chart({ title, days, rows }) {
 
   return (
     <div className="pchart">
-      <div className="pchart-title">{title}</div>
+      <div className="pchart-head">
+        <div className="pchart-title">{title}</div>
+        {grip}
+      </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="pchart-svg" role="img" aria-label={title}>
         {/* 目盛り線 */}
         {ticks.map((v) => (
@@ -245,7 +323,16 @@ export function Chart({ title, days, rows }) {
   );
 }
 
-export default function ProgressChart({ year, dateCode, types, gridRef: outerRef }) {
+export default function ProgressChart({
+  year,
+  dateCode,
+  types,
+  gridRef: outerRef,
+  order,
+  onReorder,
+  penOrder,
+  onReorderPen,
+}) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const innerRef = useRef(null);
@@ -298,17 +385,20 @@ export default function ProgressChart({ year, dateCode, types, gridRef: outerRef
   // 表示する案件タイプ（進捗表と同じ並び。IHM は Ad Hoc 扱いなので出さない）
   const shown = useMemo(() => {
     const all = view ? Object.keys(view.byType) : [];
-    const order = (types || []).filter((t) => all.includes(t));
-    return order.length ? order : all.filter((t) => t !== "IHM");
-  }, [view, types]);
+    const base = (types || []).filter((t) => all.includes(t));
+    return applyOrder(base.length ? base : all.filter((t) => t !== "IHM"), order);
+  }, [view, types, order]);
 
   // Pending も同じ並びで。母数が 0 の案件タイプは出さない（進捗表と合わせる）
   const shownPen = useMemo(() => {
     if (!view) return [];
     const has = view.penTypes.filter((t) => (view.penByType[t] || []).some((r) => r.total > 0));
-    const order = (types || []).filter((t) => has.includes(t));
-    return order.length ? order : has.filter((t) => t !== "IHM");
-  }, [view, types]);
+    const base = (types || []).filter((t) => has.includes(t));
+    return applyOrder(base.length ? base : has.filter((t) => t !== "IHM"), penOrder);
+  }, [view, types, penOrder]);
+
+  const drag = useCardDrag(shown, onReorder);
+  const dragPen = useCardDrag(shownPen, onReorderPen);
 
   if (error) {
     return (
@@ -338,8 +428,13 @@ export default function ProgressChart({ year, dateCode, types, gridRef: outerRef
           {/* 当年ぶん。まとめてコピーするボタンはタブ行にある */}
           <div className="pchart-grid" ref={gridRef}>
             {shown.map((t) => (
-              <div className="card pchart-card" key={t}>
-                <Chart title={`${year}年_${t}`} days={view.days} rows={view.byType[t]} />
+              <div className={"card pchart-card" + drag.cardClass(t)} key={t} {...drag.cardProps(t)}>
+                <Chart
+                  title={`${year}年_${t}`}
+                  days={view.days}
+                  rows={view.byType[t]}
+                  grip={drag.enabled ? <Grip {...drag.gripProps(t)} /> : null}
+                />
               </div>
             ))}
           </div>
@@ -352,11 +447,16 @@ export default function ProgressChart({ year, dateCode, types, gridRef: outerRef
               </div>
               <div className="pchart-grid" ref={penRef}>
                 {shownPen.map((t) => (
-                  <div className="card pchart-card" key={"p" + t}>
+                  <div
+                    className={"card pchart-card" + dragPen.cardClass(t)}
+                    key={"p" + t}
+                    {...dragPen.cardProps(t)}
+                  >
                     <Chart
                       title={`Pending_${view.penYear}年_${t}`}
                       days={view.days}
                       rows={view.penByType[t]}
+                      grip={dragPen.enabled ? <Grip {...dragPen.gripProps(t)} /> : null}
                     />
                   </div>
                 ))}

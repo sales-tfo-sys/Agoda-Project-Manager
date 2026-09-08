@@ -1881,6 +1881,21 @@ export default function TaskBoard({ mode = "view" }) {
   const graphGridRef = useRef(null);
   const adhocGridRef = useRef(null);
 
+  // 進捗グラフの並び（ドラッグで並べ替え）。
+  // 置き場所は task_override の scope="graph"、key は regular / pending / adhoc。
+  // 全員に同じ並びで見せたいのでサーバーに保存する（編集権限のある人だけ動かせる）。
+  const graphOrderOf = (key) => ov[`graph|${key}`]?.order;
+  const saveGraphOrder = (key, order) => {
+    const k = `graph|${key}`;
+    ovRef.current = { ...ovRef.current, [k]: { order } };
+    setOv(ovRef.current);
+    fetch("/api/override", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ scope: "graph", key, data: { order } }),
+    }).catch(() => {});
+  };
+
   // 予定の追加・編集モーダル（null = 閉じている）
   const [evForm, setEvForm] = useState(null); // { id, title, start, end, memo, isNew }
   const openNewEvent = (iso) =>
@@ -3431,7 +3446,16 @@ ${e.memo}` : e.task}>
                 <CopyChartsBtn targetRef={graphTab === "regular" ? graphGridRef : adhocGridRef} />
               </div>
               {graphTab === "regular" ? (
-                <ProgressChart year={year} dateCode={dateCode} types={regularTypes} gridRef={graphGridRef} />
+                <ProgressChart
+                  year={year}
+                  dateCode={dateCode}
+                  types={regularTypes}
+                  gridRef={graphGridRef}
+                  order={graphOrderOf("regular")}
+                  onReorder={canEditTasks ? (o) => saveGraphOrder("regular", o) : undefined}
+                  penOrder={graphOrderOf("pending")}
+                  onReorderPen={canEditTasks ? (o) => saveGraphOrder("pending", o) : undefined}
+                />
               ) : (
                 <AdhocChart
                   year={year}
@@ -3439,6 +3463,8 @@ ${e.memo}` : e.task}>
                   tasks={adhocOngoing}
                   known={adhocKnown}
                   gridRef={adhocGridRef}
+                  order={graphOrderOf("adhoc")}
+                  onReorder={canEditTasks ? (o) => saveGraphOrder("adhoc", o) : undefined}
                 />
               )}
             </div>

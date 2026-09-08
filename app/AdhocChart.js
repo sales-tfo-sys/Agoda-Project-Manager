@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Chart, RECENT_DAYS } from "./ProgressChart";
+import { Chart, RECENT_DAYS, applyOrder, useCardDrag, Grip } from "./ProgressChart";
 
 // Ad Hoc Task の進捗グラフ。対応中（On Track / Behind / Onhold）のタスクを、
 // Regular と同じ見た目（受注数・完了の折れ線＋残件数の棒）で出す。
@@ -22,7 +22,15 @@ const HIDDEN = new Set([
   "not managed list as of 13 June 2026（Tier 4）",
 ]);
 
-export default function AdhocChart({ year, dateCode, tasks, known, gridRef: outerRef }) {
+export default function AdhocChart({
+  year,
+  dateCode,
+  tasks,
+  known,
+  gridRef: outerRef,
+  order,
+  onReorder,
+}) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const innerRef = useRef(null);
@@ -55,12 +63,15 @@ export default function AdhocChart({ year, dateCode, tasks, known, gridRef: oute
     const days = data.days.slice(from);
     // 表の対応中タスクに加えて、表の行には無いけれど記録があるもの（担当が
     // プロジェクト単位で付けていた記録）も後ろに並べる。
-    const list = [...(tasks || [])];
-    const inList = new Set(list.map((t) => t.key));
+    const list0 = [...(tasks || [])];
+    const inList = new Set(list0.map((t) => t.key));
     for (const key of Object.keys(data.series || {})) {
       if (inList.has(key) || known?.has?.(key)) continue;
-      list.push({ key, label: key });
+      list0.push({ key, label: key });
     }
+    // 保存した並びがあればそれを優先する
+    const byKey = new Map(list0.map((t) => [t.key, t]));
+    const list = applyOrder(list0.map((t) => t.key), order).map((k) => byKey.get(k));
 
     // Kintone から数え直しているもの（IHM）は Regular と同じく年単位なので、年を付ける
     const kintone = new Set(data.kintone || []);
@@ -84,7 +95,12 @@ export default function AdhocChart({ year, dateCode, tasks, known, gridRef: oute
       });
     }
     return out;
-  }, [data, tasks, known, year]);
+  }, [data, tasks, known, year, order]);
+
+  const drag = useCardDrag(
+    shown.map((c) => c.key),
+    onReorder
+  );
 
   if (error) {
     return (
@@ -118,8 +134,13 @@ export default function AdhocChart({ year, dateCode, tasks, known, gridRef: oute
   return (
     <div className="pchart-grid" ref={gridRef}>
       {shown.map((c) => (
-        <div className="card pchart-card" key={c.key}>
-          <Chart title={c.label} days={c.days} rows={c.rows} />
+        <div className={"card pchart-card" + drag.cardClass(c.key)} key={c.key} {...drag.cardProps(c.key)}>
+          <Chart
+            title={c.label}
+            days={c.days}
+            rows={c.rows}
+            grip={drag.enabled ? <Grip {...drag.gripProps(c.key)} /> : null}
+          />
         </div>
       ))}
     </div>

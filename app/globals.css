@@ -11354,3 +11354,42 @@ button.drive-link:disabled {
 .tabbar-row + .sec-row.sub-tabs {
   margin-top: -6px;
 }
+
+/* 進捗グラフの並べ替え：見出し行の右端に取っ手を出し、ドラッグ中は薄く、
+   落とせる場所は枠を青くする */
+.pchart-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 18px 6px;
+}
+.pchart-head .pchart-title {
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.pchart-grip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--ink-3);
+  cursor: grab;
+  border-radius: 4px;
+  flex: 0 0 auto;
+}
+.pchart-grip:hover {
+  color: var(--ink-2);
+  background: var(--accent-soft);
+}
+.pchart-grip:active {
+  cursor: grabbing;
+}
+.pchart-card.dragging {
+  opacity: 0.45;
+}
+.pchart-card.drop-target {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
