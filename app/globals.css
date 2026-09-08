@@ -11217,3 +11217,25 @@ button.drive-link:disabled {
   padding: 0;
   list-style: none;
 }
+
+/* ══════════════ 表・グラフの枠は丸角にしない ══════════════ */
+/* 一覧やグラフを入れている枠を角のある四角に統一する。
+   ボタン・ピル・モーダルなど「操作するもの」の丸みはそのまま残す。 */
+.qcard,
+.qcard.type-card,
+.summary-card,
+.adhoc-card,
+.card,
+.chart-card,
+.sh-panel,
+.sh-tw,
+.spec-tw,
+.persons-card,
+.cal-card,
+.sched-panel {
+  border-radius: 0;
+}
+/* カード上部の見出し帯も角を落とす */
+.res-row > .chart-card > .chart-title {
+  border-radius: 0;
+}
