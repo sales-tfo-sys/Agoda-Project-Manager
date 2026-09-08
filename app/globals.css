@@ -10903,3 +10903,9 @@ button.drive-link:disabled {
   background: linear-gradient(180deg, var(--brand-1), var(--brand-2));
   border-bottom-color: rgba(255, 255, 255, 0.3);
 }
+
+/* 担当者別 内訳：ヘッダーは青地なので文字は白。
+   （太字指定と一緒に濃色を当てていたのが後勝ちしていた） */
+.res-card .res-table thead th {
+  color: #ffffff;
+}
