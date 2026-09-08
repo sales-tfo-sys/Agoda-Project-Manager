@@ -1834,6 +1834,21 @@ export default function TaskBoard({ mode = "view" }) {
     "※[受注数]は、[事前登録施設（依頼前）]の件数を除外しています。",
   ];
 
+  // 進捗グラフの中の切り替え（Regular Task / Ad Hoc Task）
+  const [graphTab, setGraphTab] = useState("regular");
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("agoda-graph-tab");
+      if (v === "regular" || v === "adhoc") setGraphTab(v);
+    } catch {}
+  }, []);
+  const switchGraphTab = (v) => {
+    setGraphTab(v);
+    try {
+      localStorage.setItem("agoda-graph-tab", v);
+    } catch {}
+  };
+
   // Ad Hoc 表のコピー用（表の DOM をそのまま読むため）
   const adhocCardRef = useRef(null);
 
@@ -3267,8 +3282,39 @@ ${e.memo}` : e.task}>
 
           {activeTab === "graph" && !isEdit && (
             <div className="tab-panel">
+              <div className="sec-row">
+                <div className="segbar segbar-sm" role="tablist" aria-label="進捗グラフの表示切替">
+                  <span
+                    className="segbar-thumb"
+                    style={{ transform: `translateX(${graphTab === "adhoc" ? "100%" : "0%"})` }}
+                    aria-hidden="true"
+                  />
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={graphTab === "regular"}
+                    className={"segbar-btn" + (graphTab === "regular" ? " active" : "")}
+                    onClick={() => switchGraphTab("regular")}
+                  >
+                    Regular Task
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={graphTab === "adhoc"}
+                    className={"segbar-btn" + (graphTab === "adhoc" ? " active" : "")}
+                    onClick={() => switchGraphTab("adhoc")}
+                  >
+                    Ad Hoc Task
+                  </button>
+                </div>
+              </div>
               <div className="card">
-                <div className="notice">進捗グラフはこれから作ります。</div>
+                <div className="notice">
+                  {graphTab === "regular"
+                    ? "Regular Task のグラフはこれから作ります。"
+                    : "Ad Hoc Task のグラフはこれから作ります。"}
+                </div>
               </div>
             </div>
           )}
