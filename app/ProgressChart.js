@@ -10,8 +10,6 @@ const SERIES = [
   { key: "total", label: "受注数", color: "#e8443a" },
   { key: "done", label: "完了", color: "#2f4fd8" },
 ];
-// 目標（累計）。データがあるときだけ点線で重ねる
-const TARGET = { label: "目標", color: "#e08c1e" };
 
 // 出すのは直近1か月ぶん（土日を除いた平日22日）
 export const RECENT_DAYS = 22;
@@ -134,13 +132,7 @@ export function Chart({ title, days, rows }) {
   const T = 26;
   const B = H - 88; // 下は日付ラベルぶん（YYYY/MM/DD を斜めに置くので広めに取る）
 
-  // 目標は入っているときだけ描く（Regular には無い）
-  const hasTarget = rows.some((r) => r.target != null);
-  const legend = hasTarget ? [...SERIES, TARGET] : SERIES;
-  const max = Math.max(
-    1,
-    ...rows.map((r) => Math.max(r.total, r.done, r.rest, r.target ?? 0))
-  );
+  const max = Math.max(1, ...rows.map((r) => Math.max(r.total, r.done, r.rest)));
   const step = niceStep(max);
   const top = Math.ceil(max / step) * step;
   // 棒の幅ぶん内側に寄せて、左端の目盛りと重ならないようにする
@@ -193,19 +185,6 @@ export function Chart({ title, days, rows }) {
             />
           );
         })}
-        {/* 目標（累計）は点線。数値は出さない（線が多くなりすぎるため） */}
-        {hasTarget && (
-          <polyline
-            points={rows
-              .map((r, i) => (r.target == null ? null : `${x(i)},${y(r.target)}`))
-              .filter(Boolean)
-              .join(" ")}
-            fill="none"
-            stroke={TARGET.color}
-            strokeWidth="1.6"
-            strokeDasharray="5 4"
-          />
-        )}
         {/* 受注数・完了は折れ線 */}
         {SERIES.filter((s) => s.key !== "rest").map((s) => (
           <g key={s.key}>
@@ -250,8 +229,8 @@ export function Chart({ title, days, rows }) {
           ) : null
         )}
         {/* 凡例 */}
-        {legend.map((s, i) => (
-          <g key={"lg" + s.label} transform={`translate(${R + 18} ${T + 12 + i * 20})`}>
+        {SERIES.map((s, i) => (
+          <g key={"lg" + s.key} transform={`translate(${R + 18} ${T + 12 + i * 20})`}>
             <rect x="0" y="-6" width="10" height="10" rx="2" fill={s.color} />
             <text x="16" y="0" dominantBaseline="middle" className="pchart-lg">
               {s.label}

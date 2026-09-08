@@ -69,7 +69,6 @@ export default function AdhocChart({ year, dateCode, tasks, known, gridRef: oute
           total: v.total,
           done: v.done,
           rest: Math.max(0, v.total - v.done),
-          target: v.target,
         })),
       });
     }
