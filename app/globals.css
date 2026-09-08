@@ -10881,3 +10881,16 @@ button.drive-link:disabled {
 .dtable th.day-th.is-weekday .d-dow {
   color: rgba(255, 255, 255, 0.82);
 }
+
+/* ダッシュボード／プロジェクト管理の上部タブ（スケジュール・全体・案件詳細）と
+   対象年のプルダウンを少し背高くして押しやすくする。
+   Ad Hoc の対応中/完了（.segbar-sm）はそのままの大きさを保つ。 */
+.tabbar-row .segbar:not(.segbar-sm) {
+  height: 30px;
+}
+.tabbar-row .segbar:not(.segbar-sm) .segbar-btn {
+  height: 24px;
+}
+.tabbar-row .head-year select {
+  height: 30px;
+}
