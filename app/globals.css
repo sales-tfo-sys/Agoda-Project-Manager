@@ -11394,11 +11394,11 @@ button.drive-link:disabled {
   outline-offset: -2px;
 }
 
-/* 赤い注記は画面ではグレーの帯にのせて目立たせる。
+/* 赤い注記は画面ではまわりと同じ下地の色にする（帯が浮いて見えないように）。
    コピーした画像は白地に文字だけ描いているので、そちらは白のまま。 */
 .table-note,
 .summary-notes {
-  background: #ececf1;
+  background: var(--bg);
   padding: 6px 10px;
 }
 .summary-notes {
