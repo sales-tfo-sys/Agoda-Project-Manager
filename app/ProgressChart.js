@@ -70,7 +70,8 @@ export async function chartsToBlob(root) {
   const COLS = blocks.length > 1 ? 2 : 1;
 
   const toItem = (b) => {
-    const svg = b.querySelector("svg");
+    // 取っ手のアイコンも svg なので、グラフ本体だけを拾う
+    const svg = b.querySelector("svg.pchart-svg");
     const vb = svg.viewBox.baseVal;
     return {
       title: b.querySelector(".pchart-title")?.textContent.trim() || "",
