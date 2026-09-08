@@ -11140,3 +11140,27 @@ button.drive-link:disabled {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* プロジェクト進捗：画面が広いとステータス列だけが間延びするので、
+   表全体の幅に上限を付けて数値列とのバランスを取る。数値列も少し広げる。 */
+.qgrid {
+  max-width: 1180px;
+}
+.qtable th:not(.l),
+.qtable td:not(.l) {
+  width: 52px;
+}
+.qtable th.sum,
+.qtable td.sum {
+  width: 62px;
+}
+
+/* 見出しの高さを揃える。
+   .sec-row の中の見出しだけ flex＋min-height が効いていて、
+   ツールバーに置いた「プロジェクト進捗」だけ行の高さが違っていた。 */
+.dash-toolbar > .sec-head.inline {
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+  line-height: 1.2;
+}
