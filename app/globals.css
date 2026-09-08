@@ -11100,3 +11100,19 @@ button.drive-link:disabled {
 .dash-toolbar.dash-toolbar-gap {
   margin-top: 34px;
 }
+
+/* 時計：日付は隣のカレンダーで分かるので出さない。そのぶん文字盤を大きく */
+.clocks {
+  flex: 0 0 200px;
+}
+.clock-face {
+  width: 150px;
+  height: 150px;
+}
+.clock-time {
+  font-size: 24px;
+}
+.sched-wrap {
+  /* カレンダー952px ＋ 時計200px ＋ すき間14px */
+  max-width: 1166px;
+}

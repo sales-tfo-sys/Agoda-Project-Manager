@@ -242,9 +242,6 @@ function Clocks() {
             <span className="clock-time">
               {fmt(c.tz, { hour: "2-digit", minute: "2-digit", hour12: false })}
             </span>
-            <span className="clock-date">
-              {fmt(c.tz, { month: "numeric", day: "numeric", weekday: "short" })}
-            </span>
           </div>
         );
       })}
