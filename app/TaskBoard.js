@@ -872,6 +872,44 @@ function drawPill(ctx, pill, x, y, w, h) {
 }
 
 // 表を1つ描く。左上の位置と、描いた高さを返す
+// セルの中身を行に分ける。
+// 見出しの「目標対応件数(Daily)」のように <small> を block で下に出しているものは、
+// 画面と同じく2行に分けて描く（1行にまとめると列からはみ出して読めなくなる）。
+function cellLines(cell, cs, isHead) {
+  const out = [];
+  const style = (c) => ({
+    font: c.fontWeight + " " + c.fontSize + " " + c.fontFamily,
+    size: parseFloat(c.fontSize) || 13,
+  });
+  const base = style(cs);
+  const baseColor = isHead ? "#ffffff" : cs.color;
+  let cur = null;
+  const add = (text, st, color) => {
+    const t = String(text).replace(/\s+/g, " ");
+    if (!t.trim()) return;
+    if (cur) cur.text += t;
+    else {
+      cur = { text: t, ...st, color };
+      out.push(cur);
+    }
+  };
+  for (const node of cell.childNodes) {
+    if (node.nodeType === 3) {
+      add(node.nodeValue, base, baseColor);
+      continue;
+    }
+    if (node.nodeType !== 1) continue;
+    const ecs = getComputedStyle(node);
+    if (ecs.display === "block") {
+      cur = null; // ここで行を変える
+      add(node.textContent, style(ecs), isHead ? "rgba(255,255,255,0.88)" : ecs.color);
+      cur = null;
+    } else add(node.textContent, base, baseColor);
+  }
+  for (const l of out) l.text = l.text.trim();
+  return out.filter((l) => l.text);
+}
+
 function drawTable(ctx, table, ox, oy, maxCols) {
   const t = table.getBoundingClientRect();
   for (const tr of table.querySelectorAll("tr")) {
@@ -898,27 +936,34 @@ function drawTable(ctx, table, ox, oy, maxCols) {
         drawPill(ctx, pill, x, y, r.width, r.height);
         continue;
       }
-      const txt = cell.textContent.replace(/\s+/g, " ").trim();
-      if (!txt) continue;
+      const lines = cellLines(cell, cs, isHead);
+      if (!lines.length) continue;
       ctx.save();
       ctx.beginPath();
       ctx.rect(x, y, r.width, r.height);
       ctx.clip();
-      ctx.fillStyle = isHead ? "#ffffff" : cs.color;
-      ctx.font = cs.fontWeight + " " + cs.fontSize + " " + cs.fontFamily;
       ctx.textBaseline = "middle";
       const padL = parseFloat(cs.paddingLeft) || 8;
       const padR = parseFloat(cs.paddingRight) || 8;
       const align = cs.textAlign;
-      if (align === "left" || align === "start") {
-        ctx.textAlign = "left";
-        ctx.fillText(txt, x + padL, y + r.height / 2 + 0.5);
-      } else if (align === "right" || align === "end") {
-        ctx.textAlign = "right";
-        ctx.fillText(txt, x + r.width - padR, y + r.height / 2 + 0.5);
-      } else {
-        ctx.textAlign = "center";
-        ctx.fillText(txt, x + r.width / 2, y + r.height / 2 + 0.5);
+      const hs = lines.map((l) => l.size * 1.28);
+      let ly = y + (r.height - hs.reduce((a, b) => a + b, 0)) / 2;
+      for (let li = 0; li < lines.length; li++) {
+        const l = lines[li];
+        ctx.fillStyle = l.color;
+        ctx.font = l.font;
+        const cy = ly + hs[li] / 2 + 0.5;
+        if (align === "left" || align === "start") {
+          ctx.textAlign = "left";
+          ctx.fillText(l.text, x + padL, cy);
+        } else if (align === "right" || align === "end") {
+          ctx.textAlign = "right";
+          ctx.fillText(l.text, x + r.width - padR, cy);
+        } else {
+          ctx.textAlign = "center";
+          ctx.fillText(l.text, x + r.width / 2, cy);
+        }
+        ly += hs[li];
       }
       ctx.restore();
     }
