@@ -871,10 +871,13 @@ function drawPill(ctx, pill, x, y, w, h) {
 }
 
 // 表を1つ描く。左上の位置と、描いた高さを返す
-function drawTable(ctx, table, ox, oy) {
+function drawTable(ctx, table, ox, oy, maxCols) {
   const t = table.getBoundingClientRect();
   for (const tr of table.querySelectorAll("tr")) {
+    let ci = -1;
     for (const cell of tr.children) {
+      ci += 1;
+      if (maxCols && ci >= maxCols) break; // ここから右は画像に入れない
       const r = cell.getBoundingClientRect();
       if (r.width === 0 || r.height === 0) continue;
       const x = ox + (r.left - t.left);
@@ -923,13 +926,19 @@ function drawTable(ctx, table, ox, oy) {
 }
 
 // 表＋注記のかたまりを画像にする
-async function areaToBlob(area) {
+async function areaToBlob(area, maxCols) {
   const table = area.querySelector("table");
   if (!table) throw new Error("表が見つかりません");
   const notes = [...area.querySelectorAll(".table-note, .summary-notes li")];
   const noteStyle = notes[0] ? getComputedStyle(notes[0]) : null;
   const noteH = noteStyle ? Math.ceil(parseFloat(noteStyle.lineHeight) || 20) : 0;
-  const tw = Math.ceil(table.getBoundingClientRect().width);
+  const tRect = table.getBoundingClientRect();
+  let tw = Math.ceil(tRect.width);
+  if (maxCols) {
+    const head = table.querySelector("tr");
+    const lastCell = head && head.children[maxCols - 1];
+    if (lastCell) tw = Math.ceil(lastCell.getBoundingClientRect().right - tRect.left);
+  }
   // 注記が表より長いこともあるので、幅は広い方に合わせる
   let noteW = 0;
   const probe = document.createElement("canvas").getContext("2d");
@@ -964,7 +973,7 @@ async function areaToBlob(area) {
     y += 8;
   };
   if (noteBefore) drawNotes();
-  y += drawTable(ctx, table, IMG_PAD, y);
+  y += drawTable(ctx, table, IMG_PAD, y, maxCols);
   if (!noteBefore) {
     y += 8;
     drawNotes();
@@ -978,7 +987,7 @@ async function areaToBlob(area) {
 // 表を画像にしてコピーするボタン。
 // メールに貼ったときに画面と同じ見た目（赤い注記も含む）になるよう、
 // 表と注記をまとめた範囲を PNG にしてクリップボードへ入れる。
-function CopyTableBtn({ targetRef, label = "表を画像でコピー" }) {
+function CopyTableBtn({ targetRef, label = "表を画像でコピー", maxCols }) {
   const [state, setState] = useState(""); // "" / "busy" / "done" / "err"
   useEffect(() => {
     if (state !== "done" && state !== "err") return;
@@ -1000,7 +1009,7 @@ function CopyTableBtn({ targetRef, label = "表を画像でコピー" }) {
       scroller.style.width = scroller.scrollWidth + "px";
     }
     try {
-      const blob = await areaToBlob(node);
+      const blob = await areaToBlob(node, maxCols);
       await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
       setState("done");
     } catch (e) {
@@ -2901,7 +2910,8 @@ ${e.memo}` : e.task}>
                     </button>
                   </div>
                   <span className="sec-actions">
-                  <CopyTableBtn targetRef={adhocCardRef} />
+                  {/* コピーする画像は「優先〜実作業工数」まで（11列） */}
+                  <CopyTableBtn targetRef={adhocCardRef} maxCols={11} />
                   {editable && (
                     <button
                       type="button"

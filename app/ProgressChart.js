@@ -11,11 +11,8 @@ const SERIES = [
   { key: "done", label: "完了", color: "#2f4fd8" },
 ];
 
-const RANGES = [
-  { key: "1m", label: "直近1か月", days: 22 },
-  { key: "3m", label: "直近3か月", days: 66 },
-  { key: "all", label: "全期間", days: 0 },
-];
+// 出すのは直近1か月ぶん（土日を除いた平日22日）
+const RECENT_DAYS = 22;
 
 const pad2 = (n) => String(n).padStart(2, "0");
 // "2026-09-08" → "2026/09/08"
@@ -66,8 +63,24 @@ function Chart({ title, days, rows }) {
             </text>
           </g>
         ))}
-        {/* 折れ線と点 */}
-        {SERIES.map((s) => (
+        {/* 残件数は棒。折れ線の下に来るよう先に描く */}
+        {rows.map((r, i) => {
+          const w = Math.min(22, ((R - L) / Math.max(1, days.length)) * 0.55);
+          const h = Math.max(0, B - y(r.rest));
+          return (
+            <rect
+              key={"bar" + i}
+              x={x(i) - w / 2}
+              y={y(r.rest)}
+              width={w}
+              height={h}
+              fill="#7fc99b"
+              opacity="0.75"
+            />
+          );
+        })}
+        {/* 受注数・完了は折れ線 */}
+        {SERIES.filter((s) => s.key !== "rest").map((s) => (
           <g key={s.key}>
             <polyline
               points={rows.map((r, i) => `${x(i)},${y(r[s.key])}`).join(" ")}
@@ -89,7 +102,7 @@ function Chart({ title, days, rows }) {
             <text x={x(i)} y={y(r.done) + 15} textAnchor="middle" className="pchart-val" fill="#2f4fd8">
               {r.done}
             </text>
-            <text x={x(i)} y={B + 16} textAnchor="middle" className="pchart-val" fill="#3f8f63">
+            <text x={x(i)} y={y(r.rest) - 5} textAnchor="middle" className="pchart-val" fill="#3f8f63">
               {r.rest}
             </text>
           </g>
@@ -126,7 +139,6 @@ function Chart({ title, days, rows }) {
 export default function ProgressChart({ year, dateCode, types }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
-  const [range, setRange] = useState("1m");
 
   useEffect(() => {
     if (!year) return;
@@ -149,8 +161,7 @@ export default function ProgressChart({ year, dateCode, types }) {
 
   const view = useMemo(() => {
     if (!data?.days?.length) return null;
-    const n = RANGES.find((r) => r.key === range)?.days || 0;
-    const from = n > 0 ? Math.max(0, data.days.length - n) : 0;
+    const from = Math.max(0, data.days.length - RECENT_DAYS);
     const days = data.days.slice(from);
     const byType = {};
     for (const t of data.types || []) {
@@ -161,7 +172,7 @@ export default function ProgressChart({ year, dateCode, types }) {
       }));
     }
     return { days, byType };
-  }, [data, range]);
+  }, [data]);
 
   // 表示する案件タイプ（進捗表と同じ並び。IHM は Ad Hoc 扱いなので出さない）
   const shown = useMemo(() => {
@@ -190,20 +201,7 @@ export default function ProgressChart({ year, dateCode, types }) {
   return (
     <>
       <div className="sec-row">
-        <span className="range-seg" role="group" aria-label="表示する期間">
-          {RANGES.map((r) => (
-            <button
-              key={r.key}
-              type="button"
-              className={"range-seg-btn" + (range === r.key ? " active" : "")}
-              onClick={() => setRange(r.key)}
-              aria-pressed={range === r.key}
-            >
-              {r.label}
-            </button>
-          ))}
-        </span>
-        <span className="pchart-note">※土日を除いた平日で表示しています。</span>
+        <span className="pchart-note">※直近1か月（土日を除いた平日）を表示しています。</span>
       </div>
       {shown.length === 0 ? (
         <div className="card">
@@ -212,7 +210,7 @@ export default function ProgressChart({ year, dateCode, types }) {
       ) : (
         shown.map((t) => (
           <div className="card pchart-card" key={t}>
-            <Chart title={`${year}　${t}`} days={view.days} rows={view.byType[t]} />
+            <Chart title={`${year}年_${t}`} days={view.days} rows={view.byType[t]} />
           </div>
         ))
       )}

@@ -11246,10 +11246,11 @@ button.drive-link:disabled {
   overflow-x: auto;
 }
 .pchart-title {
-  font-size: 15px;
+  font-size: 21px;
   font-weight: 800;
-  color: var(--ink-2);
-  margin: 2px 0 4px 6px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 4px 0 8px 6px;
 }
 .pchart-svg {
   display: block;
@@ -11280,4 +11281,16 @@ button.drive-link:disabled {
   font-size: 12px;
   font-weight: 700;
   color: var(--ink-3);
+}
+
+/* 完了タブのゼブラをやめる。
+   ゼブラ解除の指定が「完了行の偶数行」も透明にしていたため、
+   偶数行だけ白く抜けて縞模様になっていた。完了行は全部同じグレーにする。 */
+.adhoc-table tbody tr.row-done,
+.adhoc-table tbody tr.row-done:nth-child(even) {
+  background: #dfdfdf;
+}
+.adhoc-table tbody tr.row-done td,
+.adhoc-table tbody tr.row-done:nth-child(even) td {
+  background: transparent;
 }
