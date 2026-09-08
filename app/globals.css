@@ -11239,3 +11239,45 @@ button.drive-link:disabled {
 .res-row > .chart-card > .chart-title {
   border-radius: 0;
 }
+
+/* ══════════════ 進捗グラフ ══════════════ */
+.pchart-card {
+  margin-bottom: 12px;
+  overflow-x: auto;
+}
+.pchart-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink-2);
+  margin: 2px 0 4px 6px;
+}
+.pchart-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-width: 760px;
+}
+.pchart-ax {
+  font-size: 11px;
+  font-weight: 700;
+  fill: var(--ink-3);
+}
+.pchart-val {
+  font-size: 9.5px;
+  font-weight: 700;
+}
+.pchart-day {
+  font-size: 9.5px;
+  font-weight: 600;
+  fill: var(--ink-3);
+}
+.pchart-lg {
+  font-size: 11.5px;
+  font-weight: 700;
+  fill: var(--ink-2);
+}
+.pchart-note {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-3);
+}

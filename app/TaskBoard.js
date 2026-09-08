@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
+import ProgressChart from "./ProgressChart";
 import Modal from "./Modal";
 import Calendar from "./Calendar";
 import { holidayName, dowLabel } from "../lib/holidays";
@@ -3309,13 +3310,13 @@ ${e.memo}` : e.task}>
                   </button>
                 </div>
               </div>
-              <div className="card">
-                <div className="notice">
-                  {graphTab === "regular"
-                    ? "Regular Task のグラフはこれから作ります。"
-                    : "Ad Hoc Task のグラフはこれから作ります。"}
+              {graphTab === "regular" ? (
+                <ProgressChart year={year} dateCode={dateCode} types={regularTypes} />
+              ) : (
+                <div className="card">
+                  <div className="notice">Ad Hoc Task のグラフはこれから作ります。</div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
