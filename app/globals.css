@@ -10811,16 +10811,7 @@ button.drive-link:disabled {
 
 /* 工数管理：見出し横のプルダウン（作業リソース詳細・工数明細）と
    工数明細のタブの高さを揃える。見出しを大きくしたので28pxに統一する */
-.kosu-page .sec-row .detail-tools select,
-.kosu-page .sec-row .detail-tools select.slim-select {
-  height: 28px;
-}
-.kosu-page .sec-row .segbar.segbar-sm {
-  height: 28px;
-}
-.kosu-page .sec-row .segbar-sm .segbar-btn {
-  height: 24px;
-}
+/* 高さは下の「操作部品の高さを全ページで統一」でまとめて指定する */
 
 /* 工数明細：ダッシュボードと連動している印（青丸）は作業内容列の右端に置く。
    名前のすぐ後ろだと作業内容ごとに位置がばらついて読みにくいため。 */
@@ -10925,4 +10916,44 @@ button.drive-link:disabled {
   min-width: 5px;
   height: 5px;
   padding: 0;
+}
+
+/* ══════════════ 操作部品の高さを全ページで統一（30px） ══════════════ */
+/* プルダウン・検索ボックス・日付ボタン・タブ・絞り込みボタンの帯を 30px、
+   帯の中のボタンを 24px に揃える。ページごとに 22〜30px とばらついていたため。 */
+.head-year select,
+.head-year select.slim-select,
+.sec-row select,
+.detail-tools select,
+.detail-tools .head-year select,
+.list-tools select,
+.list-tools .head-year select,
+.tabbar-row select,
+.tabbar-row .head-year select,
+.mng-head select,
+.mng-year-select,
+.slim-select,
+.search-box,
+.date-face,
+.segbar,
+.segbar.segbar-sm,
+.mng-filter {
+  height: 30px;
+  box-sizing: border-box;
+}
+/* ラベルまわりも同じ行高に */
+.sec-row .head-year,
+.detail-tools .head-year {
+  line-height: 30px;
+  min-height: 30px;
+}
+.segbar .segbar-btn,
+.segbar.segbar-sm .segbar-btn,
+.mng-filter .mng-filter-btn {
+  height: 24px;
+  box-sizing: border-box;
+}
+/* 帯の中のスライダーは帯の高さから上下の余白ぶんを引く */
+.segbar.segbar-sm .segbar-thumb {
+  height: calc(100% - 4px);
 }
