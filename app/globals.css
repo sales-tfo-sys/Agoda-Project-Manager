@@ -11116,3 +11116,9 @@ button.drive-link:disabled {
   /* カレンダー952px ＋ 時計200px ＋ すき間14px */
   max-width: 1166px;
 }
+
+/* プロジェクト進捗のカードは並べ替えないので、掴めるような見た目にしない */
+.qcard,
+.qcard:active {
+  cursor: default;
+}

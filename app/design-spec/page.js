@@ -774,7 +774,7 @@ export default function DesignSpecPage() {
                   <C>/dashboard</C>,
                   <>
                     閲覧専用。<b>スケジュール</b>（連続する2か月を、1つの枠に並べて表示する（月送りと「今月」は枠に1組だけなので、常に連続した月になる）。予定は Ad Hoc タスクの開始日・期日で、入っている日には印と件数を出す。一覧は日／週／月で範囲を切り替えられ、週・月は日付ごとにまとめて表示する）／<b>進捗</b>（Regular Task・Pending のサマリー表、Ad Hoc Task 一覧、プロジェクト進捗（案件タイプ別のステータス×四半期）を1ページにまとめたもの）の2タブ。
-                    選択タブは localStorage に保存（旧「全体 / 案件詳細」の保存値は進捗として読む）。カードはドラッグで並べ替え可（localStorage）。
+                    選択タブは localStorage に保存（旧「全体 / 案件詳細」の保存値は進捗として読む）。
                   </>,
                   <><C>/api/records</C>・<C>/api/adhoc</C>・<C>/api/adhoc-counts</C>・<C>/api/priority</C>・<C>/api/assign</C>・<C>/api/override</C>・<C>/api/adhoc-tasks</C>・<C>/api/kosu?list=1</C>・<C>/api/auth/me</C></>,
                 ],

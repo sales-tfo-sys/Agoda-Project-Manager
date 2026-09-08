@@ -1777,49 +1777,8 @@ export default function TaskBoard({ mode = "view" }) {
   const [collapsed, setCollapsed] = useState({});
   const toggleCard = (t) => setCollapsed((p) => ({ ...p, [t]: !p[t] }));
 
-  // 表の並び順（ドラッグで変更・localStorageに保存）
-  const [order, setOrder] = useState(null);
-  const dragIndex = useRef(null);
-  const [dragOver, setDragOver] = useState(null);
-  const renderTypesKey = renderTypes.join("|");
-
-  useEffect(() => {
-    if (!renderTypes.length) return;
-    let saved = null;
-    try {
-      saved = JSON.parse(localStorage.getItem("agoda-dash-order") || "null");
-    } catch {}
-    const base = Array.isArray(saved) ? saved : [];
-    const kept = base.filter((t) => renderTypes.includes(t));
-    const extra = renderTypes.filter((t) => !kept.includes(t));
-    setOrder([...kept, ...extra]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [renderTypesKey]);
-
-  const displayTypes = order && order.length ? order : renderTypes;
-
-  const handleDrop = (toIdx) => {
-    const from = dragIndex.current;
-    dragIndex.current = null;
-    setDragOver(null);
-    if (from == null || from === toIdx) return;
-    setOrder((prev) => {
-      const arr = [...(prev || renderTypes)];
-      const [moved] = arr.splice(from, 1);
-      arr.splice(toIdx, 0, moved);
-      try {
-        localStorage.setItem("agoda-dash-order", JSON.stringify(arr));
-      } catch {}
-      return arr;
-    });
-  };
-
-  const resetOrder = () => {
-    try {
-      localStorage.removeItem("agoda-dash-order");
-    } catch {}
-    setOrder(renderTypes);
-  };
+  // プロジェクト進捗のカードは並べ替えない（案件タイプの既定の順で出す）
+  const displayTypes = renderTypes;
 
   // タスク別サマリー（当年 Regular ／ 前年 Pending）
   const summary = useMemo(
@@ -3082,29 +3041,9 @@ ${e.memo}` : e.task}>
               const isOpen = !collapsed[t];
               return (
                 <div
-                  className={
-                    "qcard type-card" +
-                    (dragOver === idx ? " dragover" : "") +
-                    (isOpen ? "" : " is-collapsed")
-                  }
+                  className={"qcard type-card" + (isOpen ? "" : " is-collapsed")}
                   style={{ "--type-accent": accent }}
                   key={t}
-                  draggable
-                  onDragStart={() => {
-                    dragIndex.current = idx;
-                  }}
-                  onDragOver={(ev) => {
-                    ev.preventDefault();
-                    if (dragOver !== idx) setDragOver(idx);
-                  }}
-                  onDragLeave={() => {
-                    if (dragOver === idx) setDragOver(null);
-                  }}
-                  onDrop={() => handleDrop(idx)}
-                  onDragEnd={() => {
-                    dragIndex.current = null;
-                    setDragOver(null);
-                  }}
                 >
                   <div
                     className="qcard-head"
