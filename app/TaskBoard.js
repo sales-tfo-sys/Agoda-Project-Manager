@@ -139,6 +139,38 @@ function PrioInput({ value, onCommit, label }) {
   );
 }
 
+// 日本とベトナムの現在時刻。1秒ごとに書き換える。
+// サーバー側では時刻を出さない（描画がズレるため）。画面に出てから動き出す。
+const CLOCKS = [
+  { key: "jp", label: "日本", tz: "Asia/Tokyo" },
+  { key: "vn", label: "ベトナム", tz: "Asia/Ho_Chi_Minh" },
+];
+function Clocks() {
+  const [now, setNow] = useState(null);
+  useEffect(() => {
+    setNow(new Date());
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const fmt = (tz, opts) =>
+    now ? new Intl.DateTimeFormat("ja-JP", { timeZone: tz, ...opts }).format(now) : "--";
+  return (
+    <aside className="clocks" aria-label="現在時刻">
+      {CLOCKS.map((c) => (
+        <div key={c.key} className={"clock clock-" + c.key}>
+          <span className="clock-label">{c.label}</span>
+          <span className="clock-time">
+            {fmt(c.tz, { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })}
+          </span>
+          <span className="clock-date">
+            {fmt(c.tz, { month: "numeric", day: "numeric", weekday: "short" })}
+          </span>
+        </div>
+      ))}
+    </aside>
+  );
+}
+
 // ドラッグの取っ手（優先順のセルに出す）
 function Grip({ onDragStart, onDragEnd, title }) {
   return (
@@ -2307,17 +2339,20 @@ ${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めません�
             const rangeProp = schedRange === "day" ? null : { start, end };
             return (
               <div className="tab-panel sched-wrap">
-                {/* 当月＋翌月を1つの枠に。月送りは1組だけ置く */}
-                <Calendar
-                  months={2}
-                  ym={schedYm}
-                  onNav={navSched}
-                  onToday={todaySched}
-                  events={schedEvents}
-                  selected={schedDate}
-                  onSelect={setSchedDate}
-                  range={rangeProp}
-                />
+                {/* 当月＋翌月を1つの枠に。月送りは1組だけ置く。右に現在時刻 */}
+                <div className="sched-top">
+                  <Calendar
+                    months={2}
+                    ym={schedYm}
+                    onNav={navSched}
+                    onToday={todaySched}
+                    events={schedEvents}
+                    selected={schedDate}
+                    onSelect={setSchedDate}
+                    range={rangeProp}
+                  />
+                  <Clocks />
+                </div>
 
                 <section className="sched-panel">
                   <div className="sched-panel-head">
