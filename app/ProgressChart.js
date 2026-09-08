@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 // 進捗グラフ（Regular Task）。案件タイプごとに、受注数・完了・残件数の推移を折れ線で出す。
 // 横軸は土日を除いた日付。データは /api/progress-daily から取る。
@@ -29,9 +29,88 @@ function niceStep(max) {
   return mag * 10;
 }
 
+// 画像にするとき用。SVG は外部のCSSを読まないので、同じ見た目を中に書き込む。
+const SVG_CSS = `
+  .pchart-ax{font:700 12px system-ui,sans-serif;fill:#6b7280}
+  .pchart-val{font:700 11px system-ui,sans-serif}
+  .pchart-day{font:600 11px system-ui,sans-serif;fill:#6b7280}
+  .pchart-lg{font:700 12px system-ui,sans-serif;fill:#374151}
+`;
+
+// SVG を1枚の画像として読み込む
+function svgToImage(svg) {
+  const clone = svg.cloneNode(true);
+  clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  const style = document.createElementNS("http://www.w3.org/2000/svg", "style");
+  style.textContent = SVG_CSS;
+  clone.insertBefore(style, clone.firstChild);
+  const src =
+    "data:image/svg+xml;charset=utf-8," +
+    encodeURIComponent(new XMLSerializer().serializeToString(clone));
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("グラフを画像にできませんでした"));
+    img.src = src;
+  });
+}
+
+// 画面に出ているグラフを全部まとめて1枚の画像にする（2列に並べる）
+export async function chartsToBlob(root) {
+  const blocks = [...root.querySelectorAll(".pchart")];
+  if (!blocks.length) throw new Error("グラフが見つかりません");
+  const PAD = 16;
+  const GAP = 16;
+  const TITLE_H = 30;
+  const CELL_W = 900; // 1枚あたりの幅（読みやすさ優先で大きめ）
+  const COLS = blocks.length > 1 ? 2 : 1;
+
+  const items = [];
+  for (const b of blocks) {
+    const svg = b.querySelector("svg");
+    const vb = svg.viewBox.baseVal;
+    const h = Math.round((CELL_W * vb.height) / vb.width);
+    items.push({ title: b.querySelector(".pchart-title")?.textContent.trim() || "", svg, h });
+  }
+  const rowH = [];
+  for (let i = 0; i < items.length; i += COLS) {
+    rowH.push(Math.max(...items.slice(i, i + COLS).map((it) => it.h)) + TITLE_H);
+  }
+  const W = PAD * 2 + CELL_W * COLS + GAP * (COLS - 1);
+  const H = PAD * 2 + rowH.reduce((a, b) => a + b, 0) + GAP * (rowH.length - 1);
+
+  const cv = document.createElement("canvas");
+  cv.width = W * 2;
+  cv.height = H * 2;
+  const ctx = cv.getContext("2d");
+  ctx.scale(2, 2);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, W, H);
+
+  let y = PAD;
+  for (let i = 0; i < items.length; i += COLS) {
+    const row = items.slice(i, i + COLS);
+    for (let c = 0; c < row.length; c++) {
+      const it = row[c];
+      const x = PAD + c * (CELL_W + GAP);
+      ctx.fillStyle = "#1a2540";
+      ctx.font = "800 21px system-ui, sans-serif";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText(it.title, x + 6, y + TITLE_H / 2);
+      const img = await svgToImage(it.svg);
+      ctx.drawImage(img, x, y + TITLE_H, CELL_W, it.h);
+    }
+    y += rowH[i / COLS] + GAP;
+  }
+  return new Promise((resolve, reject) =>
+    cv.toBlob((b) => (b ? resolve(b) : reject(new Error("画像を作れませんでした"))), "image/png")
+  );
+}
+
 function Chart({ title, days, rows }) {
   // 描画領域（viewBox の座標）。実際の大きさは CSS の幅に追従する。
-  const W = Math.max(760, 44 + days.length * 34 + 130);
+  const W = Math.max(700, 44 + days.length * 30 + 128);
   const H = 330;
   const L = 52; // 左の目盛りぶん
   const R = W - 128; // 右は凡例ぶん空ける
@@ -139,6 +218,7 @@ function Chart({ title, days, rows }) {
 export default function ProgressChart({ year, dateCode, types }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
+  const gridRef = useRef(null);
 
   useEffect(() => {
     if (!year) return;
@@ -202,18 +282,70 @@ export default function ProgressChart({ year, dateCode, types }) {
     <>
       <div className="sec-row">
         <span className="pchart-note">※直近1か月（土日を除いた平日）を表示しています。</span>
+        <CopyChartsBtn targetRef={gridRef} />
       </div>
       {shown.length === 0 ? (
         <div className="card">
           <div className="notice">この年のデータがありません。</div>
         </div>
       ) : (
-        shown.map((t) => (
-          <div className="card pchart-card" key={t}>
-            <Chart title={`${year}年_${t}`} days={view.days} rows={view.byType[t]} />
-          </div>
-        ))
+        <div className="pchart-grid" ref={gridRef}>
+          {shown.map((t) => (
+            <div className="card pchart-card" key={t}>
+              <Chart title={`${year}年_${t}`} days={view.days} rows={view.byType[t]} />
+            </div>
+          ))}
+        </div>
       )}
     </>
+  );
+}
+
+// グラフをまとめて画像でコピーするボタン
+function CopyChartsBtn({ targetRef }) {
+  const [state, setState] = useState("");
+  useEffect(() => {
+    if (state !== "done" && state !== "err") return;
+    const t = setTimeout(() => setState(""), 1800);
+    return () => clearTimeout(t);
+  }, [state]);
+  const copy = async () => {
+    if (!targetRef.current || state === "busy") return;
+    setState("busy");
+    try {
+      const blob = await chartsToBlob(targetRef.current);
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+      setState("done");
+    } catch (e) {
+      console.error("[copy charts]", e);
+      setState("err");
+    }
+  };
+  return (
+    <button
+      type="button"
+      className={"icon-btn copy-btn" + (state ? " " + state : "")}
+      onClick={copy}
+      disabled={state === "busy"}
+      title={
+        state === "done"
+          ? "コピーしました"
+          : state === "err"
+          ? "コピーできませんでした"
+          : "グラフをまとめて画像でコピー"
+      }
+      aria-label="グラフをまとめて画像でコピー"
+    >
+      {state === "done" ? (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ) : (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="9" y="9" width="12" height="12" rx="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+      )}
+    </button>
   );
 }

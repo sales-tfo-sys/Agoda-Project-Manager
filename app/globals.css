@@ -11294,3 +11294,26 @@ button.drive-link:disabled {
 .adhoc-table tbody tr.row-done:nth-child(even) td {
   background: transparent;
 }
+
+/* 進捗グラフは1行に2つ並べる */
+.pchart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+.pchart-grid .pchart-card {
+  margin-bottom: 0;
+  overflow: visible;
+}
+.pchart-svg {
+  min-width: 0;
+}
+.sec-row .icon-btn.copy-btn {
+  margin-left: auto;
+}
+@media (max-width: 1100px) {
+  .pchart-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
