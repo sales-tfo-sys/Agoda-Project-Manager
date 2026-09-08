@@ -241,6 +241,7 @@ export default function ProgressChart({ year, dateCode, types, gridRef: outerRef
   const [error, setError] = useState(null);
   const innerRef = useRef(null);
   const gridRef = outerRef || innerRef;
+  const penRef = useRef(null);
 
   useEffect(() => {
     if (!year) return;
@@ -324,8 +325,9 @@ export default function ProgressChart({ year, dateCode, types, gridRef: outerRef
           <div className="notice">この年のデータがありません。</div>
         </div>
       ) : (
-        <div className="pchart-wrap" ref={gridRef}>
-          <div className="pchart-grid">
+        <div className="pchart-wrap">
+          {/* 当年ぶん。まとめてコピーするボタンはタブ行にある */}
+          <div className="pchart-grid" ref={gridRef}>
             {shown.map((t) => (
               <div className="card pchart-card" key={t}>
                 <Chart title={`${year}年_${t}`} days={view.days} rows={view.byType[t]} />
@@ -333,17 +335,24 @@ export default function ProgressChart({ year, dateCode, types, gridRef: outerRef
             ))}
           </div>
           {shownPen.length > 0 && (
-            <div className="pchart-grid pchart-grid-pen">
-              {shownPen.map((t) => (
-                <div className="card pchart-card" key={"p" + t}>
-                  <Chart
-                    title={`Pending_${view.penYear}年_${t}`}
-                    days={view.days}
-                    rows={view.penByType[t]}
-                  />
-                </div>
-              ))}
-            </div>
+            <>
+              {/* Pending ぶんは当年ぶんとは別に、この2枚だけをコピーできるようにする */}
+              <div className="sec-row pchart-sec-pen">
+                <div className="sec-head">{`Pending_${view.penYear}年`}</div>
+                <CopyChartsBtn targetRef={penRef} />
+              </div>
+              <div className="pchart-grid" ref={penRef}>
+                {shownPen.map((t) => (
+                  <div className="card pchart-card" key={"p" + t}>
+                    <Chart
+                      title={`Pending_${view.penYear}年_${t}`}
+                      days={view.days}
+                      rows={view.penByType[t]}
+                    />
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       )}

@@ -11325,6 +11325,21 @@ button.drive-link:disabled {
 }
 
 /* 当年ぶんと Pending ぶんのあいだは、区切りが分かるよう広めに空ける */
-.pchart-grid-pen {
+.pchart-wrap > .sec-row.pchart-sec-pen {
   margin-top: 28px;
+  margin-bottom: 2px;
+}
+
+/* 工数管理：グラフ見出しの右端にコピーボタンを置く */
+.chart-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+}
+.chart-head .chart-title {
+  margin: 0;
+}
+.chart-head .icon-btn.copy-btn {
+  margin-left: auto;
 }
