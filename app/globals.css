@@ -11250,7 +11250,7 @@ button.drive-link:disabled {
   font-weight: 800;
   letter-spacing: -0.01em;
   color: var(--ink);
-  margin: 4px 0 8px 6px;
+  margin: 10px 0 6px 18px;
 }
 .pchart-svg {
   display: block;

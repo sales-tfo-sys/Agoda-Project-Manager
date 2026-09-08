@@ -16,7 +16,8 @@ const RECENT_DAYS = 22;
 
 const pad2 = (n) => String(n).padStart(2, "0");
 // "2026-09-08" → "2026/09/08"
-const fmtDay = (d) => String(d).replace(/-/g, "/");
+// 年はタイトルに出ているので、軸は「月/日」だけにして詰める
+const fmtDay = (d) => String(d).slice(5).replace("-", "/");
 
 // 目盛りの間隔（0 と最大値のあいだを、きりのいい数で割る）
 function niceStep(max) {
@@ -97,7 +98,7 @@ export async function chartsToBlob(root) {
       ctx.font = "800 21px system-ui, sans-serif";
       ctx.textAlign = "left";
       ctx.textBaseline = "middle";
-      ctx.fillText(it.title, x + 6, y + TITLE_H / 2);
+      ctx.fillText(it.title, x + 18, y + TITLE_H / 2);
       const img = await svgToImage(it.svg);
       ctx.drawImage(img, x, y + TITLE_H, CELL_W, it.h);
     }
@@ -110,17 +111,23 @@ export async function chartsToBlob(root) {
 
 function Chart({ title, days, rows }) {
   // 描画領域（viewBox の座標）。実際の大きさは CSS の幅に追従する。
-  const W = Math.max(700, 44 + days.length * 30 + 128);
-  const H = 330;
-  const L = 52; // 左の目盛りぶん
-  const R = W - 128; // 右は凡例ぶん空ける
+  const W = Math.max(680, 62 + days.length * 26 + 126);
+  const H = 320;
+  const L = 62; // 左の目盛りぶん（数値が線と重ならないよう広めに取る）
+  const R = W - 126; // 右は凡例ぶん空ける
   const T = 26;
-  const B = H - 78; // 下は日付ラベルぶん
+  const B = H - 66; // 下は日付ラベルぶん
 
   const max = Math.max(1, ...rows.map((r) => Math.max(r.total, r.done, r.rest)));
   const step = niceStep(max);
   const top = Math.ceil(max / step) * step;
-  const x = (i) => (days.length === 1 ? (L + R) / 2 : L + ((R - L) * i) / (days.length - 1));
+  // 棒の幅ぶん内側に寄せて、左端の目盛りと重ならないようにする
+  const barW = Math.min(20, ((R - L) / Math.max(1, days.length)) * 0.6);
+  const inset = barW / 2 + 4;
+  const x = (i) =>
+    days.length === 1
+      ? (L + R) / 2
+      : L + inset + ((R - L - inset * 2) * i) / (days.length - 1);
   const y = (v) => B - ((B - T) * v) / top;
 
   const ticks = [];
@@ -137,14 +144,14 @@ function Chart({ title, days, rows }) {
         {ticks.map((v) => (
           <g key={v}>
             <line x1={L} y1={y(v)} x2={R} y2={y(v)} stroke="#e4e8f0" strokeWidth="1" />
-            <text x={L - 8} y={y(v)} textAnchor="end" dominantBaseline="middle" className="pchart-ax">
+            <text x={L - 14} y={y(v)} textAnchor="end" dominantBaseline="middle" className="pchart-ax">
               {v.toLocaleString("ja-JP")}
             </text>
           </g>
         ))}
         {/* 残件数は棒。折れ線の下に来るよう先に描く */}
         {rows.map((r, i) => {
-          const w = Math.min(22, ((R - L) / Math.max(1, days.length)) * 0.55);
+          const w = barW;
           const h = Math.max(0, B - y(r.rest));
           return (
             <rect
@@ -192,10 +199,10 @@ function Chart({ title, days, rows }) {
             <text
               key={d}
               x={x(i)}
-              y={B + 30}
+              y={B + 26}
               textAnchor="end"
               className="pchart-day"
-              transform={`rotate(-60 ${x(i)} ${B + 30})`}
+              transform={`rotate(-45 ${x(i)} ${B + 26})`}
             >
               {fmtDay(d)}
             </text>
