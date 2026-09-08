@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Modal from "../Modal";
 import { useUi } from "../Ui";
+import ManageIcon from "../manage/ManageIcon";
 
 // HID新規発行依頼の列定義（すべて手動入力）。実シートの項目に合わせる。
 const COLUMNS = [
@@ -22,7 +23,9 @@ const COLUMNS = [
 // ISO(YYYY-MM-DD) → 表示用 YYYY/MM/DD（非編集時のプレーン表示）
 const fmtDate = (v) => (v ? String(v).replace(/-/g, "/") : "");
 
-export default function HidRequestsPage() {
+// embedded / tabs は「管理」ページに埋め込まれたときだけ渡される
+// （見出しを「管理」に差し替え、その下にタブ行を挟む）。
+export default function HidRequestsPage({ embedded, tabs } = {}) {
   const [items, setItems] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -114,13 +117,17 @@ export default function HidRequestsPage() {
     <div className="wrap page-compact forms-page">
       <div className="head">
         <div className="head-left">
-          <span className="conn ok" title="HID新規発行依頼" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="4" width="20" height="16" rx="2" />
-              <path d="M7 15h0M2 9h20" />
-            </svg>
+          <span className="conn ok" title={embedded ? "管理" : "HID新規発行依頼"} aria-hidden="true">
+            {embedded ? (
+              <ManageIcon />
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2" />
+                <path d="M7 15h0M2 9h20" />
+              </svg>
+            )}
           </span>
-          <span className="page-h page-h-gap">HID新規発行依頼</span>
+          <span className="page-h page-h-gap">{embedded ? "管理" : "HID新規発行依頼"}</span>
           {items && (
             <span className="forms-count-pill">{items.length.toLocaleString("ja-JP")} 件</span>
           )}
@@ -136,6 +143,8 @@ export default function HidRequestsPage() {
           )}
         </div>
       </div>
+
+      {tabs}
 
       {error && <div className="banner err-banner">エラー：{error}</div>}
 

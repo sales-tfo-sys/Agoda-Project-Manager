@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Modal from "../Modal";
 import { useUi } from "../Ui";
+import ManageIcon from "../manage/ManageIcon";
 
 // 最終回答日時のラベル整形（今日 HH:MM / 昨日 HH:MM / M/D HH:MM）
 function fmtUpdated(ms) {
@@ -17,7 +18,9 @@ function fmtUpdated(ms) {
   return `${d.toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" })} ${hhmm}`;
 }
 
-export default function FormsPage() {
+// embedded / tabs は「管理」ページに埋め込まれたときだけ渡される
+// （見出しを「管理」に差し替え、その下にタブ行を挟む）。
+export default function FormsPage({ embedded, tabs } = {}) {
   const [items, setItems] = useState(null);
   const [counts, setCounts] = useState({}); // { id: {total, month, latest} | {error} }
   const [selected, setSelected] = useState(null);
@@ -211,14 +214,18 @@ export default function FormsPage() {
         ) : (
           <>
             <div className="head-left">
-              <span className="conn ok" title="フォーム回答" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-4" />
-                  <rect x="9" y="2" width="6" height="4" rx="1" />
-                  <line x1="8" y1="11" x2="16" y2="11" /><line x1="8" y1="15" x2="14" y2="15" />
-                </svg>
+              <span className="conn ok" title={embedded ? "管理" : "フォーム回答"} aria-hidden="true">
+                {embedded ? (
+                  <ManageIcon />
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-4" />
+                    <rect x="9" y="2" width="6" height="4" rx="1" />
+                    <line x1="8" y1="11" x2="16" y2="11" /><line x1="8" y1="15" x2="14" y2="15" />
+                  </svg>
+                )}
               </span>
-              <span className="page-h page-h-gap">フォーム回答</span>
+              <span className="page-h page-h-gap">{embedded ? "管理" : "フォーム回答"}</span>
             </div>
             <div className="head-right">
               {canEdit && (
@@ -232,6 +239,8 @@ export default function FormsPage() {
           </>
         )}
       </div>
+
+      {tabs}
 
       {error && <div className="banner err-banner">エラー：{error}</div>}
 

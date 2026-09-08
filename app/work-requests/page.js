@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Modal from "../Modal";
 import { useUi } from "../Ui";
+import ManageIcon from "../manage/ManageIcon";
 
 // 手動入力の3項目
 const EMPTY_CELL = { created: false, recordNo: "", doneDate: "" };
@@ -19,7 +20,9 @@ const isMaru = (v) => {
   return s !== "" && !/^(×|✗|false|no|0|-)$/i.test(s);
 };
 
-export default function WorkRequestsPage() {
+// embedded / tabs は「管理」ページに埋め込まれたときだけ渡される
+// （見出しを「管理」に差し替え、その下にタブ行を挟む）。
+export default function WorkRequestsPage({ embedded, tabs } = {}) {
   const [item, setItem] = useState(null); // 単一の登録シート（固定ページ）
   const [grid, setGrid] = useState(null); // {headers, rows, rowKeys, overlay, total} or {error}
   const [cells, setCells] = useState({}); // rowKey -> {created, recordNo, doneDate}
@@ -248,13 +251,17 @@ export default function WorkRequestsPage() {
     <div className="wrap page-compact forms-page">
       <div className="head">
         <div className="head-left">
-          <span className="conn ok" title="新規作業依頼" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 11l3 3L22 4" />
-              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-            </svg>
+          <span className="conn ok" title={embedded ? "管理" : "新規作業依頼"} aria-hidden="true">
+            {embedded ? (
+              <ManageIcon />
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 11l3 3L22 4" />
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+              </svg>
+            )}
           </span>
-          <span className="page-h page-h-gap">新規作業依頼</span>
+          <span className="page-h page-h-gap">{embedded ? "管理" : "新規作業依頼"}</span>
           {grid && !grid.error && (
             <span className="forms-count-pill">
               {grid.total?.toLocaleString("ja-JP")} 件{grid.truncated && "（先頭のみ）"}
@@ -286,6 +293,8 @@ export default function WorkRequestsPage() {
           )}
         </div>
       </div>
+
+      {tabs}
 
       {error && <div className="banner err-banner">エラー：{error}</div>}
 

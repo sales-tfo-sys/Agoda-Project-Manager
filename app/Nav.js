@@ -239,9 +239,9 @@ const TABS = [
   { href: "/", label: "施設一覧", Icon: ListIcon },
   // グラフページは一旦削除（app/graphs を除去）
   { href: "/kosu/input", label: "工数入力", Icon: InputIcon },
-  { href: "/hid-requests", label: "HID新規発行依頼", Icon: HidIcon },
-  { href: "/work-requests", label: "新規作業依頼", Icon: WorkReqIcon },
-  { href: "/forms", label: "フォーム回答", Icon: FormIcon },
+  // HID新規発行依頼・新規作業依頼・フォーム回答は、どれもスプレッドシートから
+  // 取ってくるデータなので「管理」1つにまとめ、中身はタブで切り替える
+  { href: "/manage", label: "管理", Icon: FormIcon, keys: ["hid", "workReq", "forms"] },
   { divider: true },
   { href: "/design-spec", label: "設計仕様書", Icon: SpecIcon, admin: true },
   { href: "/system-health", label: "システムヘルス", Icon: HealthIcon, admin: true },
@@ -274,9 +274,16 @@ export default function Sidebar() {
     const key = pageKeyForPath(href);
     return key ? !!pages[key]?.view : true;
   };
-  const visible = TABS.filter((t) =>
-    t.divider ? true : t.admin ? canView(t.href) === true : canView(t.href) !== false
-  );
+  // まとめたページ（管理）は、中のどれか1つでも見られるなら出す
+  const canViewAny = (keys) => {
+    if (!pages) return null;
+    return keys.some((k) => !!pages[k]?.view);
+  };
+  const visible = TABS.filter((t) => {
+    if (t.divider) return true;
+    if (t.keys) return canViewAny(t.keys) !== false;
+    return t.admin ? canView(t.href) === true : canView(t.href) !== false;
+  });
   // 区切り線は、その下に出すものが1つも無ければ引かない
   const tabs = visible.filter(
     (t, i) => !t.divider || visible.slice(i + 1).some((x) => !x.divider)

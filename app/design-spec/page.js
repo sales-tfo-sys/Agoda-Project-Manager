@@ -532,11 +532,12 @@ export default function DesignSpecPage() {
               rows={[
                 ["ダッシュボード", <C>dashboard</C>, <C>/dashboard</C>, "—"],
                 ["施設一覧", <C>facilities</C>, <C>/</C>, "—"],
-                ["工数管理", <C>kosu</C>, <C>/kosu</C>, "—"],
+                ["作業工数管理", <C>kosu</C>, <C>/kosu</C>, "—"],
                 ["工数入力", <C>kosuInput</C>, <C>/kosu/input</C>, "あり"],
                 ["HID新規発行依頼", <C>hid</C>, <C>/hid-requests</C>, "あり"],
                 ["新規作業依頼", <C>workReq</C>, <C>/work-requests</C>, "あり"],
                 ["フォーム回答", <C>forms</C>, <C>/forms</C>, "—"],
+                [<>「管理」にまとめて表示（<C>/manage</C>）。上の3つの権限をそのまま使う</>, <>{"—"}</>, <C>/manage</C>, "—"],
                 ["プロジェクト管理", <C>project</C>, <C>/project</C>, "あり"],
                 ["アカウント管理", <C>accounts</C>, <C>/kosu/persons</C>, "あり"],
                 ["設計仕様書", <C>designSpec</C>, <C>/design-spec</C>, "—"],
@@ -552,7 +553,7 @@ export default function DesignSpecPage() {
               rows={[
                 ["owner", "全ページ", <>編集可能な全ページ（<C>editable=true</C> のもの）</>],
                 ["admin", "全ページ", <><C>kosuInput</C> は常に可。<C>accounts</C> は <C>can_edit_accounts</C>、<C>project</C>・<C>hid</C>・<C>workReq</C> は <C>can_edit_tasks</C> に従う。</>],
-                ["member", "業務グループのみ（ダッシュボード／施設一覧／工数管理／工数入力／HID／新規作業依頼／フォーム回答）", <><C>kosuInput</C> のみ</>],
+                ["member", "業務グループのみ（ダッシュボード／施設一覧／作業工数管理／工数入力／HID／新規作業依頼／フォーム回答）", <><C>kosuInput</C> のみ</>],
               ]}
             />
 
@@ -799,7 +800,7 @@ export default function DesignSpecPage() {
                   <><C>/api/records</C>・<C>/api/kintone-sync</C>・<C>/api/auth/me</C></>,
                 ],
                 [
-                  "工数管理",
+                  "作業工数管理",
                   <C>/kosu</C>,
                   <>
                     週次の作業リソース（メンバー別 100% 積み上げ棒・Ad Hoc 詳細・担当者別内訳表）と、下部に工数明細。
