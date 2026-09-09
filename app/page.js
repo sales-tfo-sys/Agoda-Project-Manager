@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import UpdatedPop from "./UpdatedPop";
+import Pulldown from "./Pulldown";
 
 const TYPE_ORDER = ["Hotel", "ACQ", "Liberty", "Temairazu", "IHM"];
 
@@ -572,61 +573,68 @@ export default function Page() {
           {records.length > 0 && (
             <label className="head-year">
               案件名
-              <select
+              <Pulldown
                 value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-              >
-                <option value="all">
-                  すべて（{records.length.toLocaleString("ja-JP")}）
-                </option>
-                {typeList.map((t) => (
-                  <option key={t} value={t}>
-                    {t}（{typeCounts[t].toLocaleString("ja-JP")}）
-                  </option>
-                ))}
-              </select>
+                onChange={setTypeFilter}
+                ariaLabel="案件名で絞り込み"
+                icon="filter"
+                options={[
+                  { value: "all", label: `すべて（${records.length.toLocaleString("ja-JP")}）` },
+                  ...typeList.map((t) => ({
+                    value: t,
+                    label: `${t}（${typeCounts[t].toLocaleString("ja-JP")}）`,
+                  })),
+                ]}
+              />
             </label>
           )}
           {records.length > 0 && (
             <label className="head-year">
               ステータス
-              <select
+              <Pulldown
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="active">完了以外</option>
-                <option value="all">すべて</option>
-              </select>
+                onChange={setStatusFilter}
+                ariaLabel="ステータスで絞り込み"
+                icon="filter"
+                options={[
+                  { value: "active", label: "完了以外" },
+                  { value: "all", label: "すべて" },
+                ]}
+              />
             </label>
           )}
           {years.length > 0 && (
             <label className="head-year">
               年
-              <select value={periodYear} onChange={(e) => setPeriodYear(e.target.value)}>
-                <option value="all">すべて</option>
-                {years.map((y) => (
-                  <option key={y} value={y}>
-                    {y}年
-                  </option>
-                ))}
-              </select>
+              <Pulldown
+                value={periodYear}
+                onChange={setPeriodYear}
+                ariaLabel="年で絞り込み"
+                icon="calendar"
+                options={[
+                  { value: "all", label: "すべて" },
+                  ...years.map((y) => ({ value: String(y), label: `${y} 年` })),
+                ]}
+              />
             </label>
           )}
           {records.length > 0 && (
             <label className="head-year">
               四半期
-              <select
+              <Pulldown
                 value={periodQ}
-                onChange={(e) => setPeriodQ(e.target.value)}
+                onChange={setPeriodQ}
                 disabled={periodYear === "all"}
-                title={periodYear === "all" ? "先に年を選んでください" : undefined}
-              >
-                <option value="all">通年</option>
-                <option value="1">Q1（1〜3月）</option>
-                <option value="2">Q2（4〜6月）</option>
-                <option value="3">Q3（7〜9月）</option>
-                <option value="4">Q4（10〜12月）</option>
-              </select>
+                ariaLabel="四半期で絞り込み"
+                icon="calendar"
+                options={[
+                  { value: "all", label: "通年" },
+                  { value: "1", label: "Q1（1〜3月）" },
+                  { value: "2", label: "Q2（4〜6月）" },
+                  { value: "3", label: "Q3（7〜9月）" },
+                  { value: "4", label: "Q4（10〜12月）" },
+                ]}
+              />
             </label>
           )}
           <span className="count">

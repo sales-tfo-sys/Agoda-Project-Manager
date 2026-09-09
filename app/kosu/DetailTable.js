@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { holidayName, dowLabel } from "../../lib/holidays";
+import Pulldown from "../Pulldown";
 
 // 作業内容の右端に置く進捗バッジの幅（列幅の計算に使う）
 const BADGE_W = 82;
@@ -741,13 +742,13 @@ export default function DetailTable({ title, compact = false }) {
         <div className="detail-tools">
         {months.length > 0 && (
           <label className="head-year" aria-label="対象月">
-            <select value={monthIdx ?? 0} onChange={(e) => setMonthIdx(Number(e.target.value))}>
-              {months.map((m, i) => (
-                <option key={m + i} value={i}>
-                  {monthLabel(i)}
-                </option>
-              ))}
-            </select>
+            <Pulldown
+              value={monthIdx ?? 0}
+              onChange={(v) => setMonthIdx(Number(v))}
+              ariaLabel="対象月"
+              icon="calendar"
+              options={months.map((m, i) => ({ value: i, label: monthLabel(i) }))}
+            />
           </label>
         )}
         <div className="segbar segbar-sm" role="tablist" aria-label="工数明細の表示切替">

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DetailTable from "./DetailTable";
 import UpdatedPop from "../UpdatedPop";
 import CopyChartBtn from "./CopyChartBtn";
+import Pulldown from "../Pulldown";
 
 const REGULAR_COLOR = "#8fb4e3";
 const ADHOC_COLOR = "#e79a9a";
@@ -251,17 +252,13 @@ export default function KosuPage() {
             <div className="sec-head">作業リソース詳細</div>
             <div className="detail-tools">
               <label className="head-year head-year-bare" aria-label="対象週">
-                <select
-                  className="slim-select"
+                <Pulldown
                   value={wi}
-                  onChange={(e) => setWi(Number(e.target.value))}
-                >
-                  {resource.weeks.map((w, i) => (
-                    <option key={w + i} value={i}>
-                      {weekLabel(i)}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => setWi(Number(v))}
+                  ariaLabel="対象週"
+                  icon="calendar"
+                  options={resource.weeks.map((w, i) => ({ value: i, label: weekLabel(i) }))}
+                />
               </label>
             </div>
             {/* 担当者管理・作業内容管理はダッシュボードのメニューに、

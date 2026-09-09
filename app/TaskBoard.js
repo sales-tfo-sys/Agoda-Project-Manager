@@ -9,6 +9,7 @@ import Modal from "./Modal";
 import Calendar from "./Calendar";
 import { holidayName, dowLabel } from "../lib/holidays";
 import UpdatedPop from "./UpdatedPop";
+import Pulldown from "./Pulldown";
 
 const TYPE_CODE = "ドロップダウン_13"; // 案件名（空欄は Hotel依頼）
 const STAGE_CODE = "ドロップダウン"; // Stage（ステータス）
@@ -2423,19 +2424,13 @@ export default function TaskBoard({ mode = "view" }) {
             {/* 対象年は「進捗」の集計に使うもの。
                 スケジュールは Ad Hoc の開始日・期日で表示するので出さない。 */}
             {years.length > 0 && activeTab !== "schedule" && (
-              <label className="head-year head-year-bare">
-                <select
-                  value={year ?? ""}
-                  onChange={(e) => setYear(Number(e.target.value))}
-                  aria-label="対象年"
-                >
-                  {years.map((y) => (
-                    <option key={y} value={y}>
-                      {y} 年
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <Pulldown
+                value={year ?? ""}
+                onChange={(v) => setYear(Number(v))}
+                ariaLabel="対象年"
+                icon="calendar"
+                options={years.map((y) => ({ value: y, label: `${y} 年` }))}
+              />
             )}
             {/* アカウント管理はサイドバーのメニューに移設 */}
           </div>
@@ -2597,13 +2592,13 @@ export default function TaskBoard({ mode = "view" }) {
               <div className="card no-pad manage-card">
                 <div className="manage-head">
                   {years.length > 0 && (
-                    <select className="mng-year-select" value={year ?? ""} onChange={(e) => setYear(Number(e.target.value))} aria-label="対象年">
-                      {years.map((y) => (
-                        <option key={y} value={y}>
-                          {y} 年
-                        </option>
-                      ))}
-                    </select>
+                    <Pulldown
+                      value={year ?? ""}
+                      onChange={(v) => setYear(Number(v))}
+                      ariaLabel="対象年"
+                      icon="calendar"
+                      options={years.map((y) => ({ value: y, label: `${y} 年` }))}
+                    />
                   )}
                   <div
                     className="mng-filter"

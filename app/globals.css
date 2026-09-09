@@ -11554,3 +11554,154 @@ select.slim-select,
 .segbar.segbar-sm .segbar-btn {
   padding: 0 14px;
 }
+
+/* ══════════════ 共通のプルダウン（app/Pulldown.js）══════════════ */
+/* 閉じているとき：白地＋淡い青の枠。中身は「アイコン｜文字｜白い箱の矢印」。
+   開いたとき：白いカードに項目を並べ、選んでいるものは青地＋チェック。 */
+.pd {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 4px 0 10px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  background: #f2f6ff;
+  border: 1px solid #c9dcff;
+  border-radius: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+.pd:hover:not(:disabled) {
+  background: #e9f1ff;
+  border-color: #a9c8ff;
+}
+.pd.open,
+.pd:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(47, 107, 224, 0.16);
+}
+.pd:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.pd-ico {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+.pd-label {
+  flex: 1 1 auto;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pd-caret {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  color: var(--accent);
+  background: #ffffff;
+  border-radius: 7px;
+  transition: transform 0.18s ease;
+}
+.pd.open .pd-caret {
+  transform: rotate(180deg);
+}
+
+/* 開いたときのパネル。表の中でも切れないよう画面基準で出す */
+.pd-pop {
+  position: fixed;
+  z-index: 220;
+  padding: 6px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 14px 34px rgba(20, 28, 44, 0.16);
+  overflow: auto;
+  animation: pdin 0.13s ease;
+}
+@keyframes pdin {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+.pd-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.pd-item.act {
+  background: var(--surface-soft);
+}
+.pd-item.sel {
+  color: var(--accent);
+  font-weight: 800;
+  background: #eaf1ff;
+}
+.pd-item-label {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pd-check {
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+
+/* ラベル付きの入れ物（.head-year など）に入れたときに高さが崩れないように */
+.head-year .pd,
+.sec-row .pd,
+.list-tools .pd,
+.detail-tools .pd,
+.tabbar-row .pd {
+  vertical-align: middle;
+}
+
+/* タブも新しいプルダウンと同じ家族に見えるよう、角の丸みと下地をそろえる */
+.segbar {
+  background: #f3f6fc;
+  border-color: #e2e9f6;
+  border-radius: 12px;
+  padding: 3px;
+}
+.segbar .segbar-btn,
+.segbar .segbar-thumb {
+  border-radius: 9px;
+}
+.segbar.segbar-sm {
+  border-radius: 10px;
+  padding: 2px;
+}
+.segbar.segbar-sm .segbar-btn,
+.segbar.segbar-sm .segbar-thumb {
+  border-radius: 8px;
+}
+/* 絞り込みボタンの帯も同じ丸みに */
+.mng-filter {
+  border-radius: 12px;
+}
+.mng-filter .mng-filter-btn,
+.mng-filter .mng-filter-thumb {
+  border-radius: 9px;
+}
