@@ -11516,3 +11516,41 @@ button.drive-link:disabled {
 .persons-table td.grip-td {
   border-right: 0;
 }
+
+/* ══════════════ 操作部品の文字サイズを全ページで統一 ══════════════ */
+/* 高さは 30px（帯）／24px（帯の中のボタン）のまま。
+   文字が小さくてばらついていた（11〜12.5px）ので 13px にそろえ、
+   件数バッジは 11px にそろえる。文字が切れないよう内側の余白も少し広げる。 */
+.head-year select,
+.head-year select.slim-select,
+.sec-row select,
+.detail-tools select,
+.detail-tools .head-year select,
+.list-tools select,
+.list-tools .head-year select,
+.tabbar-row select,
+.tabbar-row .head-year select,
+.mng-head select,
+.mng-year-select,
+.slim-select,
+select.slim-select,
+.search-box,
+.search-box input,
+.date-field .date-face,
+.wrap.page-compact .date-field .date-face,
+.segbar .segbar-btn,
+.segbar.segbar-sm .segbar-btn,
+.mng-filter .mng-filter-btn,
+.wr-filter .wr-filter-btn,
+.forms-filter-btn {
+  font-size: 13px;
+}
+.seg-count,
+.mng-fcount {
+  font-size: 11px;
+}
+
+/* 小型タブ（Regular Task / Ad Hoc Task など）の内側の余白 */
+.segbar.segbar-sm .segbar-btn {
+  padding: 0 14px;
+}
