@@ -231,7 +231,7 @@ const TABS = [
   { href: "/kosu/persons", label: "アカウント管理", Icon: PersonIcon, admin: true },
   { href: "/project", label: "プロジェクト管理", Icon: BoardIcon, admin: true },
   // 作業工数管理は中身（作業リソース詳細・工数明細）をダッシュボードの
-  // 「作業工数グラフ」「作業工数表」タブへ移したので、ページごと廃止した
+  // 「作業工数表」タブ（一覧＝工数明細／グラフ＝作業リソース詳細）へ移したので、ページごと廃止した
 ];
 
 export default function Sidebar() {

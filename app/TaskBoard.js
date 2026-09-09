@@ -1956,6 +1956,24 @@ export default function TaskBoard({ mode = "view" }) {
     } catch {}
   };
 
+  // 作業工数表の中の切り替え（一覧 = 工数明細 / グラフ = 作業リソース詳細）。
+  // 進捗表と同じ形にそろえ、上のタブから「作業工数グラフ」を外した。
+  const [kosuView, setKosuView] = useState("list");
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("agoda-kosu-view");
+      if (v === "list" || v === "chart") setKosuView(v);
+      // 旧「作業工数グラフ」タブを選んだまま保存されていた場合はグラフ側で開く
+      else if (localStorage.getItem("agoda-dash-tab") === "kosu") setKosuView("chart");
+    } catch {}
+  }, []);
+  const switchKosuView = (v) => {
+    setKosuView(v);
+    try {
+      localStorage.setItem("agoda-kosu-view", v);
+    } catch {}
+  };
+
   // Ad Hoc 表のコピー用（表の DOM をそのまま読むため）
   const adhocCardRef = useRef(null);
   // 進捗グラフのコピー用（グラフの入れ物を指す）
@@ -2018,8 +2036,8 @@ export default function TaskBoard({ mode = "view" }) {
     try {
       const v = localStorage.getItem("agoda-dash-tab");
       if (v === "schedule") setTab("schedule");
-      else if (v === "kosu") setTab("kosu");
-      else if (v === "ktable") setTab("ktable");
+      // 旧「作業工数グラフ」は作業工数表の中の「グラフ」になった
+      else if (v === "kosu" || v === "ktable") setTab("ktable");
       // 旧「全体 / 案件詳細 / 進捗グラフ」の保存値は進捗表に読み替える
       // （進捗グラフは進捗表の中の「グラフ」になった）
       else if (v === "overview" || v === "cases" || v === "progress" || v === "graph") setTab("progress");
@@ -2311,7 +2329,7 @@ export default function TaskBoard({ mode = "view" }) {
   // 上のタブ行に一緒に並べるので、どちらのタブを見ているかで中身を差し替える。
   const hasSubTabs = !isEdit && activeTab === "progress";
   // 作業工数グラフ（作業リソース詳細）。タブを開いたときだけ読み込む。
-  const res = useResource(!isEdit && activeTab === "kosu");
+  const res = useResource(!isEdit && activeTab === "ktable" && kosuView === "chart");
   const subTab = tableTab;
   const setSubTab = switchTableTab;
 
@@ -2359,16 +2377,6 @@ export default function TaskBoard({ mode = "view" }) {
                     onClick={() => switchTab("progress")}
                   >
                     進捗表
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    data-tab="kosu"
-                    aria-selected={tab === "kosu"}
-                    className={"segbar-btn" + (tab === "kosu" ? " active" : "")}
-                    onClick={() => switchTab("kosu")}
-                  >
-                    作業工数グラフ
                   </button>
                   <button
                     type="button"
@@ -2449,8 +2457,42 @@ export default function TaskBoard({ mode = "view" }) {
                     options={years.map((y) => ({ value: y, label: `${y} 年` }))}
                   />
                 )}
-                {/* 作業工数グラフは週ごとの集計なので、対象年ではなく対象週を出す */}
-                {activeTab === "kosu" && res.wi != null && res.weekOptions.length > 0 && (
+                {/* 一覧（工数明細）／グラフ（作業リソース詳細）。
+                    もとの「作業工数グラフ」タブをここに畳んだ */}
+                {!isEdit && activeTab === "ktable" && (
+                  <div className="segbar segbar-sm" role="tablist" aria-label="一覧とグラフの切替">
+                    <span
+                      className="segbar-thumb"
+                      style={{ transform: `translateX(${kosuView === "chart" ? "100%" : "0%"})` }}
+                      aria-hidden="true"
+                    />
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={kosuView === "list"}
+                      className={"segbar-btn" + (kosuView === "list" ? " active" : "")}
+                      onClick={() => switchKosuView("list")}
+                    >
+                      一覧
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={kosuView === "chart"}
+                      className={"segbar-btn" + (kosuView === "chart" ? " active" : "")}
+                      onClick={() => switchKosuView("chart")}
+                    >
+                      グラフ
+                    </button>
+                  </div>
+                )}
+                {/* 工数明細の対応中/完了の切替と対象月は、
+                    工数明細の中で持っている状態なので、ここへ差し込んでもらう */}
+                {activeTab === "ktable" && kosuView === "list" && (
+                  <span className="head-tools" ref={setKosuTools} />
+                )}
+                {/* 作業リソース詳細は週ごとの集計なので、対象年ではなく対象週を出す */}
+                {activeTab === "ktable" && kosuView === "chart" && res.wi != null && res.weekOptions.length > 0 && (
                   <Pulldown
                     value={res.wi}
                     onChange={(v) => res.setWi(Number(v))}
@@ -2458,11 +2500,6 @@ export default function TaskBoard({ mode = "view" }) {
                     icon="calendar"
                     options={res.weekOptions}
                   />
-                )}
-                {/* 作業工数表（工数明細）の対応中/完了の切替と対象月は、
-                    工数明細の中で持っている状態なので、ここへ差し込んでもらう */}
-                {activeTab === "ktable" && (
-                  <span className="head-tools" ref={setKosuTools} />
                 )}
               </div>
             </>
@@ -2488,11 +2525,16 @@ export default function TaskBoard({ mode = "view" }) {
         </div>
       </div>
 
-      {/* 作業工数グラフ：もと「作業工数管理」の作業リソース詳細（3枚）。
-          案件データ（/api/records）は使わないので、その読み込みは待たない。
-          対象週のプルダウンはヘッダーのタブの右に置いている */}
-      {activeTab === "kosu" && !isEdit ? (
-        res.error ? (
+      {/* 作業工数表：もと「作業工数管理」の中身。
+          一覧＝工数明細、グラフ＝作業リソース詳細（3枚）。
+          どちらも案件データ（/api/records）は使わないので、その読み込みは待たない。
+          操作部品（一覧/グラフ・対応中/完了・対象月／対象週）はヘッダーのタブの右に置いている */}
+      {activeTab === "ktable" && !isEdit ? (
+        kosuView === "list" ? (
+          <div className="tab-panel kosu-panel">
+            <DetailTable compact toolbarHost={kosuTools} />
+          </div>
+        ) : res.error ? (
           <div className="card">
             <div className="err">{"取得エラー\n\n" + res.error}</div>
           </div>
@@ -2505,12 +2547,6 @@ export default function TaskBoard({ mode = "view" }) {
             <ResourceCharts resource={res.resource} wi={res.wi} weekLabel={res.weekLabel} />
           </div>
         )
-      ) : activeTab === "ktable" && !isEdit ? (
-        /* 作業工数表：もと「作業工数管理」の工数明細。こちらも案件データは使わない。
-           対応中/完了の切替と対象月はヘッダーのタブの右に差し込む */
-        <div className="tab-panel kosu-panel">
-          <DetailTable compact toolbarHost={kosuTools} />
-        </div>
       ) : error ? (
         <div className="card">
           <div className="err">{"集計エラー\n\n" + error}</div>
