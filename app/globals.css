@@ -11892,3 +11892,16 @@ body {
 .head-left {
   min-width: 0;
 }
+
+/* ══════════════ 作業依頼：一覧をヘッダー直下から画面下端まで ══════════════
+   ヘッダーと一覧のあいだ、一覧とページ下端のあいだの隙間を無くし、
+   表が画面いっぱいに収まるようにする（ヘッダーの高さ 58px ぶんだけ引く）。 */
+.wrap.page-compact.forms-page.wr-page .head {
+  margin-bottom: 0;
+}
+.wrap.forms-page.wr-page {
+  padding-bottom: 0;
+}
+.wrap.forms-page.wr-page .forms-tw {
+  max-height: calc(100vh - 58px);
+}

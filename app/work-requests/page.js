@@ -245,7 +245,7 @@ export default function WorkRequestsPage() {
   };
 
   return (
-    <div className="wrap page-compact forms-page">
+    <div className="wrap page-compact forms-page wr-page">
       <div className="head">
         <div className="head-left">
           <span className="conn ok" title="作業依頼" aria-hidden="true">
