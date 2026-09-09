@@ -11782,3 +11782,18 @@ body {
 .clock {
   border-radius: 14px;
 }
+
+/* プロジェクト進捗の表を、上の Regular Task の表と同じ幅にそろえる。
+   幅の上限を外したぶん、数値列を少し広げて、ステータス列だけが
+   間延びしないようにする（余ったぶんは長いステータス名の表示に回す）。 */
+.qgrid {
+  max-width: none;
+}
+.qtable th:not(.l),
+.qtable td:not(.l) {
+  width: 72px;
+}
+.qtable th.sum,
+.qtable td.sum {
+  width: 86px;
+}

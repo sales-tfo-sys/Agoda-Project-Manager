@@ -276,6 +276,8 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
   // ドラッグでの並べ替え
   const dragIndex = useRef(null);
   const [dragOver, setDragOver] = useState(null);
+  // 取っ手を押した行だけ掴めるようにする（行のどこからでも動いてしまうのを防ぐ）
+  const [armedId, setArmedId] = useState(null);
   const reorder = async (from, to) => {
     if (from == null || to == null || from === to) return;
     const list = persons.filter((p) => p.active);
@@ -585,7 +587,7 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                   return (
                     <tr
                       key={p.id}
-                      draggable={canDrag && !busy && p.active}
+                      draggable={canDrag && !busy && p.active && armedId === p.id}
                       onDragStart={() => {
                         dragIndex.current = i;
                       }}
@@ -601,10 +603,12 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                         reorder(dragIndex.current, i);
                         dragIndex.current = null;
                         setDragOver(null);
+                        setArmedId(null);
                       }}
                       onDragEnd={() => {
                         dragIndex.current = null;
                         setDragOver(null);
+                        setArmedId(null);
                       }}
                       className={
                         (dragOver === i ? "row-dragover " : "") +
@@ -614,6 +618,8 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                     >
                       <td
                         className="grip-td"
+                        onMouseDown={() => p.active && canDrag && !busy && setArmedId(p.id)}
+                        onMouseUp={() => setArmedId(null)}
                         title={
                           !p.active
                             ? "除外したメンバーは並べ替えできません"
