@@ -11857,3 +11857,12 @@ body {
   top: 0;
   align-self: center;
 }
+
+/* 作業リソース詳細：グラフの見出しを少し右下へ、コピーボタンを少し左下へ */
+.res-row > .chart-card > .chart-head {
+  padding: 5px 0 0 8px;
+}
+.res-row > .chart-card > .chart-head .icon-btn.copy-btn {
+  margin-right: 8px;
+  margin-top: 3px;
+}
