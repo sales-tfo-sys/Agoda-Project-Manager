@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from "react";
 import HidRequestsPage from "../hid-requests/page";
-import WorkRequestsPage from "../work-requests/page";
 import FormsPage from "../forms/page";
 import { cachedJson } from "../dataCache";
 
 // 「管理」ページ。
-// HID新規発行依頼／新規作業依頼／フォーム回答は、どれも
+// HID新規発行依頼／フォーム回答は、どちらも
 // 「スプレッドシートを登録して、そこから中身や件数を読む」という同じ作りなので、
 // 1ページにまとめてタブで切り替える。
 // 中身はそれぞれの画面をそのまま使い（embedded で見出しだけ「管理」に差し替え）、
@@ -15,7 +14,6 @@ import { cachedJson } from "../dataCache";
 
 const TABS = [
   { key: "hid", label: "HID新規発行依頼", Panel: HidRequestsPage },
-  { key: "workReq", label: "新規作業依頼", Panel: WorkRequestsPage },
   { key: "forms", label: "フォーム回答", Panel: FormsPage },
 ];
 const STORE_KEY = "agoda-manage-tab";

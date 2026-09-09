@@ -452,7 +452,7 @@ export default function KosuInputPage() {
     <div className="wrap">
       <div className="head">
         <div className="head-left">
-          <span className="page-h page-h-gap">工数入力</span>
+          <span className="page-h page-h-gap">作業工数入力</span>
         </div>
         <div className="head-right">
           <button

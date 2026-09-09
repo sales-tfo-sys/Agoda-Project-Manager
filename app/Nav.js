@@ -237,12 +237,13 @@ function HealthIcon() {
 // 作業工数管理はプロジェクト管理の下に置くが、見られる人は今までどおり全員。
 const TABS = [
   { href: "/dashboard", label: "ダッシュボード", Icon: GridIcon },
+  { href: "/work-requests", label: "作業依頼", Icon: WorkReqIcon },
   { href: "/", label: "施設一覧", Icon: ListIcon },
   // グラフページは一旦削除（app/graphs を除去）
-  { href: "/kosu/input", label: "工数入力", Icon: InputIcon },
-  // HID新規発行依頼・新規作業依頼・フォーム回答は、どれもスプレッドシートから
+  { href: "/kosu/input", label: "作業工数入力", Icon: InputIcon },
+  // HID新規発行依頼・フォーム回答は、どちらもスプレッドシートから
   // 取ってくるデータなので「管理」1つにまとめ、中身はタブで切り替える
-  { href: "/manage", label: "管理", Icon: FormIcon, keys: ["hid", "workReq", "forms"] },
+  { href: "/manage", label: "管理", Icon: FormIcon, keys: ["hid", "forms"] },
   { divider: true },
   { href: "/design-spec", label: "設計仕様書", Icon: SpecIcon, admin: true },
   { href: "/system-health", label: "システムヘルス", Icon: HealthIcon, admin: true },
