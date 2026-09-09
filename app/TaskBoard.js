@@ -2389,35 +2389,8 @@ export default function TaskBoard({ mode = "view" }) {
                     作業工数表
                   </button>
                 </div>
-                {/* Regular Task / Ad Hoc Task の切り替えは、対象年のプルダウンの左に置く */}
-                {hasSubTabs && (
-                  <div className="segbar segbar-sm" role="tablist" aria-label="進捗表の表示切替">
-                    <span
-                      className="segbar-thumb"
-                      style={{ transform: `translateX(${subTab === "adhoc" ? "100%" : "0%"})` }}
-                      aria-hidden="true"
-                    />
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={subTab === "regular"}
-                      className={"segbar-btn" + (subTab === "regular" ? " active" : "")}
-                      onClick={() => setSubTab("regular")}
-                    >
-                      Regular Task
-                    </button>
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={subTab === "adhoc"}
-                      className={"segbar-btn" + (subTab === "adhoc" ? " active" : "")}
-                      onClick={() => setSubTab("adhoc")}
-                    >
-                      Ad Hoc Task
-                    </button>
-                  </div>
-                )}
                 {/* 一覧 / グラフ（もとの「進捗グラフ」タブ）。
+                    作業工数表と同じく、切り替えの並びは 一覧/グラフ を左に置く。
                     Regular / Ad Hoc の選択はそのままで中身だけ入れ替わる */}
                 {hasSubTabs && (
                   <div className="segbar segbar-sm" role="tablist" aria-label="一覧とグラフの切替">
@@ -2443,6 +2416,34 @@ export default function TaskBoard({ mode = "view" }) {
                       onClick={() => switchProgView("chart")}
                     >
                       グラフ
+                    </button>
+                  </div>
+                )}
+                {/* Regular Task / Ad Hoc Task の切り替えは、対象年のプルダウンの左に置く */}
+                {hasSubTabs && (
+                  <div className="segbar segbar-sm" role="tablist" aria-label="進捗表の表示切替">
+                    <span
+                      className="segbar-thumb"
+                      style={{ transform: `translateX(${subTab === "adhoc" ? "100%" : "0%"})` }}
+                      aria-hidden="true"
+                    />
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={subTab === "regular"}
+                      className={"segbar-btn" + (subTab === "regular" ? " active" : "")}
+                      onClick={() => setSubTab("regular")}
+                    >
+                      Regular Task
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={subTab === "adhoc"}
+                      className={"segbar-btn" + (subTab === "adhoc" ? " active" : "")}
+                      onClick={() => setSubTab("adhoc")}
+                    >
+                      Ad Hoc Task
                     </button>
                   </div>
                 )}
