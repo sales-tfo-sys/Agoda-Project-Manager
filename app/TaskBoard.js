@@ -275,6 +275,29 @@ function Clocks() {
   );
 }
 
+// 進捗グラフに出しているタスクに付ける印（棒グラフ）。
+// グルーピング・シート連携の印と同じ並びに置く。
+function GraphMarkIcon({ size = 13, w = 2.6 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={w}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <line x1="4.5" y1="20" x2="4.5" y2="12" />
+      <line x1="10.5" y1="20" x2="10.5" y2="5" />
+      <line x1="16.5" y1="20" x2="16.5" y2="15" />
+      <line x1="21" y1="20" x2="3" y2="20" />
+    </svg>
+  );
+}
+
 // ドラッグの取っ手（優先順のセルに出す）
 function Grip({ onDragStart, onDragEnd, title }) {
   return (
@@ -2246,6 +2269,12 @@ export default function TaskBoard({ mode = "view" }) {
   const regularTypes = renderTypes.filter((t) => !REGULAR_EXCLUDE.has(t));
 
   const fmt = (n) => n.toLocaleString("ja-JP");
+  // 管理表の件数：数値なら3桁区切り、未設定は「—」。数字でない文字はそのまま出す
+  const mngNum = (v) => {
+    if (v == null || v === "") return "—";
+    const n = Number(String(v).replace(/,/g, "").trim());
+    return Number.isFinite(n) ? n.toLocaleString("ja-JP") : v;
+  };
   const dateLabel =
     dateOptions.find((o) => o.code === dateCode)?.label || dateCode;
   // 編集モード（プロジェクト管理）は Regular ＋ Ad Hoc の編集に集中するため
@@ -2667,13 +2696,31 @@ export default function TaskBoard({ mode = "view" }) {
                                         <line x1="9" y1="9" x2="9" y2="21" />
                                       </svg>
                                     </button>
+                                    {/* 進捗グラフに出すかどうか。押すたびに切り替わる */}
+                                    <button
+                                      type="button"
+                                      className={"klink-btn klink-graph" + (!o.noGraph ? " on" : "")}
+                                      onClick={() =>
+                                        setOvField("adhoc", row.key, "noGraph", o.noGraph ? "" : true)
+                                      }
+                                      title={
+                                        o.noGraph
+                                          ? "進捗グラフに出さない設定です（押すと出すようにします）"
+                                          : ONGOING.includes(row.status)
+                                          ? "進捗グラフに出しています（押すと出さないようにします）"
+                                          : "進捗グラフに出す設定です（対応中になると出ます）"
+                                      }
+                                      aria-label="進捗グラフに出すかどうか"
+                                    >
+                                      <GraphMarkIcon />
+                                    </button>
                                   </span>
                                 )}
                                 {/* 紐づけ先が自分と同じ名前でも「設定済み」なので印を出す
                                     （編集中のボタンは点灯するのに、編集を終えると消えてしまうため） */}
                                 {!editable &&
                                   row.kind === "Ad Hoc" &&
-                                  (o.kosuLink || o.sheetUrl) && (
+                                  (o.kosuLink || o.sheetUrl || (!o.noGraph && ONGOING.includes(row.status))) && (
                                     <span className="mng-task-marks">
                                       {o.kosuLink && (
                                         <span
@@ -2695,6 +2742,11 @@ ${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めません�
                                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="9" x2="9" y2="21" /></svg>
                                         </span>
                                       )}
+                                      {!o.noGraph && ONGOING.includes(row.status) && (
+                                        <span className="mng-link-mark graph" title="進捗グラフに出しています" aria-label="進捗グラフに出しています">
+                                          <GraphMarkIcon />
+                                        </span>
+                                      )}
                                     </span>
                                   )}
                               </span>
@@ -2703,8 +2755,9 @@ ${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めません�
                             <td className="mng-date">{row.kind === "Ad Hoc" ? (editable ? dateField(row, "end") : (row.end || "—")) : <span className="mng-dim">—</span>}</td>
                             <td className="l">{editable ? (<AssignCell scope={row.scope} akey={row.key} ids={ids} persons={persons} retired={retiredPersons} allowRetired={row.status === "Complete"} setAssign={setAssign} />) : (ids.length ? ids.map((id) => { const p = personById.get(id); return p ? (<span key={id} className={"mng-asg-name" + (p.active === false ? " gone" : "")} title={p.active === false ? `${p.name}（退職）` : undefined}>{p.name}</span>) : null; }).filter(Boolean) : "—")}</td>
                             <td>{editable ? (<select className="ed-input ed-sel" value={row.status || ""} onChange={(e) => setOvField(row.scope, row.key, "status", e.target.value)}><option value="">—</option>{STATUS_OPTIONS.map((s) => (<option key={s} value={s}>{s}</option>))}</select>) : (<span className={"st-pill " + statusClass(row.status)}>{row.status || "—"}</span>)}</td>
-                            <td className="v-strong">{row.count == null ? "—" : row.count}</td>
-                            <td>{row.done == null ? "—" : row.done}</td>
+                            {/* 件数は3桁ごとに区切って出す（41,311 のように） */}
+                            <td className="v-strong">{mngNum(row.count)}</td>
+                            <td>{mngNum(row.done)}</td>
                             <td>{row.rate == null ? "—" : row.rate + "%"}</td>
                             {/* 操作：シートを開く／詳細編集／削除。
                                 scope=adhoc（Ad Hoc・区分Regularで追加した分）だけが対象。 */}
@@ -3347,7 +3400,7 @@ ${e.memo}` : e.task}>
                                 // グルーピング／シート連携の印はタスク列の右端に寄せる
                                 <span className="tname-view">
                                   <span className="tname-text">{val("name", t.task)}</span>
-                                  {(o.kosuLink || o.sheetUrl) && (
+                                  {(o.kosuLink || o.sheetUrl || (!o.noGraph && ONGOING.includes(status))) && (
                                     <span className="tname-marks">
                                       {o.kosuLink && (
                                         <span
@@ -3372,6 +3425,11 @@ ${e.memo}` : e.task}>
                                             <line x1="3" y1="9" x2="21" y2="9" />
                                             <line x1="9" y1="9" x2="9" y2="21" />
                                           </svg>
+                                        </span>
+                                      )}
+                                      {!o.noGraph && ONGOING.includes(status) && (
+                                        <span className="graph-mark" title="進捗グラフに出しています" aria-label="進捗グラフに出しています">
+                                          <GraphMarkIcon size={12.5} w={2.8} />
                                         </span>
                                       )}
                                     </span>

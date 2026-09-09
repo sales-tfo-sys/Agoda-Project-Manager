@@ -11471,3 +11471,28 @@ button.drive-link:disabled {
   line-height: 1.6;
   color: var(--ink-3);
 }
+
+/* 進捗グラフに出している印・ボタン。グルーピング＝紫／シート＝緑と分けて、こちらは青 */
+.graph-mark {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 5px;
+}
+.mng-link-mark.graph,
+.adhoc-table .tname-marks .graph-mark {
+  color: #2f6be0;
+}
+.klink-btn.klink-graph.on {
+  background: #2f6be0;
+  border-color: #2f6be0;
+  color: #ffffff;
+}
+.klink-btn.klink-graph:hover {
+  color: #2f6be0;
+  border-color: #2f6be0;
+}
+.klink-btn.klink-graph.on:hover {
+  color: #ffffff;
+  background: #2757b6;
+  border-color: #2757b6;
+}
