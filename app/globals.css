@@ -11931,3 +11931,22 @@ body {
   font-size: 11.5px;
   padding: 1px 0;
 }
+
+/* ══════════════ 作業リソース詳細：2段に分ける ══════════════
+   上の段に「メンバー別リソース割合」「Ad Hoc 詳細」、下の段に「担当者別 内訳」。
+   （3枚を横一列に並べると数値表のぶんグラフが細くなるため） */
+.chart-grid.res-row {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.chart-grid.res-row > .chart-card.res-card {
+  grid-column: 1 / -1;
+  width: auto;
+  max-width: none;
+}
+/* 下の段は横幅いっぱいなので、表も枠の幅に合わせて広げる
+   （見出しの帯はカードの端まで伸ばしたいので、余白は表側に持たせる） */
+.res-row > .chart-card.res-card > .res-table {
+  width: calc(100% - 24px);
+  max-width: none;
+  margin: 10px 12px 11px;
+}
