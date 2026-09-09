@@ -11772,3 +11772,13 @@ body {
 .persons-page .pd.role-member .pd-caret {
   color: var(--ink-2);
 }
+
+/* スケジュールページだけは丸角に戻す（カレンダー・予定・時計）。
+   表やグラフのページと違って一覧性より見た目の柔らかさを優先する。 */
+.cal-card,
+.sched-panel {
+  border-radius: 14px;
+}
+.clock {
+  border-radius: 14px;
+}
