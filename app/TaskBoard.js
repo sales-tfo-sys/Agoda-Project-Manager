@@ -11,6 +11,7 @@ import { holidayName, dowLabel } from "../lib/holidays";
 import UpdatedPop from "./UpdatedPop";
 import Pulldown from "./Pulldown";
 import { cachedJson, peekJson, invalidate } from "./dataCache";
+import ResourceCharts, { useResource } from "./kosu/ResourceCharts";
 
 const TYPE_CODE = "ドロップダウン_13"; // 案件名（空欄は Hotel依頼）
 const STAGE_CODE = "ドロップダウン"; // Stage（ステータス）
@@ -2013,6 +2014,7 @@ export default function TaskBoard({ mode = "view" }) {
       const v = localStorage.getItem("agoda-dash-tab");
       if (v === "schedule") setTab("schedule");
       else if (v === "graph") setTab("graph");
+      else if (v === "kosu") setTab("kosu");
       // 旧「全体 / 案件詳細」の保存値は進捗表に読み替える
       else if (v === "overview" || v === "cases" || v === "progress") setTab("progress");
     } catch {}
@@ -2300,6 +2302,8 @@ export default function TaskBoard({ mode = "view" }) {
   // 進捗表・進捗グラフの中の切り替え（Regular Task / Ad Hoc Task）。
   // 上のタブ行に一緒に並べるので、どちらのタブを見ているかで中身を差し替える。
   const hasSubTabs = !isEdit && (activeTab === "progress" || activeTab === "graph");
+  // 作業工数グラフ（作業リソース詳細）。タブを開いたときだけ読み込む。
+  const res = useResource(!isEdit && activeTab === "kosu");
   const subTab = activeTab === "graph" ? graphTab : tableTab;
   const setSubTab = activeTab === "graph" ? switchGraphTab : switchTableTab;
 
@@ -2358,6 +2362,16 @@ export default function TaskBoard({ mode = "view" }) {
                   >
                     進捗グラフ
                   </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    data-tab="kosu"
+                    aria-selected={tab === "kosu"}
+                    className={"segbar-btn" + (tab === "kosu" ? " active" : "")}
+                    onClick={() => switchTab("kosu")}
+                  >
+                    作業工数グラフ
+                  </button>
                 </div>
                 {/* Regular Task / Ad Hoc Task の切り替えは、対象年のプルダウンの左に置く */}
                 {hasSubTabs && (
@@ -2393,13 +2407,23 @@ export default function TaskBoard({ mode = "view" }) {
                 )}
                 {/* 対象年は「進捗」の集計に使うもの。
                     スケジュールは Ad Hoc の開始日・期日で表示するので出さない。 */}
-                {years.length > 0 && activeTab !== "schedule" && (
+                {years.length > 0 && (activeTab === "progress" || activeTab === "graph") && (
                   <Pulldown
                     value={year ?? ""}
                     onChange={(v) => setYear(Number(v))}
                     ariaLabel="対象年"
                     icon="calendar"
                     options={years.map((y) => ({ value: y, label: `${y} 年` }))}
+                  />
+                )}
+                {/* 作業工数グラフは週ごとの集計なので、対象年ではなく対象週を出す */}
+                {activeTab === "kosu" && res.wi != null && res.weekOptions.length > 0 && (
+                  <Pulldown
+                    value={res.wi}
+                    onChange={(v) => res.setWi(Number(v))}
+                    ariaLabel="対象週"
+                    icon="calendar"
+                    options={res.weekOptions}
                   />
                 )}
               </div>
@@ -2426,7 +2450,24 @@ export default function TaskBoard({ mode = "view" }) {
         </div>
       </div>
 
-      {error ? (
+      {/* 作業工数グラフ：もと「作業工数管理」の作業リソース詳細（3枚）。
+          案件データ（/api/records）は使わないので、その読み込みは待たない。
+          対象週のプルダウンはヘッダーのタブの右に置いている */}
+      {activeTab === "kosu" && !isEdit ? (
+        res.error ? (
+          <div className="card">
+            <div className="err">{"取得エラー\n\n" + res.error}</div>
+          </div>
+        ) : !res.ready ? (
+          <div className="card">
+            <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>
+          </div>
+        ) : (
+          <div className="tab-panel">
+            <ResourceCharts resource={res.resource} wi={res.wi} weekLabel={res.weekLabel} />
+          </div>
+        )
+      ) : error ? (
         <div className="card">
           <div className="err">{"集計エラー\n\n" + error}</div>
         </div>
