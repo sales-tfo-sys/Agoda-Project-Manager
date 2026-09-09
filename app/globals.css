@@ -11879,7 +11879,9 @@ body {
   flex: 0 0 auto;
   width: 1px;
   height: 22px;
-  margin: 0 5px;
+  /* タイトルと仕切り線、仕切り線とタブのあいだをはっきり空ける
+     （.head-left の gap 10px ＋ この左右の余白） */
+  margin: 0 18px;
   background: var(--border2);
   border-radius: 1px;
 }
