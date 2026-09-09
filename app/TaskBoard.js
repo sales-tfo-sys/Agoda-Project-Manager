@@ -1737,6 +1737,7 @@ export default function TaskBoard({ mode = "view" }) {
     issue: "",
     next: "",
     memo: "",
+    noGraph: false, // 進捗グラフに出すかどうか（既定は出す）
   };
   const [addForm, setAddForm] = useState(ADD_FORM_INIT);
   const setAF = (k, v) => setAddForm((f) => ({ ...f, [k]: v }));
@@ -1834,6 +1835,8 @@ export default function TaskBoard({ mode = "view" }) {
     for (const k of ["daily", "effort", "issue", "next", "memo"]) {
       if (String(addForm[k] || "").trim()) setOvField("adhoc", name, k, addForm[k].trim());
     }
+    // 進捗グラフに出さない設定のときだけ印を付ける（既定は出す＝印なし）
+    if (addForm.noGraph) setOvField("adhoc", name, "noGraph", true);
     if (addForm.assign.length) setAssign("adhoc", name, addForm.assign);
     if (String(addForm.prio).trim()) setPriority("adhoc", name, addForm.prio);
 
@@ -2181,7 +2184,7 @@ export default function TaskBoard({ mode = "view" }) {
         const o = ov[`adhoc|${t.task}`] || EMPTY_OV;
         return { key: t.task, label: t.task, status: o.status ?? t.status, no: t.no, i };
       })
-      .filter((r) => ONGOING.includes(r.status))
+      .filter((r) => ONGOING.includes(r.status) && !(ov[`adhoc|${r.key}`] || EMPTY_OV).noGraph)
       .map((r) => ({ ...r, p: prioOf("adhoc", r.key, r.no) }))
       .sort((a, b) => {
         const na = a.p == null ? Infinity : a.p;
@@ -2197,6 +2200,16 @@ export default function TaskBoard({ mode = "view" }) {
     for (const c of customAdhoc || []) s.add(c.task);
     return s;
   }, [adhoc, customAdhoc]);
+
+  // 「進捗グラフに出さない」設定のタスク。表に無い記録（プロジェクト単位のもの）も
+  // 同じ設定で隠せるよう、上書きデータから直接集める。
+  const adhocNoGraph = useMemo(() => {
+    const s = new Set();
+    for (const [k, v] of Object.entries(ov)) {
+      if (k.startsWith("adhoc|") && v?.noGraph) s.add(k.slice(6));
+    }
+    return s;
+  }, [ov]);
 
   // その日の受注数・完了数を1日1回だけ記録する。
   // Ad Hoc の件数はシートの「今の値」しか読めず、後から遡って数え直せないため。
@@ -3514,6 +3527,7 @@ ${e.memo}` : e.task}>
                   dateCode={dateCode}
                   tasks={adhocOngoing}
                   known={adhocKnown}
+                  hidden={adhocNoGraph}
                   gridRef={adhocGridRef}
                   order={graphOrderOf("adhoc")}
                   onReorder={canEditTasks ? (o) => saveGraphOrder("adhoc", o) : undefined}
@@ -3716,6 +3730,22 @@ ${e.memo}` : e.task}>
               placeholder="例：1"
             />
           </label>
+
+          <div className="fld">
+            進捗グラフ
+            <label className="chk-row">
+              <input
+                type="checkbox"
+                checked={!addForm.noGraph}
+                onChange={(e) => setAF("noGraph", !e.target.checked)}
+              />
+              進捗グラフ（Ad Hoc Task）に表示する
+            </label>
+            <span className="fld-note">
+              対応中（On Track／Behind／Onhold）のあいだ、日ごとの受注数・完了数のグラフを出します。
+              追加したあとでも「詳細」からいつでも変えられます。
+            </span>
+          </div>
 
           <div className="fld">
             対応者
@@ -3929,6 +3959,20 @@ ${e.memo}` : e.task}>
                     placeholder="補足があれば"
                   />
                 </label>
+                <div className="fld">
+                  進捗グラフ
+                  <label className="chk-row">
+                    <input
+                      type="checkbox"
+                      checked={!o.noGraph}
+                      onChange={(e) => set("noGraph", e.target.checked ? "" : true)}
+                    />
+                    進捗グラフ（Ad Hoc Task）に表示する
+                  </label>
+                  <span className="fld-note">
+                    対応中（On Track／Behind／Onhold）のあいだ、日ごとの受注数・完了数のグラフを出します。
+                  </span>
+                </div>
                 {driveCfg?.configured && o.sheetUrl && (
                   <div className="fld">
                     作業シートの保管先

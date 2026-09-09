@@ -11461,3 +11461,13 @@ button.drive-link:disabled {
 .qgrid.qgrid-top {
   margin-top: 18px;
 }
+
+/* モーダルの項目に添える補足文（進捗グラフの設定など） */
+.fld-note {
+  display: block;
+  margin-top: 5px;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.6;
+  color: var(--ink-3);
+}
