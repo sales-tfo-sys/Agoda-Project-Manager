@@ -22,6 +22,10 @@ const STORE_KEY = "agoda-manage-tab";
 export default function ManagePage() {
   const [tab, setTab] = useState("hid");
   const [pages, setPages] = useState(null); // ページ権限（取得前は null）
+  // タブの幅が不揃いなので、選択中ボタンの実寸からスライダーを合わせる
+  // （ダッシュボードのタブと同じやり方）。
+  const [segEl, setSegEl] = useState(null);
+  const [segThumb, setSegThumb] = useState(null);
 
   useEffect(() => {
     try {
@@ -36,6 +40,26 @@ export default function ManagePage() {
       .then((j) => setPages(j?.perms?.pages || {}))
       .catch(() => setPages({}));
   }, []);
+
+  useEffect(() => {
+    if (!segEl) return;
+    const fit = () => {
+      const el = segEl.querySelector(".segbar-btn.active");
+      if (el) setSegThumb({ left: el.offsetLeft, width: el.offsetWidth });
+    };
+    fit();
+    // 文字の読み込みなどで幅が後から変わることがあるので、描画直後にも測り直す
+    const raf = requestAnimationFrame(fit);
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(fit) : null;
+    ro?.observe(segEl);
+    document.fonts?.ready?.then(fit).catch(() => {});
+    window.addEventListener("resize", fit);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro?.disconnect();
+      window.removeEventListener("resize", fit);
+    };
+  }, [segEl, tab, pages]);
 
   const switchTab = (v) => {
     setTab(v);
@@ -57,16 +81,16 @@ export default function ManagePage() {
     );
   }
 
-  const i = shown.findIndex((t) => t.key === active.key);
   const tabs = shown.length > 1 && (
     <div className="tabbar-row">
-      <div className="segbar" role="tablist" aria-label="管理の表示切替">
+      <div className="segbar" role="tablist" aria-label="管理の表示切替" ref={setSegEl}>
         <span
           className="segbar-thumb"
-          style={{
-            width: `${100 / shown.length}%`,
-            transform: `translateX(${i * 100}%)`,
-          }}
+          style={
+            segThumb
+              ? { left: segThumb.left, width: segThumb.width, transform: "none" }
+              : { opacity: 0 }
+          }
           aria-hidden="true"
         />
         {shown.map((t) => (
