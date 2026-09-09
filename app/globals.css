@@ -11835,3 +11835,25 @@ body {
     var(--bg);
   background-attachment: fixed;
 }
+
+/* タブ・絞り込みボタンの件数バッジ：数字を丸の中央に置く。
+   以前「上に寄る」対策で上だけ余白を入れていたぶん、今度は下に寄っていた。
+   上下の余白を無くして、flex で中央に揃える。 */
+.seg-count,
+.mng-fcount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 17px;
+  min-width: 26px;
+  padding: 0 7px;
+  line-height: 1;
+  position: relative;
+  top: 0;
+}
+.segbar-btn .seg-count,
+.segbar-sm .segbar-btn .seg-count {
+  top: 0;
+  align-self: center;
+}
