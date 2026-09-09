@@ -11705,3 +11705,21 @@ select.slim-select,
 .mng-filter .mng-filter-thumb {
   border-radius: 9px;
 }
+
+/* 時計のカードも、ほかの表・グラフの枠と同じく角のある四角にする */
+.clock {
+  border-radius: 0;
+}
+
+/* ページの下地をもう少し暗いグレーにする。
+   カード・表は白のままなので、白との差がはっきりして枠が読みやすくなる。
+   真ん中を明るくしていた白のにじみは、色ムラに見えるので外す。 */
+:root {
+  --bg: #c9ced7;
+}
+body {
+  background: radial-gradient(80% 55% at 88% -10%, rgba(120, 170, 255, 0.1) 0%, transparent 60%),
+    radial-gradient(70% 50% at -8% 104%, rgba(120, 170, 255, 0.08) 0%, transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+}
