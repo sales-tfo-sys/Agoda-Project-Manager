@@ -11866,3 +11866,8 @@ body {
   margin-right: 8px;
   margin-top: 3px;
 }
+
+/* システムヘルス：各パネルの一番外側の枠を丸角にする（中の表はそのまま四角） */
+.sh-panel {
+  border-radius: 14px;
+}
