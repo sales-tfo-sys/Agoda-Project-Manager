@@ -18,6 +18,7 @@ export default function AdhocChart({
   tasks,
   known,
   hidden, // 「進捗グラフに出さない」設定のタスク名（Set）
+  groups, // タスク名 → まとめ先の名前（同じ名前どうしを1枚にする）
   gridRef: outerRef,
   order,
   onReorder,
@@ -46,37 +47,60 @@ export default function AdhocChart({
     };
   }, [year, dateCode]);
 
-  // タスクごとに直近1か月ぶんを切り出す。
-  // 記録が始まる前の日は線を引かない（その日ぶんだけ手前を捨てる）。
+  // グラフ1枚ぶんを組み立てる。
+  //   ・「まとめ先」が設定されているタスクは、同じ名前どうしを1枚にして足し合わせる
+  //   ・直近1か月ぶんだけ切り出し、記録が始まる前の日は線を引かない
   const shown = useMemo(() => {
     if (!data?.days?.length) return [];
     const from = Math.max(0, data.days.length - RECENT_DAYS);
     const days = data.days.slice(from);
-    // 表の対応中タスクに加えて、表の行には無いけれど記録があるもの（担当が
-    // プロジェクト単位で付けていた記録）も後ろに並べる。
-    const list0 = [...(tasks || [])];
-    const inList = new Set(list0.map((t) => t.key));
-    for (const key of Object.keys(data.series || {})) {
-      if (inList.has(key) || known?.has?.(key)) continue;
-      list0.push({ key, label: key });
+
+    // グラフ1枚＝1ユニット。まとめ先があればその名前、無ければタスク名で1枚。
+    const units = [];
+    const byUnit = new Map();
+    const add = (key, label, member) => {
+      let u = byUnit.get(key);
+      if (!u) {
+        u = { key, label, members: [] };
+        byUnit.set(key, u);
+        units.push(u);
+      }
+      u.members.push(member);
+    };
+    for (const t of tasks || []) {
+      if (hidden?.has?.(t.key)) continue;
+      const g = String(groups?.[t.key] || "").trim();
+      add(g || t.key, g || t.label, t.key);
     }
-    // 保存した並びがあればそれを優先する
-    const byKey = new Map(list0.map((t) => [t.key, t]));
-    const list = applyOrder(list0.map((t) => t.key), order).map((k) => byKey.get(k));
+    // 表の行には無いけれど記録があるもの（過去に取り込んだ記録など）も後ろに並べる
+    const inList = new Set((tasks || []).map((t) => t.key));
+    for (const key of Object.keys(data.series || {})) {
+      if (inList.has(key) || known?.has?.(key) || hidden?.has?.(key) || byUnit.has(key)) continue;
+      add(key, key, key);
+    }
 
     // Kintone から数え直しているもの（IHM）は Regular と同じく年単位なので、年を付ける
     const kintone = new Set(data.kintone || []);
     const out = [];
-    for (const t of list) {
-      if (hidden?.has?.(t.key)) continue;
-      const all = data.series?.[t.key];
-      if (!all) continue;
-      const part = all.slice(from);
+    // 保存した並びがあればそれを優先する
+    for (const k of applyOrder(units.map((u) => u.key), order)) {
+      const u = byUnit.get(k);
+      if (!u) continue;
+      // まとめているときは、全員に値がある日だけ足す（欠けたまま足すと数が減って見えるため）
+      const lists = u.members.map((m) => data.series?.[m] || null);
+      const part = days.map((_, i) => {
+        const vs = lists.map((l) => l && l[from + i]);
+        if (vs.some((v) => !v)) return null;
+        return {
+          total: vs.reduce((a, v) => a + v.total, 0),
+          done: vs.reduce((a, v) => a + v.done, 0),
+        };
+      });
       const start = part.findIndex((v) => v);
       if (start < 0) continue; // この期間はまだ記録がない
       out.push({
-        key: t.key,
-        label: kintone.has(t.key) ? `${year}年_${t.label}` : t.label,
+        key: u.key,
+        label: kintone.has(u.key) ? `${year}年_${u.label}` : u.label,
         days: days.slice(start),
         rows: part.slice(start).map((v) => ({
           total: v.total,
@@ -86,7 +110,7 @@ export default function AdhocChart({
       });
     }
     return out;
-  }, [data, tasks, known, hidden, year, order]);
+  }, [data, tasks, known, hidden, groups, year, order]);
 
   const drag = useCardDrag(
     shown.map((c) => c.key),

@@ -11496,3 +11496,23 @@ button.drive-link:disabled {
   background: #2757b6;
   border-color: #2757b6;
 }
+
+/* Regular Task / Ad Hoc Task の切り替えを上のタブ行に並べたので、
+   進捗表側の余分な行は消し、グラフ側はコピーボタンだけの行にする */
+.tab-panel > .sec-row.sub-tabs {
+  margin-top: 0;
+  margin-bottom: 4px;
+  min-height: 0;
+}
+.tabbar-row .segbar.segbar-sm {
+  margin: 0;
+}
+
+/* アカウント管理：ドラッグの取っ手と担当者のあいだの縦罫線を消す
+   （取っ手は列というより行の掴み手なので、担当者と地続きに見せる） */
+.wrap.persons-page .persons-table th.grip-th,
+.wrap.persons-page .persons-table td.grip-td,
+.persons-table th.grip-th,
+.persons-table td.grip-td {
+  border-right: 0;
+}

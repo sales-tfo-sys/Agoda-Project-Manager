@@ -1761,6 +1761,7 @@ export default function TaskBoard({ mode = "view" }) {
     next: "",
     memo: "",
     noGraph: false, // 進捗グラフに出すかどうか（既定は出す）
+    graphGroup: "", // 進捗グラフのまとめ先（同じ名前どうしを1枚にする）
   };
   const [addForm, setAddForm] = useState(ADD_FORM_INIT);
   const setAF = (k, v) => setAddForm((f) => ({ ...f, [k]: v }));
@@ -1860,6 +1861,8 @@ export default function TaskBoard({ mode = "view" }) {
     }
     // 進捗グラフに出さない設定のときだけ印を付ける（既定は出す＝印なし）
     if (addForm.noGraph) setOvField("adhoc", name, "noGraph", true);
+    else if (addForm.graphGroup.trim())
+      setOvField("adhoc", name, "graphGroup", addForm.graphGroup.trim());
     if (addForm.assign.length) setAssign("adhoc", name, addForm.assign);
     if (String(addForm.prio).trim()) setPriority("adhoc", name, addForm.prio);
 
@@ -2234,6 +2237,22 @@ export default function TaskBoard({ mode = "view" }) {
     return s;
   }, [ov]);
 
+  // 進捗グラフのまとめ先。同じ名前を付けたタスクどうしが1枚のグラフになる。
+  //   { タスク名: まとめ先の名前 }
+  const adhocGraphGroups = useMemo(() => {
+    const m = {};
+    for (const [k, v] of Object.entries(ov)) {
+      const g = String(v?.graphGroup || "").trim();
+      if (k.startsWith("adhoc|") && g) m[k.slice(6)] = g;
+    }
+    return m;
+  }, [ov]);
+  // まとめ先の候補（入力欄の候補に出す）
+  const graphGroupNames = useMemo(
+    () => [...new Set(Object.values(adhocGraphGroups))].sort(),
+    [adhocGraphGroups]
+  );
+
   // その日の受注数・完了数を1日1回だけ記録する。
   // Ad Hoc の件数はシートの「今の値」しか読めず、後から遡って数え直せないため。
   // シートの読み込みは表示より遅れて届くので、一度きりではなく
@@ -2280,6 +2299,11 @@ export default function TaskBoard({ mode = "view" }) {
   // 編集モード（プロジェクト管理）は Regular ＋ Ad Hoc の編集に集中するため
   // 編集画面（プロジェクト管理）はタブを使わない。
   const activeTab = isEdit ? "edit" : tab;
+  // 進捗表・進捗グラフの中の切り替え（Regular Task / Ad Hoc Task）。
+  // 上のタブ行に一緒に並べるので、どちらのタブを見ているかで中身を差し替える。
+  const hasSubTabs = !isEdit && (activeTab === "progress" || activeTab === "graph");
+  const subTab = activeTab === "graph" ? graphTab : tableTab;
+  const setSubTab = activeTab === "graph" ? switchGraphTab : switchTableTab;
 
   return (
     <div className="wrap">
@@ -2364,6 +2388,38 @@ export default function TaskBoard({ mode = "view" }) {
               進捗グラフ
             </button>
             </div>
+            {/* Regular Task / Ad Hoc Task の切り替えは、対象年のプルダウンの左に置く */}
+            {hasSubTabs && (
+              <div
+                className="segbar segbar-sm"
+                role="tablist"
+                aria-label={activeTab === "graph" ? "進捗グラフの表示切替" : "進捗表の表示切替"}
+              >
+                <span
+                  className="segbar-thumb"
+                  style={{ transform: `translateX(${subTab === "adhoc" ? "100%" : "0%"})` }}
+                  aria-hidden="true"
+                />
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={subTab === "regular"}
+                  className={"segbar-btn" + (subTab === "regular" ? " active" : "")}
+                  onClick={() => setSubTab("regular")}
+                >
+                  Regular Task
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={subTab === "adhoc"}
+                  className={"segbar-btn" + (subTab === "adhoc" ? " active" : "")}
+                  onClick={() => setSubTab("adhoc")}
+                >
+                  Ad Hoc Task
+                </button>
+              </div>
+            )}
             {/* 対象年は「進捗」の集計に使うもの。
                 スケジュールは Ad Hoc の開始日・期日で表示するので出さない。 */}
             {years.length > 0 && activeTab !== "schedule" && (
@@ -2743,7 +2799,15 @@ ${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めません�
                                         </span>
                                       )}
                                       {!o.noGraph && ONGOING.includes(row.status) && (
-                                        <span className="mng-link-mark graph" title="進捗グラフに出しています" aria-label="進捗グラフに出しています">
+                                        <span
+                                          className="mng-link-mark graph"
+                                          title={
+                                            o.graphGroup
+                                              ? `進捗グラフ：「${o.graphGroup}」にまとめています`
+                                              : "進捗グラフに出しています"
+                                          }
+                                          aria-label="進捗グラフに出しています"
+                                        >
                                           <GraphMarkIcon />
                                         </span>
                                       )}
@@ -2798,36 +2862,6 @@ ${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めません�
               </div>
             );
           })()}
-
-          {activeTab === "progress" && !isEdit && (
-            <div className="sec-row sub-tabs">
-              <div className="segbar segbar-sm" role="tablist" aria-label="進捗表の表示切替">
-                <span
-                  className="segbar-thumb"
-                  style={{ transform: `translateX(${tableTab === "adhoc" ? "100%" : "0%"})` }}
-                  aria-hidden="true"
-                />
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={tableTab === "regular"}
-                  className={"segbar-btn" + (tableTab === "regular" ? " active" : "")}
-                  onClick={() => switchTableTab("regular")}
-                >
-                  Regular Task
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={tableTab === "adhoc"}
-                  className={"segbar-btn" + (tableTab === "adhoc" ? " active" : "")}
-                  onClick={() => switchTableTab("adhoc")}
-                >
-                  Ad Hoc Task
-                </button>
-              </div>
-            </div>
-          )}
 
           {activeTab === "progress" && !isEdit && tableTab === "regular" && (
           <div className="tab-panel overview-row">
@@ -3428,7 +3462,15 @@ ${e.memo}` : e.task}>
                                         </span>
                                       )}
                                       {!o.noGraph && ONGOING.includes(status) && (
-                                        <span className="graph-mark" title="進捗グラフに出しています" aria-label="進捗グラフに出しています">
+                                        <span
+                                          className="graph-mark"
+                                          title={
+                                            o.graphGroup
+                                              ? `進捗グラフ：「${o.graphGroup}」にまとめています`
+                                              : "進捗グラフに出しています"
+                                          }
+                                          aria-label="進捗グラフに出しています"
+                                        >
                                           <GraphMarkIcon size={12.5} w={2.8} />
                                         </span>
                                       )}
@@ -3540,32 +3582,8 @@ ${e.memo}` : e.task}>
 
           {activeTab === "graph" && !isEdit && (
             <div className="tab-panel">
+              {/* 切り替えは上のタブ行に移したので、ここはコピーボタンだけ */}
               <div className="sec-row sub-tabs">
-                <div className="segbar segbar-sm" role="tablist" aria-label="進捗グラフの表示切替">
-                  <span
-                    className="segbar-thumb"
-                    style={{ transform: `translateX(${graphTab === "adhoc" ? "100%" : "0%"})` }}
-                    aria-hidden="true"
-                  />
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={graphTab === "regular"}
-                    className={"segbar-btn" + (graphTab === "regular" ? " active" : "")}
-                    onClick={() => switchGraphTab("regular")}
-                  >
-                    Regular Task
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={graphTab === "adhoc"}
-                    className={"segbar-btn" + (graphTab === "adhoc" ? " active" : "")}
-                    onClick={() => switchGraphTab("adhoc")}
-                  >
-                    Ad Hoc Task
-                  </button>
-                </div>
                 <CopyChartsBtn targetRef={graphTab === "regular" ? graphGridRef : adhocGridRef} />
               </div>
               {graphTab === "regular" ? (
@@ -3586,6 +3604,7 @@ ${e.memo}` : e.task}>
                   tasks={adhocOngoing}
                   known={adhocKnown}
                   hidden={adhocNoGraph}
+                  groups={adhocGraphGroups}
                   gridRef={adhocGridRef}
                   order={graphOrderOf("adhoc")}
                   onReorder={canEditTasks ? (o) => saveGraphOrder("adhoc", o) : undefined}
@@ -3803,6 +3822,25 @@ ${e.memo}` : e.task}>
               対応中（On Track／Behind／Onhold）のあいだ、日ごとの受注数・完了数のグラフを出します。
               追加したあとでも「詳細」からいつでも変えられます。
             </span>
+            {!addForm.noGraph && (
+              <>
+                <input
+                  type="text"
+                  list="graph-group-names-add"
+                  value={addForm.graphGroup}
+                  onChange={(e) => setAF("graphGroup", e.target.value)}
+                  placeholder="まとめ先（まとめないときは空のまま）"
+                />
+                <datalist id="graph-group-names-add">
+                  {graphGroupNames.map((n) => (
+                    <option key={n} value={n} />
+                  ))}
+                </datalist>
+                <span className="fld-note">
+                  同じ名前を付けたタスクどうしを、足し合わせて1枚のグラフにします。
+                </span>
+              </>
+            )}
           </div>
 
           <div className="fld">
@@ -4031,6 +4069,27 @@ ${e.memo}` : e.task}>
                     対応中（On Track／Behind／Onhold）のあいだ、日ごとの受注数・完了数のグラフを出します。
                   </span>
                 </div>
+                {!o.noGraph && (
+                  <label className="fld">
+                    進捗グラフのまとめ先
+                    <input
+                      type="text"
+                      list="graph-group-names"
+                      value={cur("graphGroup")}
+                      onChange={(e) => set("graphGroup", e.target.value)}
+                      placeholder="まとめないときは空のまま"
+                    />
+                    <datalist id="graph-group-names">
+                      {graphGroupNames.map((n) => (
+                        <option key={n} value={n} />
+                      ))}
+                    </datalist>
+                    <span className="fld-note">
+                      同じ名前を付けたタスクどうしを、受注数・完了数を足し合わせて1枚のグラフにします。
+                      グラフのタイトルはこの名前になります。
+                    </span>
+                  </label>
+                )}
                 {driveCfg?.configured && o.sheetUrl && (
                   <div className="fld">
                     作業シートの保管先
