@@ -5,6 +5,7 @@ import Modal from "../Modal";
 import { useUi } from "../Ui";
 import ManageIcon from "../manage/ManageIcon";
 import Pulldown from "../Pulldown";
+import { cachedJson } from "../dataCache";
 
 // HID新規発行依頼の列定義（すべて手動入力）。実シートの項目に合わせる。
 const COLUMNS = [
@@ -37,8 +38,7 @@ export default function HidRequestsPage({ embedded, tabs } = {}) {
   const { setBusy, flashDone, showToast, busy } = useUi();
 
   useEffect(() => {
-    fetch("/api/auth/me", { cache: "no-store" })
-      .then((r) => r.json())
+    cachedJson("/api/auth/me", 60 * 1000)
       .then((d) => setCanEdit(!!d?.perms?.pages?.hid?.edit))
       .catch(() => {});
   }, []);

@@ -10,6 +10,7 @@ import Calendar from "./Calendar";
 import { holidayName, dowLabel } from "../lib/holidays";
 import UpdatedPop from "./UpdatedPop";
 import Pulldown from "./Pulldown";
+import { cachedJson, peekJson, invalidate } from "./dataCache";
 
 const TYPE_CODE = "ドロップダウン_13"; // 案件名（空欄は Hotel依頼）
 const STAGE_CODE = "ドロップダウン"; // Stage（ステータス）
@@ -1315,7 +1316,11 @@ export default function TaskBoard({ mode = "view" }) {
     try {
       const res = await fetch("/api/kintone-sync", { method: "POST" }).then((r) => r.json());
       if (res.error) setError(res.error);
-      else await load();
+      else {
+        // 取り込んだら、ためていた案件データは捨てて取り直す
+        invalidate("/api/records");
+        await load();
+      }
     } catch (e) {
       setError(String(e?.message || e));
     } finally {
@@ -1326,20 +1331,15 @@ export default function TaskBoard({ mode = "view" }) {
   }, []);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    // 前に取ったものがあれば、待たせずにそのまま出す
+    setLoading(!peekJson("/api/records"));
     setError(null);
     try {
-      const [res, ares] = await Promise.all([
-        fetch("/api/records", { cache: "no-store" }),
-        fetch("/api/adhoc", { cache: "no-store" }).catch(() => null),
+      const [json, aj] = await Promise.all([
+        cachedJson("/api/records"),
+        cachedJson("/api/adhoc").catch(() => null),
       ]);
-      try {
-        const aj = ares ? await ares.json() : null;
-        setAdhoc(aj && !aj.error ? aj.tasks || [] : []);
-      } catch {
-        setAdhoc([]);
-      }
-      const json = await res.json();
+      setAdhoc(aj && !aj.error ? aj.tasks || [] : []);
       if (json.error) setError(json.error);
       else {
         setRecords(json.records || []);
@@ -1772,8 +1772,7 @@ export default function TaskBoard({ mode = "view" }) {
   // ログイン中の権限（タスク編集の可否・アカウント管理の閲覧可否）
   const [perms, setPerms] = useState(null);
   useEffect(() => {
-    fetch("/api/auth/me", { cache: "no-store" })
-      .then((r) => r.json())
+    cachedJson("/api/auth/me", 60 * 1000)
       .then((d) => setPerms(d?.perms || null))
       .catch(() => {});
   }, []);

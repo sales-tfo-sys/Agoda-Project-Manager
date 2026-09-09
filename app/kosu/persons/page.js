@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useUi } from "../../Ui";
 import Pulldown from "../../Pulldown";
+import { cachedJson } from "../../dataCache";
 
 // 権限の選択肢（モーダルと一覧で同じものを使う）
 const ROLE_OPTIONS = [
@@ -79,8 +80,7 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
   const [perms, setPerms] = useState(null);
   const [permsLoaded, setPermsLoaded] = useState(false);
   useEffect(() => {
-    fetch("/api/auth/me", { cache: "no-store" })
-      .then((r) => r.json())
+    cachedJson("/api/auth/me", 60 * 1000)
       .then((d) => setPerms(d?.perms || null))
       .catch(() => setPerms(null))
       .finally(() => setPermsLoaded(true));

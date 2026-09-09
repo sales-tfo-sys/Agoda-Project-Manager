@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import HidRequestsPage from "../hid-requests/page";
 import WorkRequestsPage from "../work-requests/page";
 import FormsPage from "../forms/page";
+import { cachedJson } from "../dataCache";
 
 // 「管理」ページ。
 // HID新規発行依頼／新規作業依頼／フォーム回答は、どれも
@@ -35,8 +36,7 @@ export default function ManagePage() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/auth/me", { cache: "no-store" })
-      .then((r) => r.json())
+    cachedJson("/api/auth/me", 60 * 1000)
       .then((j) => setPages(j?.perms?.pages || {}))
       .catch(() => setPages({}));
   }, []);

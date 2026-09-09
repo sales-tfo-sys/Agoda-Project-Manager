@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useNavLoading } from "./NavLoading";
 import { pageKeyForPath } from "../lib/pages";
+import { cachedJson } from "./dataCache";
 
 function LogoutIcon() {
   return (
@@ -260,8 +261,7 @@ export default function Sidebar() {
   const { start } = useNavLoading();
 
   useEffect(() => {
-    fetch("/api/auth/me", { cache: "no-store" })
-      .then((r) => r.json())
+    cachedJson("/api/auth/me", 60 * 1000)
       .then(setMe)
       .catch(() => {});
   }, [pathname]);

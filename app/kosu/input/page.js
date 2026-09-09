@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useUi } from "../../Ui";
+import { cachedJson } from "../../dataCache";
 
 // Regular task は従来どおり固定表示（完了・対応者による絞り込みの対象外）
 function isRegular(t) {
@@ -35,8 +36,7 @@ export default function KosuInputPage() {
   const [me, setMe] = useState(null);
 
   useEffect(() => {
-    fetch("/api/auth/me", { cache: "no-store" })
-      .then((r) => r.json())
+    cachedJson("/api/auth/me", 60 * 1000)
       .then(setMe)
       .catch(() => setMe({}));
   }, []);

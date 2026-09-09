@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Modal from "../Modal";
 import { useUi } from "../Ui";
 import ManageIcon from "../manage/ManageIcon";
+import { cachedJson } from "../dataCache";
 
 // 最終回答日時のラベル整形（今日 HH:MM / 昨日 HH:MM / M/D HH:MM）
 function fmtUpdated(ms) {
@@ -61,8 +62,7 @@ export default function FormsPage({ embedded, tabs } = {}) {
     fetch("/api/form-config", { cache: "no-store" }).then((r) => r.json()).then(setCfg).catch(() => {});
   }, []);
   useEffect(() => {
-    fetch("/api/auth/me", { cache: "no-store" })
-      .then((r) => r.json())
+    cachedJson("/api/auth/me", 60 * 1000)
       .then((d) => setCanEdit(!!d?.perms?.editTasks))
       .catch(() => {});
   }, []);

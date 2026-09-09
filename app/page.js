@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import UpdatedPop from "./UpdatedPop";
 import Pulldown from "./Pulldown";
+import { cachedJson, peekJson, invalidate } from "./dataCache";
 
 const TYPE_ORDER = ["Hotel", "ACQ", "Liberty", "Temairazu", "IHM"];
 
@@ -312,18 +313,18 @@ export default function Page() {
     );
 
   useEffect(() => {
-    fetch("/api/auth/me", { cache: "no-store" })
-      .then((r) => r.json())
+    cachedJson("/api/auth/me", 60 * 1000)
       .then((d) => setCanSync(!!d?.perms?.editTasks))
       .catch(() => {});
   }, []);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    // 前に取ったものがあれば、待たせずにそのまま出す
+    const cached = peekJson("/api/records");
+    setLoading(!cached);
     setError(null);
     try {
-      const res = await fetch("/api/records", { cache: "no-store" });
-      const json = await res.json();
+      const json = await cachedJson("/api/records");
       if (json.error) setError(json.error);
       setData(json);
       // 表示は Kintone を取り込んだ時刻（保存済みなら fetchedAt）
@@ -341,7 +342,11 @@ export default function Page() {
     try {
       const res = await fetch("/api/kintone-sync", { method: "POST" }).then((r) => r.json());
       if (res.error) setError(res.error);
-      else await load();
+      else {
+        // 取り込んだら、ためていた案件データは捨てて取り直す
+        invalidate("/api/records");
+        await load();
+      }
     } catch (e) {
       setError(String(e?.message || e));
     } finally {

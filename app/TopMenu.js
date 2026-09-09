@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { cachedJson } from "./dataCache";
 
 // 右上の共通メニュー。よく使うページへのショートカット。
 export default function TopMenu() {
@@ -12,8 +13,7 @@ export default function TopMenu() {
   const pathname = usePathname();
 
   useEffect(() => {
-    fetch("/api/auth/me", { cache: "no-store" })
-      .then((r) => r.json())
+    cachedJson("/api/auth/me", 60 * 1000)
       .then(setMe)
       .catch(() => {});
   }, [pathname]);

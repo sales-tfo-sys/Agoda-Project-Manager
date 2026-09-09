@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Modal from "../Modal";
 import { useUi } from "../Ui";
 import ManageIcon from "../manage/ManageIcon";
+import { cachedJson } from "../dataCache";
 
 // 手動入力の3項目
 const EMPTY_CELL = { created: false, recordNo: "", doneDate: "" };
@@ -46,8 +47,7 @@ export default function WorkRequestsPage({ embedded, tabs } = {}) {
     fetch("/api/form-config", { cache: "no-store" }).then((r) => r.json()).then(setCfg).catch(() => {});
   }, []);
   useEffect(() => {
-    fetch("/api/auth/me", { cache: "no-store" })
-      .then((r) => r.json())
+    cachedJson("/api/auth/me", 60 * 1000)
       .then((d) => setCanEdit(!!d?.perms?.pages?.workReq?.edit))
       .catch(() => {});
   }, []);
