@@ -1679,6 +1679,24 @@ export default function TaskBoard({ mode = "view" }) {
   const [sheetErrors, setSheetErrors] = useState({});
   // シート連携の設定モーダル対象タスク
   const [cfgTask, setCfgTask] = useState(null);
+  // サービスアカウントの案内（シートを共有してもらうためのメールアドレス）
+  const [saOpen, setSaOpen] = useState(false);
+  const [saCfg, setSaCfg] = useState(null);
+  const [saCopied, setSaCopied] = useState(false);
+  const openSa = () => {
+    setSaOpen(true);
+    setSaCopied(false);
+    if (!saCfg) cachedJson("/api/form-config", 5 * 60 * 1000).then(setSaCfg).catch(() => {});
+  };
+  const copySa = async () => {
+    const mail = saCfg?.serviceEmail;
+    if (!mail) return;
+    try {
+      await navigator.clipboard.writeText(mail);
+      setSaCopied(true);
+      setTimeout(() => setSaCopied(false), 1600);
+    } catch {}
+  };
   // 詳細編集モーダル（管理表に列が無い項目）の対象タスク
   const [detailTask, setDetailTask] = useState(null);
   // Google ドライブ連携（未設定なら関連UIを出さない）
@@ -2056,6 +2074,9 @@ export default function TaskBoard({ mode = "view" }) {
   const [segThumb, setSegThumb] = useState(null);
   // 「作業工数表」タブの操作部品（対応中/完了・対象月）をヘッダーに出すための置き場所
   const [kosuTools, setKosuTools] = useState(null);
+  // プロジェクト管理の操作部品もヘッダーに出す（左＝対象年・絞り込み／右＝編集・追加）
+  const [mngTools, setMngTools] = useState(null);
+  const [mngActions, setMngActions] = useState(null);
   useEffect(() => {
     if (!segEl) return;
     const fit = () => {
@@ -2346,6 +2367,13 @@ export default function TaskBoard({ mode = "view" }) {
             </svg>
           </span>
           <span className="page-h page-h-gap">{isEdit ? "プロジェクト管理" : "ダッシュボード"}</span>
+          {/* プロジェクト管理も同じ形。対象年と絞り込みをここへ差し込んでもらう */}
+          {isEdit && (
+            <>
+              <span className="head-sep" aria-hidden="true" />
+              <span className="head-tools mng-head-tools" ref={setMngTools} />
+            </>
+          )}
           {/* タブと対象年はヘッダーの中に置く。
               ページタイトルとのあいだは少し空けて、縦の仕切り線で区切る。 */}
           {!isEdit && (
@@ -2507,6 +2535,7 @@ export default function TaskBoard({ mode = "view" }) {
           )}
         </div>
         <div className="head-right">
+          {isEdit && <span className="head-tools" ref={setMngActions} />}
           {editable && (
             <button
               className="icon-btn"
@@ -2712,47 +2741,64 @@ export default function TaskBoard({ mode = "view" }) {
             };
             return (
               <div className="card no-pad manage-card">
-                <div className="manage-head">
-                  {years.length > 0 && (
-                    <Pulldown
-                      value={year ?? ""}
-                      onChange={(v) => setYear(Number(v))}
-                      ariaLabel="対象年"
-                      icon="calendar"
-                      options={years.map((y) => ({ value: y, label: `${y} 年` }))}
-                    />
+                {/* 対象年・絞り込みはヘッダーの左側（タイトルの右）へ差し込む */}
+                {mngTools &&
+                  createPortal(
+                    <>
+                      {years.length > 0 && (
+                        <Pulldown
+                          value={year ?? ""}
+                          onChange={(v) => setYear(Number(v))}
+                          ariaLabel="対象年"
+                          icon="calendar"
+                          options={years.map((y) => ({ value: y, label: `${y} 年` }))}
+                        />
+                      )}
+                      <div
+                        className="mng-filter"
+                        role="group"
+                        aria-label="区分で絞り込み"
+                        ref={setFltEl}
+                        style={fltThumb ? { "--thumb-x": fltThumb.left + "px", "--thumb-w": fltThumb.width + "px" } : undefined}
+                      >
+                        <span className={"mng-filter-thumb" + (fltThumb ? " on" : "")} aria-hidden="true" />
+                        <button type="button" className={"mng-filter-btn" + (mngFilter === "all" ? " active" : "")} onClick={() => setMngFilter("all")}>すべて<span className="mng-fcount">{cnt.all}</span></button>
+                        <button type="button" className={"mng-filter-btn" + (mngFilter === "regular" ? " active" : "")} onClick={() => setMngFilter("regular")}>Regular<span className="mng-fcount">{cnt.regular}</span></button>
+                        <button type="button" className={"mng-filter-btn" + (mngFilter === "pending" ? " active" : "")} onClick={() => setMngFilter("pending")}>Pending<span className="mng-fcount">{cnt.pending}</span></button>
+                        <button type="button" className={"mng-filter-btn" + (mngFilter === "adhoc" ? " active" : "")} onClick={() => setMngFilter("adhoc")}>Ad Hoc<span className="mng-fcount">{cnt.adhoc}</span></button>
+                      </div>
+                      {mngFilter === "adhoc" && (
+                        <div
+                          className="mng-filter mng-filter-sub"
+                          role="group"
+                          aria-label="進捗で絞り込み"
+                          ref={setSubEl}
+                          style={subThumb ? { "--thumb-x": subThumb.left + "px", "--thumb-w": subThumb.width + "px" } : undefined}
+                        >
+                          <span className={"mng-filter-thumb" + (subThumb ? " on" : "")} aria-hidden="true" />
+                          <button type="button" className={"mng-filter-btn" + (mngStatus === "all" ? " active" : "")} onClick={() => setMngStatus("all")}>すべて<span className="mng-fcount">{statusCnt.all}</span></button>
+                          {STATUS_FILTERS.map((s) => (
+                            <button key={s} type="button" className={"mng-filter-btn" + (mngStatus === s ? " active" : "")} onClick={() => setMngStatus(s)}>{s}<span className="mng-fcount">{statusCnt[s]}</span></button>
+                          ))}
+                          <button type="button" className={"mng-filter-btn" + (mngStatus === "not-complete" ? " active" : "")} onClick={() => setMngStatus("not-complete")}>Complete以外<span className="mng-fcount">{statusCnt["not-complete"]}</span></button>
+                        </div>
+                      )}
+                    </>,
+                    mngTools
                   )}
-                  <div
-                    className="mng-filter"
-                    role="group"
-                    aria-label="区分で絞り込み"
-                    ref={setFltEl}
-                    style={fltThumb ? { "--thumb-x": fltThumb.left + "px", "--thumb-w": fltThumb.width + "px" } : undefined}
-                  >
-                    <span className={"mng-filter-thumb" + (fltThumb ? " on" : "")} aria-hidden="true" />
-                    <button type="button" className={"mng-filter-btn" + (mngFilter === "all" ? " active" : "")} onClick={() => setMngFilter("all")}>すべて<span className="mng-fcount">{cnt.all}</span></button>
-                    <button type="button" className={"mng-filter-btn" + (mngFilter === "regular" ? " active" : "")} onClick={() => setMngFilter("regular")}>Regular<span className="mng-fcount">{cnt.regular}</span></button>
-                    <button type="button" className={"mng-filter-btn" + (mngFilter === "pending" ? " active" : "")} onClick={() => setMngFilter("pending")}>Pending<span className="mng-fcount">{cnt.pending}</span></button>
-                    <button type="button" className={"mng-filter-btn" + (mngFilter === "adhoc" ? " active" : "")} onClick={() => setMngFilter("adhoc")}>Ad Hoc<span className="mng-fcount">{cnt.adhoc}</span></button>
-                  </div>
-                  {mngFilter === "adhoc" && (
-                    <div
-                      className="mng-filter mng-filter-sub"
-                      role="group"
-                      aria-label="進捗で絞り込み"
-                      ref={setSubEl}
-                      style={subThumb ? { "--thumb-x": subThumb.left + "px", "--thumb-w": subThumb.width + "px" } : undefined}
-                    >
-                      <span className={"mng-filter-thumb" + (subThumb ? " on" : "")} aria-hidden="true" />
-                      <button type="button" className={"mng-filter-btn" + (mngStatus === "all" ? " active" : "")} onClick={() => setMngStatus("all")}>すべて<span className="mng-fcount">{statusCnt.all}</span></button>
-                      {STATUS_FILTERS.map((s) => (
-                        <button key={s} type="button" className={"mng-filter-btn" + (mngStatus === s ? " active" : "")} onClick={() => setMngStatus(s)}>{s}<span className="mng-fcount">{statusCnt[s]}</span></button>
-                      ))}
-                      <button type="button" className={"mng-filter-btn" + (mngStatus === "not-complete" ? " active" : "")} onClick={() => setMngStatus("not-complete")}>Complete以外<span className="mng-fcount">{statusCnt["not-complete"]}</span></button>
-                    </div>
-                  )}
-                  {canEditTasks && (
-                    <span className="manage-actions">
+                {/* 編集・タスク追加・サービスアカウントはヘッダーの右側へ差し込む */}
+                {canEditTasks &&
+                  mngActions &&
+                  createPortal(
+                    <>
+                      {/* シートを読ませるために共有してもらうサービスアカウントの案内 */}
+                      <button type="button" className="icon-btn" onClick={openSa} title="サービスアカウント（シートの共有先）" aria-label="サービスアカウント（シートの共有先）">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <circle cx="12" cy="8" r="3.4" />
+                          <path d="M5 20v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1" />
+                          <path d="M17.5 4.5 19 6l3-3" />
+                        </svg>
+                      </button>
                       <button type="button" className={"icon-btn manage-edit-btn" + (mngEdit ? " on" : "")} onClick={() => setMngEdit((v) => !v)} title={mngEdit ? "編集を終了" : "編集"} aria-label={mngEdit ? "編集を終了" : "編集"}>
                         {mngEdit ? (
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
@@ -2767,9 +2813,9 @@ export default function TaskBoard({ mode = "view" }) {
                           <line x1="5" y1="12" x2="19" y2="12" />
                         </svg>
                       </button>
-                    </span>
+                    </>,
+                    mngActions
                   )}
-                </div>
                 <div className="tw manage-tw">
                   <table className="manage-table">
                     <thead>
@@ -2930,6 +2976,19 @@ ${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めません�
                                       )}
                                     </span>
                                   )}
+                                {/* Regular / Pending は設定なしで必ず進捗グラフに出るので、
+                                    切り替えではなく印だけを出す */}
+                                {row.kind !== "Ad Hoc" && (
+                                  <span className="mng-task-marks">
+                                    <span
+                                      className="mng-link-mark graph"
+                                      title={`進捗グラフに出しています（${row.kind} は常に出ます）`}
+                                      aria-label="進捗グラフに出しています"
+                                    >
+                                      <GraphMarkIcon />
+                                    </span>
+                                  </span>
+                                )}
                               </span>
                             </td>
                             <td className="mng-date">{row.kind === "Ad Hoc" ? (editable ? dateField(row, "start") : (row.start || "—")) : <span className="mng-dim">—</span>}</td>
@@ -4382,6 +4441,54 @@ ${e.memo}` : e.task}>
               </div>
             );
           })()}
+      </Modal>
+
+      {/* サービスアカウントの案内。シート連携（受注数・完了数／作業シート）で
+          非公開のスプレッドシートを読むために、この宛先へ閲覧共有してもらう */}
+      <Modal
+        open={saOpen}
+        title="スプレッドシートの共有先"
+        onClose={() => setSaOpen(false)}
+        footer={
+          <button className="save-btn" onClick={() => setSaOpen(false)}>
+            閉じる
+          </button>
+        }
+      >
+        <div className="modal-fields">
+          {saCfg === null ? (
+            <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>
+          ) : saCfg.mode === "service" ? (
+            <>
+              <p className="modal-note sa-lead">
+                シート連携で読み取る<b>スプレッドシートを、次のアカウントに「閲覧者」で共有</b>してください。
+                共有しておけば、シートを一般公開しなくても受注数・完了数を読み取れます。
+              </p>
+              <div className="sa-mail-row">
+                <code className="sa-email">{saCfg.serviceEmail}</code>
+                <button type="button" className="mini-btn" onClick={copySa}>
+                  {saCopied ? "コピーしました" : "コピー"}
+                </button>
+              </div>
+              <p className="modal-note">
+                <b>共有のしかた</b>
+                <br />
+                ① 対象のスプレッドシートを開く → 右上の「共有」
+                <br />
+                ② 上のアドレスを貼り付け、権限を<b>「閲覧者」</b>にする
+                <br />
+                ③「通知」のチェックは外してよいので、そのまま「送信」
+                <br />
+                ※ 編集権限は不要です。共有しない場合は「リンクを知っている全員が閲覧可」にしてください。
+              </p>
+            </>
+          ) : (
+            <p className="modal-note">
+              サービスアカウントが未設定のため、共有先のアドレスはありません。
+              対象のスプレッドシートは<b>「リンクを知っている全員が閲覧可」</b>にしてください。
+            </p>
+          )}
+        </div>
       </Modal>
     </div>
   );

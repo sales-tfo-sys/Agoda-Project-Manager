@@ -11950,3 +11950,29 @@ body {
   max-width: none;
   margin: 10px 12px 11px;
 }
+
+/* サービスアカウントの案内モーダル：アドレスとコピーボタンを1行に並べる */
+.sa-lead {
+  margin-bottom: 2px;
+}
+.sa-mail-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.sa-mail-row .sa-email {
+  margin-top: 0;
+  font-size: 12.5px;
+  padding: 5px 9px;
+}
+
+/* プロジェクト管理：対象年・絞り込みをヘッダーに出したので、
+   カードの中の操作行は無くなった。ヘッダー内での間隔だけ整える */
+.head-left > .head-tools.mng-head-tools {
+  gap: 14px;
+  flex-wrap: nowrap;
+}
+.head-left > .head-tools.mng-head-tools .mng-filter {
+  margin: 0;
+}
