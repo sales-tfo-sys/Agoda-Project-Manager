@@ -11723,3 +11723,52 @@ body {
     var(--bg);
   background-attachment: fixed;
 }
+
+/* 表の行の中に置く小さいプルダウン（行の高さを変えないため） */
+.pd.pd-sm {
+  height: 22px;
+  gap: 5px;
+  padding: 0 3px 0 8px;
+  font-size: 12px;
+  border-radius: 7px;
+}
+.pd.pd-sm .pd-caret {
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+}
+.pd.pd-sm .pd-caret svg {
+  width: 11px;
+  height: 11px;
+}
+.pd.pd-block {
+  display: flex;
+  width: 100%;
+}
+
+/* アカウント管理の権限プルダウンは、役割ごとの色をそのまま引き継ぐ */
+.persons-page .pd.role-owner {
+  color: #7a4bbd;
+  background: #f2ecfb;
+  border-color: #ddcdf3;
+}
+.persons-page .pd.role-owner .pd-ico,
+.persons-page .pd.role-owner .pd-caret {
+  color: #7a4bbd;
+}
+.persons-page .pd.role-admin {
+  color: #292929;
+  background: #ededed;
+  border-color: #dcdcdc;
+}
+.persons-page .pd.role-admin .pd-caret {
+  color: #292929;
+}
+.persons-page .pd.role-member {
+  color: var(--ink-2);
+  background: #eeeeee;
+  border-color: #e0e0e0;
+}
+.persons-page .pd.role-member .pd-caret {
+  color: var(--ink-2);
+}

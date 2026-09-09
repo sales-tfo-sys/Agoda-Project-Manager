@@ -1233,19 +1233,17 @@ function SummaryTable({
                   {/* 進捗フラグ（画面で設定する値。集計値ではない） */}
                   <td className="st-td">
                     {edit && setOvField ? (
-                      <select
-                        className="ed-input ed-sel"
+                      <Pulldown
+                        size="sm"
+                        block
                         value={o.status || ""}
-                        onChange={(e) => setOvField(scope, t, "status", e.target.value)}
-                        aria-label={`${t} の進捗`}
-                      >
-                        <option value="">—</option>
-                        {STATUS_OPTIONS.map((s) => (
-                          <option key={s} value={s}>
-                            {s}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(v) => setOvField(scope, t, "status", v)}
+                        ariaLabel={`${t} の進捗`}
+                        options={[
+                          { value: "", label: "—" },
+                          ...STATUS_OPTIONS.map((s) => ({ value: s, label: s })),
+                        ]}
+                      />
                     ) : (
                       <span className={"st-pill " + statusClass(o.status)}>{o.status || "—"}</span>
                     )}
@@ -2813,7 +2811,7 @@ ${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めません�
                             <td className="mng-date">{row.kind === "Ad Hoc" ? (editable ? dateField(row, "start") : (row.start || "—")) : <span className="mng-dim">—</span>}</td>
                             <td className="mng-date">{row.kind === "Ad Hoc" ? (editable ? dateField(row, "end") : (row.end || "—")) : <span className="mng-dim">—</span>}</td>
                             <td className="l">{editable ? (<AssignCell scope={row.scope} akey={row.key} ids={ids} persons={persons} retired={retiredPersons} allowRetired={row.status === "Complete"} setAssign={setAssign} />) : (ids.length ? ids.map((id) => { const p = personById.get(id); return p ? (<span key={id} className={"mng-asg-name" + (p.active === false ? " gone" : "")} title={p.active === false ? `${p.name}（退職）` : undefined}>{p.name}</span>) : null; }).filter(Boolean) : "—")}</td>
-                            <td>{editable ? (<select className="ed-input ed-sel" value={row.status || ""} onChange={(e) => setOvField(row.scope, row.key, "status", e.target.value)}><option value="">—</option>{STATUS_OPTIONS.map((s) => (<option key={s} value={s}>{s}</option>))}</select>) : (<span className={"st-pill " + statusClass(row.status)}>{row.status || "—"}</span>)}</td>
+                            <td>{editable ? (<Pulldown size="sm" block value={row.status || ""} onChange={(v) => setOvField(row.scope, row.key, "status", v)} ariaLabel="進捗" options={[{ value: "", label: "—" }, ...STATUS_OPTIONS.map((s) => ({ value: s, label: s }))]} />) : (<span className={"st-pill " + statusClass(row.status)}>{row.status || "—"}</span>)}</td>
                             {/* 件数は3桁ごとに区切って出す（41,311 のように） */}
                             <td className="v-strong">{mngNum(row.count)}</td>
                             <td>{mngNum(row.done)}</td>
@@ -3501,19 +3499,17 @@ ${e.memo}` : e.task}>
                             </td>
                             <td>
                               {ed ? (
-                                <select
-                                  className="ed-input ed-sel"
+                                <Pulldown
+                                  size="sm"
+                                  block
                                   value={status || ""}
-                                  onChange={(e) => setOvField("adhoc", t.task, "status", e.target.value)}
-                                  aria-label="進捗"
-                                >
-                                  <option value="">—</option>
-                                  {STATUS_OPTIONS.map((s) => (
-                                    <option key={s} value={s}>
-                                      {s}
-                                    </option>
-                                  ))}
-                                </select>
+                                  onChange={(v) => setOvField("adhoc", t.task, "status", v)}
+                                  ariaLabel="進捗"
+                                  options={[
+                                    { value: "", label: "—" },
+                                    ...STATUS_OPTIONS.map((s) => ({ value: s, label: s })),
+                                  ]}
+                                />
                               ) : (
                                 <span className={"st-pill " + statusClass(status)}>
                                   {status || "—"}
@@ -3766,20 +3762,24 @@ ${e.memo}` : e.task}>
           <div className="cfg-grid">
             <label className="fld">
               区分
-              <select value={newBoard} onChange={(e) => setNewBoard(e.target.value)}>
-                <option value="adhoc">Ad Hoc</option>
-                <option value="regular">Regular</option>
-              </select>
+              <Pulldown
+                value={newBoard}
+                onChange={setNewBoard}
+                ariaLabel="区分"
+                options={[
+                  { value: "adhoc", label: "Ad Hoc" },
+                  { value: "regular", label: "Regular" },
+                ]}
+              />
             </label>
             <label className="fld">
               進捗
-              <select value={addForm.status} onChange={(e) => setAF("status", e.target.value)}>
-                {STATUS_OPTIONS.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
+              <Pulldown
+                value={addForm.status}
+                onChange={(v) => setAF("status", v)}
+                ariaLabel="進捗"
+                options={STATUS_OPTIONS.map((s) => ({ value: s, label: s }))}
+              />
             </label>
           </div>
 

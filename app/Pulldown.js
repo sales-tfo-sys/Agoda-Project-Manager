@@ -40,6 +40,8 @@ export default function Pulldown({
   disabled,
   ariaLabel,
   minWidth,
+  size,        // "sm" … 表の行の中に置く小さい版（行の高さを変えないため）
+  block,       // true … セル幅いっぱいに広げる
   className = "",
 }) {
   const [open, setOpen] = useState(false);
@@ -129,7 +131,13 @@ export default function Pulldown({
       <button
         type="button"
         ref={btnRef}
-        className={"pd" + (open ? " open" : "") + (className ? " " + className : "")}
+        className={
+          "pd" +
+          (size === "sm" ? " pd-sm" : "") +
+          (block ? " pd-block" : "") +
+          (open ? " open" : "") +
+          (className ? " " + className : "")
+        }
         style={minWidth ? { minWidth } : undefined}
         onClick={() => !disabled && setOpen((v) => !v)}
         onKeyDown={onBtnKey}

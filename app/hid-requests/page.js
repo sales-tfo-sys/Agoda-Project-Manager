@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Modal from "../Modal";
 import { useUi } from "../Ui";
 import ManageIcon from "../manage/ManageIcon";
+import Pulldown from "../Pulldown";
 
 // HID新規発行依頼の列定義（すべて手動入力）。実シートの項目に合わせる。
 const COLUMNS = [
@@ -213,16 +214,17 @@ export default function HidRequestsPage({ embedded, tabs } = {}) {
                         if (c.type === "select") {
                           return (
                             <td key={c.key}>
-                              <select
-                                className="wr-input hid-select"
+                              <Pulldown
+                                size="sm"
+                                block
                                 value={v}
-                                onChange={(e) => saveField(it.id, c.key, e.target.value)}
-                              >
-                                <option value="">—</option>
-                                {c.options.map((o) => (
-                                  <option key={o} value={o}>{o}</option>
-                                ))}
-                              </select>
+                                onChange={(nv) => saveField(it.id, c.key, nv)}
+                                ariaLabel={c.label || c.key}
+                                options={[
+                                  { value: "", label: "—" },
+                                  ...c.options.map((o) => ({ value: o, label: o })),
+                                ]}
+                              />
                             </td>
                           );
                         }

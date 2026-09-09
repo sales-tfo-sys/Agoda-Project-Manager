@@ -6,6 +6,14 @@ import PagePermModal from "./PagePermModal";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useUi } from "../../Ui";
+import Pulldown from "../../Pulldown";
+
+// 権限の選択肢（モーダルと一覧で同じものを使う）
+const ROLE_OPTIONS = [
+  { value: "owner", label: "オーナー" },
+  { value: "admin", label: "管理者" },
+  { value: "member", label: "メンバー" },
+];
 
 
 // 氏名の下に出すローマ字。メールのローカル部から作る（hori@… → Hori）
@@ -494,11 +502,12 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
           {canGrant && (
             <label className="fld">
               権限
-              <select value={role} onChange={(e) => setRole(e.target.value)}>
-                <option value="owner">オーナー</option>
-                <option value="admin">管理者</option>
-                <option value="member">メンバー</option>
-              </select>
+              <Pulldown
+                value={role}
+                onChange={setRole}
+                ariaLabel="権限"
+                options={ROLE_OPTIONS}
+              />
             </label>
           )}
           {canGrant && role === "admin" && (
@@ -728,17 +737,15 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                         </span>
                       </td>
                       <td className="perm-cell">
-                        <select
-                          className={"mini-select role-select role-" + (p.role || "member")}
+                        <Pulldown
+                          size="sm"
+                          className={"role-" + (p.role || "member")}
                           value={p.role || "member"}
-                          onChange={(e) => patch(p.id, { role: e.target.value }, "権限を変更しました。")}
+                          onChange={(v) => patch(p.id, { role: v }, "権限を変更しました。")}
                           disabled={busy || !canGrant}
-                          title={canGrant ? undefined : "役割を変更できるのはオーナーだけです"}
-                        >
-                          <option value="owner">オーナー</option>
-                          <option value="admin">管理者</option>
-                          <option value="member">メンバー</option>
-                        </select>
+                          ariaLabel="権限"
+                          options={ROLE_OPTIONS}
+                        />
                       </td>
                       {/* 編集権限：管理者への個別付与だけを扱う。オーナー・メンバーは対象外＝「—」。
                           「権限編集」「タスク関連」の2列（列見出しがラベルを兼ねる） */}
