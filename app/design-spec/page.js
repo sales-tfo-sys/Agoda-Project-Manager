@@ -278,7 +278,7 @@ export default function DesignSpecPage() {
             <Ul>
               <li>Kintone に入っている案件データを取り込み、案件タイプ別・ステータス別・四半期別に可視化する。</li>
               <li>スプレッドシートで運用していた Regular / Ad Hoc タスクの管理と工数入力を、サイト上に移行する。</li>
-              <li>HID 新規発行依頼・新規作業依頼・フォーム回答といった周辺業務を同じ画面から扱えるようにする。</li>
+              <li>HID 新規発行依頼・作業依頼・フォーム回答といった周辺業務を同じ画面から扱えるようにする。</li>
               <li>役割とページ単位の権限で、誰が何を見て編集できるかを管理する。</li>
             </Ul>
 
@@ -357,7 +357,10 @@ export default function DesignSpecPage() {
                 [<C>app/Shell.js</C>, <>サイドバー＋メインの枠。<C>/login</C> 配下だけメニューを出さない。<C>UiProvider</C> と <C>NavLoadingProvider</C> を張る。</>],
                 [<C>app/Nav.js</C>, "左サイドバー。ユーザー用／管理者用をラインで区切り、各タブはページ閲覧権限で出し分ける。"],
                 [<C>app/TaskBoard.js</C>, <>ダッシュボード（<C>mode=&quot;view&quot;</C>）とプロジェクト管理（<C>mode=&quot;edit&quot;</C>）で共有する中核コンポーネント。</>],
-                [<C>app/kosu/DetailTable.js</C>, "工数明細（日次グリッド）の組み立て。"],
+                [<C>app/kosu/DetailTable.js</C>, <>工数明細（日次グリッド）の組み立て。<C>toolbarHost</C> を渡すと、対応中/完了の切替と対象月をその要素（ダッシュボードのヘッダー）へ差し込む。</>],
+                [<C>app/kosu/ResourceCharts.js</C>, <>作業リソース詳細の3枚と、週の状態を持つ <C>useResource()</C>。ダッシュボードの「作業工数表 → グラフ」で使う。</>],
+                [<C>app/Pulldown.js</C>, <>共通プルダウン。<C>position: fixed</C> のパネルを <C>getBoundingClientRect()</C> から配置し、リサイズ・スクロールで置き直す。</>],
+                [<C>app/dataCache.js</C>, <>クライアント側の取得キャッシュ（<C>cachedJson</C> / <C>peekJson</C> / <C>invalidate</C>）。同じ URL の重複取得と再取得を抑えてページ遷移を速くする。</>],
                 [<C>app/PageIcons.js</C>, "ページごとのアイコン。サイドバーとページ権限モーダルで同じ絵柄を使う。"],
                 [<C>app/Ui.js</C>, "画面共通の UI（中央スピナー・完了チェック・トースト・保存完了メッセージ）。"],
                 [<C>app/NavLoading.js</C>, "メニュー遷移時の全画面ローディング。URL 変化で自動解除。"],
@@ -510,14 +513,14 @@ export default function DesignSpecPage() {
               rows={[
                 ["owner（オーナー）", "常に全ページの閲覧・編集が可能。役割と権限フラグを変更できるのはオーナーだけ。ページ権限の保存対象外（保存値を無視して常に全権）。"],
                 ["admin（管理者）", "既定で全ページ閲覧可。編集は「個別に許可された項目」のみ。"],
-                ["member（メンバー）", "業務系ページの閲覧と、工数入力の編集のみ。管理系ページは開けない。"],
+                ["member（メンバー）", "業務系ページの閲覧と、作業工数入力の編集のみ。管理系ページは開けない。"],
               ]}
             />
             <Tbl
               head={["個別付与フラグ（kosu_person）", "効果"]}
               rows={[
                 [<C>can_edit_accounts</C>, "アカウント管理を編集できる（admin のみ意味を持つ）。"],
-                [<C>can_edit_tasks</C>, "プロジェクト管理・HID新規発行依頼・新規作業依頼を編集できる（admin のみ意味を持つ）。"],
+                [<C>can_edit_tasks</C>, "プロジェクト管理・HID新規発行依頼・作業依頼を編集できる（admin のみ意味を持つ）。"],
               ]}
             />
 
@@ -532,11 +535,11 @@ export default function DesignSpecPage() {
               rows={[
                 ["ダッシュボード", <C>dashboard</C>, <C>/dashboard</C>, "—"],
                 ["施設一覧", <C>facilities</C>, <C>/</C>, "—"],
-                ["工数入力", <C>kosuInput</C>, <C>/kosu/input</C>, "あり"],
+                ["作業工数入力", <C>kosuInput</C>, <C>/kosu/input</C>, "あり"],
                 ["HID新規発行依頼", <C>hid</C>, <C>/hid-requests</C>, "あり"],
-                ["新規作業依頼", <C>workReq</C>, <C>/work-requests</C>, "あり"],
+                ["作業依頼", <C>workReq</C>, <C>/work-requests</C>, "あり"],
                 ["フォーム回答", <C>forms</C>, <C>/forms</C>, "—"],
-                [<>「管理」にまとめて表示（<C>/manage</C>）。上の3つの権限をそのまま使う</>, <>{"—"}</>, <C>/manage</C>, "—"],
+                [<>HID新規発行依頼とフォーム回答は「管理」1ページにまとめてタブで切り替える（<C>/manage</C>）。権限は上の2つをそのまま使う</>, <>{"—"}</>, <C>/manage</C>, "—"],
                 ["プロジェクト管理", <C>project</C>, <C>/project</C>, "あり"],
                 ["アカウント管理", <C>accounts</C>, <C>/kosu/persons</C>, "あり"],
                 ["設計仕様書", <C>designSpec</C>, <C>/design-spec</C>, "—"],
@@ -552,7 +555,7 @@ export default function DesignSpecPage() {
               rows={[
                 ["owner", "全ページ", <>編集可能な全ページ（<C>editable=true</C> のもの）</>],
                 ["admin", "全ページ", <><C>kosuInput</C> は常に可。<C>accounts</C> は <C>can_edit_accounts</C>、<C>project</C>・<C>hid</C>・<C>workReq</C> は <C>can_edit_tasks</C> に従う。</>],
-                ["member", "業務グループのみ（ダッシュボード／施設一覧／工数入力／HID／新規作業依頼／フォーム回答）", <><C>kosuInput</C> のみ</>],
+                ["member", "業務グループのみ（ダッシュボード／施設一覧／作業工数入力／HID／作業依頼／フォーム回答）", <><C>kosuInput</C> のみ</>],
               ]}
             />
 
@@ -804,7 +807,7 @@ export default function DesignSpecPage() {
                   "作業リソース詳細（部品）",
                   <>{"—"}（ダッシュボードの「作業工数表」タブ → グラフ）</>,
                   <>
-                    週次の作業リソース（メンバー別 100% 積み上げ棒・Ad Hoc 詳細・担当者別内訳表）。
+                    週次の作業リソース。上の段に「メンバー別リソース割合」「Ad Hoc 詳細」（100% 積み上げ棒）を横並び、下の段に「担当者別 内訳」の数値表を横幅いっぱいで置く。
                     既定は今週。今週のデータが無ければ実績のある最新週。<C>app/kosu/ResourceCharts.js</C>。
                   </>,
                   <><C>/api/resource</C></>,
@@ -819,7 +822,7 @@ export default function DesignSpecPage() {
                   <><C>/api/kosu</C>・<C>/api/kosu-tasks</C>・<C>/api/kosu-entries</C>・<C>/api/assign</C>・<C>/api/override</C>・<C>/api/adhoc</C>・<C>/api/adhoc-tasks</C></>,
                 ],
                 [
-                  "工数入力",
+                  "作業工数入力",
                   <C>/kosu/input</C>,
                   <>
                     対象日を選び、作業 × メンバーで稼働時間（Ad Hoc は稼働時間＋完了数）を入力して保存。
@@ -838,11 +841,12 @@ export default function DesignSpecPage() {
                   <><C>/api/hid-requests</C>・<C>/api/auth/me</C></>,
                 ],
                 [
-                  "新規作業依頼",
+                  "作業依頼",
                   <C>/work-requests</C>,
                   <>
                     登録した作業依頼シートを表示し、「レコード作成／レコードNo／作業完了日」の 3 項目だけサイト側で上書き入力する。
                     先頭列〜施設名（日本語）を横スクロール時に固定。「すべて／完了以外」で絞り込み。
+                    一覧はヘッダーの直下から画面の下端までぴったり広げる（上下の余白 0・高さは <C>100vh − 58px</C>）。
                   </>,
                   <><C>/api/work-requests</C>・<C>/api/work-request-data</C>・<C>/api/work-request-cell</C>・<C>/api/form-config</C>・<C>/api/auth/me</C></>,
                 ],
@@ -887,6 +891,8 @@ export default function DesignSpecPage() {
               <li>メニュークリック時は全画面ローディングを出し、URL が変わった時点で解除。以降はページ内スピナーに引き継ぐ。</li>
               <li>日付入力はブラウザ既定の表示書式が環境依存（曜日の括弧が付くなど）のため、表示は自前で描き、カレンダーだけ <C>showPicker()</C> で開く。</li>
               <li>サイドバーは 52px のレールで、ホバー（またはキーボードフォーカス）で 216px に展開し、本文に重ねる。</li>
+              <li>ダッシュボードのタブ・切替・プルダウンはページヘッダーの中に置く。ページタイトルとのあいだは 26px あけて縦の仕切り線（<C>.head-sep</C>）で区切り、そこから 26px 先にタブを並べる。</li>
+              <li>プルダウンは <C>&lt;select&gt;</C> を使わず共通部品（<C>app/Pulldown.js</C>）に統一。タブ（<C>.segbar</C>）とプルダウン（<C>.pd</C>）は同じ角丸・下地・文字サイズにそろえる。</li>
             </Ul>
           </Sec>
 
