@@ -11907,3 +11907,27 @@ body {
 .wrap.forms-page.wr-page .forms-tw {
   max-height: calc(100vh - 58px);
 }
+
+/* 「作業工数表」タブの操作部品（対応中/完了・対象月）をヘッダーに差し込む置き場所 */
+.head-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ダッシュボードの「作業工数表」タブ：工数明細の字と行の高さは
+   作業工数管理ページ（.wrap.page-compact）と同じにする。
+   （そうしないと「Regular task」など固定幅の列がはみ出して省略される） */
+.kosu-panel .dtable {
+  font-size: 11.5px;
+}
+.kosu-panel .dtable td {
+  padding: 2px 8px;
+}
+.kosu-panel .dtable thead th {
+  padding: 3px 8px;
+}
+.kosu-panel .link-cell {
+  font-size: 11.5px;
+  padding: 1px 0;
+}

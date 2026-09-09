@@ -174,25 +174,6 @@ function HidIcon() {
   );
 }
 
-function ClockIcon() {
-  return (
-    <svg
-      width="17"
-      height="17"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="9" />
-      <polyline points="12 7 12 12 16 14" />
-    </svg>
-  );
-}
-
 function BoardIcon() {
   return (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -249,7 +230,8 @@ const TABS = [
   { href: "/system-health", label: "システムヘルス", Icon: HealthIcon, admin: true },
   { href: "/kosu/persons", label: "アカウント管理", Icon: PersonIcon, admin: true },
   { href: "/project", label: "プロジェクト管理", Icon: BoardIcon, admin: true },
-  { href: "/kosu", label: "作業工数管理", Icon: ClockIcon },
+  // 作業工数管理は中身（作業リソース詳細・工数明細）をダッシュボードの
+  // 「作業工数グラフ」「作業工数表」タブへ移したので、ページごと廃止した
 ];
 
 export default function Sidebar() {

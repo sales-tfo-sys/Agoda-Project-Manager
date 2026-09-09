@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-// 作業リソースは工数管理ページに統合。旧URLはリダイレクトする。
+// 作業リソースはダッシュボードの「作業工数グラフ」タブに統合。旧URLはリダイレクトする。
 export default function ResourceRedirect() {
-  redirect("/kosu");
+  redirect("/dashboard");
 }

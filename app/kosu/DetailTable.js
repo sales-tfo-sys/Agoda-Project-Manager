@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { holidayName, dowLabel } from "../../lib/holidays";
 import Pulldown from "../Pulldown";
 
@@ -31,7 +32,9 @@ function normName(v) {
 }
 
 // 工数明細（日次）。工数管理ページ内と単独ページの両方で使う共通部品。
-export default function DetailTable({ title, compact = false }) {
+// toolbarHost を渡すと、対象月のプルダウンと対応中/完了の切替をその要素の中に描く
+// （ダッシュボードの「作業工数表」タブでは、ヘッダーのタブの右に並べるため）。
+export default function DetailTable({ title, compact = false, toolbarHost = null }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [monthIdx, setMonthIdx] = useState(null);
@@ -735,53 +738,72 @@ export default function DetailTable({ title, compact = false }) {
     );
   }
 
+  const monthPulldown =
+    months.length > 0 ? (
+      <Pulldown
+        value={monthIdx ?? 0}
+        onChange={(v) => setMonthIdx(Number(v))}
+        ariaLabel="対象月"
+        icon="calendar"
+        options={months.map((m, i) => ({ value: i, label: monthLabel(i) }))}
+      />
+    ) : null;
+  const modeTabs = (
+    <div className="segbar segbar-sm" role="tablist" aria-label="工数明細の表示切替">
+      <span
+        className="segbar-thumb"
+        style={{ transform: `translateX(${tab === "done" ? "100%" : "0%"})` }}
+        aria-hidden="true"
+      />
+      <button
+        type="button"
+        role="tab"
+        aria-selected={tab === "active"}
+        className={"segbar-btn" + (tab === "active" ? " active" : "")}
+        onClick={() => setTab("active")}
+      >
+        対応中
+        <span className="seg-count">{counts.active}</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={tab === "done"}
+        className={"segbar-btn" + (tab === "done" ? " active" : "")}
+        onClick={() => setTab("done")}
+      >
+        完了
+        <span className="seg-count">{counts.done}</span>
+      </button>
+    </div>
+  );
+
   return (
     <>
-      <div className="sec-row">
-        {title && <div className="sec-head">{title}</div>}
-        <div className="detail-tools">
-        {months.length > 0 && (
-          <label className="head-year" aria-label="対象月">
-            <Pulldown
-              value={monthIdx ?? 0}
-              onChange={(v) => setMonthIdx(Number(v))}
-              ariaLabel="対象月"
-              icon="calendar"
-              options={months.map((m, i) => ({ value: i, label: monthLabel(i) }))}
-            />
-          </label>
-        )}
-        <div className="segbar segbar-sm" role="tablist" aria-label="工数明細の表示切替">
-          <span
-            className="segbar-thumb"
-            style={{ transform: `translateX(${tab === "done" ? "100%" : "0%"})` }}
-            aria-hidden="true"
-          />
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "active"}
-            className={"segbar-btn" + (tab === "active" ? " active" : "")}
-            onClick={() => setTab("active")}
-          >
-            対応中
-            <span className="seg-count">{counts.active}</span>
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "done"}
-            className={"segbar-btn" + (tab === "done" ? " active" : "")}
-            onClick={() => setTab("done")}
-          >
-            完了
-            <span className="seg-count">{counts.done}</span>
-          </button>
-        </div>
-        </div>
+      {toolbarHost ? (
+        // ヘッダーへ差し込む場合は、進捗表と同じ「切替タブ → プルダウン」の並びにする
+        createPortal(
+          <>
+            {modeTabs}
+            {monthPulldown}
+          </>,
+          toolbarHost
+        )
+      ) : (
+        <div className="sec-row">
+          {title && <div className="sec-head">{title}</div>}
+          <div className="detail-tools">
+            {monthPulldown && (
+              <label className="head-year" aria-label="対象月">
+                {monthPulldown}
+              </label>
+            )}
+            {modeTabs}
+          </div>
 
-        {/* 工数入力へはサイドメニューから移動する（ここのボタンは廃止） */}
-      </div>
+          {/* 工数入力へはサイドメニューから移動する（ここのボタンは廃止） */}
+        </div>
+      )}
 
       <div className="card no-pad">
         <div className={"dtw" + (compact ? " dtw-embed" : "")}>

@@ -12,6 +12,7 @@ import UpdatedPop from "./UpdatedPop";
 import Pulldown from "./Pulldown";
 import { cachedJson, peekJson, invalidate } from "./dataCache";
 import ResourceCharts, { useResource } from "./kosu/ResourceCharts";
+import DetailTable from "./kosu/DetailTable";
 
 const TYPE_CODE = "ドロップダウン_13"; // 案件名（空欄は Hotel依頼）
 const STAGE_CODE = "ドロップダウン"; // Stage（ステータス）
@@ -2015,6 +2016,7 @@ export default function TaskBoard({ mode = "view" }) {
       if (v === "schedule") setTab("schedule");
       else if (v === "graph") setTab("graph");
       else if (v === "kosu") setTab("kosu");
+      else if (v === "ktable") setTab("ktable");
       // 旧「全体 / 案件詳細」の保存値は進捗表に読み替える
       else if (v === "overview" || v === "cases" || v === "progress") setTab("progress");
     } catch {}
@@ -2030,6 +2032,8 @@ export default function TaskBoard({ mode = "view" }) {
   // 「実際にDOMに出た時点」で計測する（useRef だと初回に間に合わず選択が見えなくなる）。
   const [segEl, setSegEl] = useState(null);
   const [segThumb, setSegThumb] = useState(null);
+  // 「作業工数表」タブの操作部品（対応中/完了・対象月）をヘッダーに出すための置き場所
+  const [kosuTools, setKosuTools] = useState(null);
   useEffect(() => {
     if (!segEl) return;
     const fit = () => {
@@ -2372,6 +2376,16 @@ export default function TaskBoard({ mode = "view" }) {
                   >
                     作業工数グラフ
                   </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    data-tab="ktable"
+                    aria-selected={tab === "ktable"}
+                    className={"segbar-btn" + (tab === "ktable" ? " active" : "")}
+                    onClick={() => switchTab("ktable")}
+                  >
+                    作業工数表
+                  </button>
                 </div>
                 {/* Regular Task / Ad Hoc Task の切り替えは、対象年のプルダウンの左に置く */}
                 {hasSubTabs && (
@@ -2426,6 +2440,11 @@ export default function TaskBoard({ mode = "view" }) {
                     options={res.weekOptions}
                   />
                 )}
+                {/* 作業工数表（工数明細）の対応中/完了の切替と対象月は、
+                    工数明細の中で持っている状態なので、ここへ差し込んでもらう */}
+                {activeTab === "ktable" && (
+                  <span className="head-tools" ref={setKosuTools} />
+                )}
               </div>
             </>
           )}
@@ -2467,6 +2486,12 @@ export default function TaskBoard({ mode = "view" }) {
             <ResourceCharts resource={res.resource} wi={res.wi} weekLabel={res.weekLabel} />
           </div>
         )
+      ) : activeTab === "ktable" && !isEdit ? (
+        /* 作業工数表：もと「作業工数管理」の工数明細。こちらも案件データは使わない。
+           対応中/完了の切替と対象月はヘッダーのタブの右に差し込む */
+        <div className="tab-panel kosu-panel">
+          <DetailTable compact toolbarHost={kosuTools} />
+        </div>
       ) : error ? (
         <div className="card">
           <div className="err">{"集計エラー\n\n" + error}</div>

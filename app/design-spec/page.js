@@ -532,7 +532,6 @@ export default function DesignSpecPage() {
               rows={[
                 ["ダッシュボード", <C>dashboard</C>, <C>/dashboard</C>, "—"],
                 ["施設一覧", <C>facilities</C>, <C>/</C>, "—"],
-                ["作業工数管理", <C>kosu</C>, <C>/kosu</C>, "—"],
                 ["工数入力", <C>kosuInput</C>, <C>/kosu/input</C>, "あり"],
                 ["HID新規発行依頼", <C>hid</C>, <C>/hid-requests</C>, "あり"],
                 ["新規作業依頼", <C>workReq</C>, <C>/work-requests</C>, "あり"],
@@ -553,7 +552,7 @@ export default function DesignSpecPage() {
               rows={[
                 ["owner", "全ページ", <>編集可能な全ページ（<C>editable=true</C> のもの）</>],
                 ["admin", "全ページ", <><C>kosuInput</C> は常に可。<C>accounts</C> は <C>can_edit_accounts</C>、<C>project</C>・<C>hid</C>・<C>workReq</C> は <C>can_edit_tasks</C> に従う。</>],
-                ["member", "業務グループのみ（ダッシュボード／施設一覧／作業工数管理／工数入力／HID／新規作業依頼／フォーム回答）", <><C>kosuInput</C> のみ</>],
+                ["member", "業務グループのみ（ダッシュボード／施設一覧／工数入力／HID／新規作業依頼／フォーム回答）", <><C>kosuInput</C> のみ</>],
               ]}
             />
 
@@ -774,10 +773,12 @@ export default function DesignSpecPage() {
                   "ダッシュボード",
                   <C>/dashboard</C>,
                   <>
-                    閲覧専用。<b>スケジュール</b>（連続する2か月を、1つの枠に並べて表示する（月送りと「今月」は枠に1組だけなので、常に連続した月になる）。予定は Ad Hoc タスクの開始日・期日で、入っている日には印と件数を出す。一覧は日／週／月で範囲を切り替えられ、週・月は日付ごとにまとめて表示する）／<b>進捗</b>（Regular Task・Pending のサマリー表、Ad Hoc Task 一覧、プロジェクト進捗（案件タイプ別のステータス×四半期）を1ページにまとめたもの）の2タブ。
-                    選択タブは localStorage に保存（旧「全体 / 案件詳細」の保存値は進捗として読む）。
+                    閲覧専用。<b>スケジュール</b>（連続する2か月を、1つの枠に並べて表示する（月送りと「今月」は枠に1組だけなので、常に連続した月になる）。予定は Ad Hoc タスクの開始日・期日で、入っている日には印と件数を出す。一覧は日／週／月で範囲を切り替えられ、週・月は日付ごとにまとめて表示する）／<b>進捗表</b>（Regular Task・Pending のサマリー表、Ad Hoc Task 一覧、プロジェクト進捗（案件タイプ別のステータス×四半期））／<b>進捗グラフ</b>（Regular・Ad Hoc の日次推移）／<b>作業工数グラフ</b>（週次の作業リソース詳細＝メンバー別 100% 積み上げ棒・Ad Hoc 詳細・担当者別内訳表。既定は今週、無ければ実績のある最新週）／<b>作業工数表</b>（工数明細）の5タブ。
+                    タブと、その右のプルダウン（進捗＝対象年／作業工数グラフ＝対象週／作業工数表＝対象月・対応中/完了）はページヘッダーの中に置く。
+                    作業工数グラフ・作業工数表は案件データ（<C>/api/records</C>）を使わないので、その読み込みを待たずに表示する。
+                    選択タブは localStorage に保存（旧「全体 / 案件詳細」の保存値は進捗表として読む）。
                   </>,
-                  <><C>/api/records</C>・<C>/api/adhoc</C>・<C>/api/adhoc-counts</C>・<C>/api/priority</C>・<C>/api/assign</C>・<C>/api/override</C>・<C>/api/adhoc-tasks</C>・<C>/api/kosu?list=1</C>・<C>/api/auth/me</C></>,
+                  <><C>/api/records</C>・<C>/api/adhoc</C>・<C>/api/adhoc-counts</C>・<C>/api/priority</C>・<C>/api/assign</C>・<C>/api/override</C>・<C>/api/adhoc-tasks</C>・<C>/api/kosu?list=1</C>・<C>/api/resource</C>・<C>/api/auth/me</C> ＋ 工数明細ぶん</>,
                 ],
                 [
                   "プロジェクト管理",
@@ -800,17 +801,17 @@ export default function DesignSpecPage() {
                   <><C>/api/records</C>・<C>/api/kintone-sync</C>・<C>/api/auth/me</C></>,
                 ],
                 [
-                  "作業工数管理",
-                  <C>/kosu</C>,
+                  "作業リソース詳細（部品）",
+                  <>{"—"}（ダッシュボードの「作業工数グラフ」タブ）</>,
                   <>
-                    週次の作業リソース（メンバー別 100% 積み上げ棒・Ad Hoc 詳細・担当者別内訳表）と、下部に工数明細。
-                    既定は今週。今週のデータが無ければ実績のある最新週。
+                    週次の作業リソース（メンバー別 100% 積み上げ棒・Ad Hoc 詳細・担当者別内訳表）。
+                    既定は今週。今週のデータが無ければ実績のある最新週。<C>app/kosu/ResourceCharts.js</C>。
                   </>,
-                  <><C>/api/resource</C> ＋ 工数明細ぶん</>,
+                  <><C>/api/resource</C></>,
                 ],
                 [
                   "工数明細（部品）",
-                  <>{"—"}（<C>/kosu</C> 内）</>,
+                  <>{"—"}（ダッシュボードの「作業工数表」タブ）</>,
                   <>
                     日次グリッド（作業内容 × 担当 × 日付）。対象月を選ぶと月まるごとの日付列を出す（土日・祝日は色分け）。
                     「対応中／完了」タブで切り替え、完了はその週の金曜まで対応中に残す。作業内容の列幅は文字幅を実測して決める。
