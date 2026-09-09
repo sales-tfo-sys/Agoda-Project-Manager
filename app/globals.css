@@ -11823,3 +11823,15 @@ body {
   color: #ffffff;
   background: rgba(255, 255, 255, 0.26);
 }
+
+/* ページの下地を薄いブルーグレーにする。
+   ヘッダーの帯と左メニューはそれぞれ自前の背景を持っているので、ここでは触らない。 */
+:root {
+  --bg: #dde4f1;
+}
+body {
+  background: radial-gradient(80% 55% at 88% -10%, rgba(120, 170, 255, 0.12) 0%, transparent 60%),
+    radial-gradient(70% 50% at -8% 104%, rgba(120, 170, 255, 0.1) 0%, transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+}
