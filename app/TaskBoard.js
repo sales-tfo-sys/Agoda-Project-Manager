@@ -1937,18 +1937,22 @@ export default function TaskBoard({ mode = "view" }) {
     } catch {}
   };
 
-  // 進捗グラフの中の切り替え（Regular Task / Ad Hoc Task）
-  const [graphTab, setGraphTab] = useState("regular");
+  // 進捗表の中の切り替え（一覧 / グラフ）。
+  // 以前は上のタブに「進捗グラフ」を並べていたが、Regular / Ad Hoc の選択を
+  // 一覧とグラフで共通にしたいので、進捗表の中の切り替えに変えた。
+  const [progView, setProgView] = useState("list");
   useEffect(() => {
     try {
-      const v = localStorage.getItem("agoda-graph-tab");
-      if (v === "regular" || v === "adhoc") setGraphTab(v);
+      const v = localStorage.getItem("agoda-progress-view");
+      if (v === "list" || v === "chart") setProgView(v);
+      // 旧「進捗グラフ」タブを選んだまま保存されていた場合はグラフ側で開く
+      else if (localStorage.getItem("agoda-dash-tab") === "graph") setProgView("chart");
     } catch {}
   }, []);
-  const switchGraphTab = (v) => {
-    setGraphTab(v);
+  const switchProgView = (v) => {
+    setProgView(v);
     try {
-      localStorage.setItem("agoda-graph-tab", v);
+      localStorage.setItem("agoda-progress-view", v);
     } catch {}
   };
 
@@ -2014,11 +2018,11 @@ export default function TaskBoard({ mode = "view" }) {
     try {
       const v = localStorage.getItem("agoda-dash-tab");
       if (v === "schedule") setTab("schedule");
-      else if (v === "graph") setTab("graph");
       else if (v === "kosu") setTab("kosu");
       else if (v === "ktable") setTab("ktable");
-      // 旧「全体 / 案件詳細」の保存値は進捗表に読み替える
-      else if (v === "overview" || v === "cases" || v === "progress") setTab("progress");
+      // 旧「全体 / 案件詳細 / 進捗グラフ」の保存値は進捗表に読み替える
+      // （進捗グラフは進捗表の中の「グラフ」になった）
+      else if (v === "overview" || v === "cases" || v === "progress" || v === "graph") setTab("progress");
     } catch {}
   }, []);
   const switchTab = (v) => {
@@ -2305,11 +2309,11 @@ export default function TaskBoard({ mode = "view" }) {
   const activeTab = isEdit ? "edit" : tab;
   // 進捗表・進捗グラフの中の切り替え（Regular Task / Ad Hoc Task）。
   // 上のタブ行に一緒に並べるので、どちらのタブを見ているかで中身を差し替える。
-  const hasSubTabs = !isEdit && (activeTab === "progress" || activeTab === "graph");
+  const hasSubTabs = !isEdit && activeTab === "progress";
   // 作業工数グラフ（作業リソース詳細）。タブを開いたときだけ読み込む。
   const res = useResource(!isEdit && activeTab === "kosu");
-  const subTab = activeTab === "graph" ? graphTab : tableTab;
-  const setSubTab = activeTab === "graph" ? switchGraphTab : switchTableTab;
+  const subTab = tableTab;
+  const setSubTab = switchTableTab;
 
   return (
     <div className="wrap">
@@ -2359,16 +2363,6 @@ export default function TaskBoard({ mode = "view" }) {
                   <button
                     type="button"
                     role="tab"
-                    data-tab="graph"
-                    aria-selected={tab === "graph"}
-                    className={"segbar-btn" + (tab === "graph" ? " active" : "")}
-                    onClick={() => switchTab("graph")}
-                  >
-                    進捗グラフ
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
                     data-tab="kosu"
                     aria-selected={tab === "kosu"}
                     className={"segbar-btn" + (tab === "kosu" ? " active" : "")}
@@ -2389,11 +2383,7 @@ export default function TaskBoard({ mode = "view" }) {
                 </div>
                 {/* Regular Task / Ad Hoc Task の切り替えは、対象年のプルダウンの左に置く */}
                 {hasSubTabs && (
-                  <div
-                    className="segbar segbar-sm"
-                    role="tablist"
-                    aria-label={activeTab === "graph" ? "進捗グラフの表示切替" : "進捗表の表示切替"}
-                  >
+                  <div className="segbar segbar-sm" role="tablist" aria-label="進捗表の表示切替">
                     <span
                       className="segbar-thumb"
                       style={{ transform: `translateX(${subTab === "adhoc" ? "100%" : "0%"})` }}
@@ -2419,9 +2409,38 @@ export default function TaskBoard({ mode = "view" }) {
                     </button>
                   </div>
                 )}
+                {/* 一覧 / グラフ（もとの「進捗グラフ」タブ）。
+                    Regular / Ad Hoc の選択はそのままで中身だけ入れ替わる */}
+                {hasSubTabs && (
+                  <div className="segbar segbar-sm" role="tablist" aria-label="一覧とグラフの切替">
+                    <span
+                      className="segbar-thumb"
+                      style={{ transform: `translateX(${progView === "chart" ? "100%" : "0%"})` }}
+                      aria-hidden="true"
+                    />
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={progView === "list"}
+                      className={"segbar-btn" + (progView === "list" ? " active" : "")}
+                      onClick={() => switchProgView("list")}
+                    >
+                      一覧
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={progView === "chart"}
+                      className={"segbar-btn" + (progView === "chart" ? " active" : "")}
+                      onClick={() => switchProgView("chart")}
+                    >
+                      グラフ
+                    </button>
+                  </div>
+                )}
                 {/* 対象年は「進捗」の集計に使うもの。
                     スケジュールは Ad Hoc の開始日・期日で表示するので出さない。 */}
-                {years.length > 0 && (activeTab === "progress" || activeTab === "graph") && (
+                {years.length > 0 && activeTab === "progress" && (
                   <Pulldown
                     value={year ?? ""}
                     onChange={(v) => setYear(Number(v))}
@@ -2924,7 +2943,7 @@ ${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めません�
             );
           })()}
 
-          {activeTab === "progress" && !isEdit && tableTab === "regular" && (
+          {activeTab === "progress" && progView === "list" && !isEdit && tableTab === "regular" && (
           <div className="tab-panel overview-row">
             <div className="summary-row overview-tables">
             {summary && renderTypes.length > 0 && (
@@ -3139,7 +3158,7 @@ ${e.memo}` : e.task}>
             );
           })()}
 
-          {activeTab === "progress" && !isEdit && tableTab === "adhoc" && adhoc && (adhoc.length > 0 || customAdhoc.length > 0) && (() => {
+          {activeTab === "progress" && progView === "list" && !isEdit && tableTab === "adhoc" && adhoc && (adhoc.length > 0 || customAdhoc.length > 0) && (() => {
             // シート由来のタスク＋サイトで追加したタスクを結合
             const merged = [
               ...adhoc,
@@ -3639,13 +3658,13 @@ ${e.memo}` : e.task}>
             );
           })()}
 
-          {activeTab === "graph" && !isEdit && (
+          {activeTab === "progress" && progView === "chart" && !isEdit && (
             <div className="tab-panel">
               {/* 切り替えは上のタブ行に移したので、ここはコピーボタンだけ */}
               <div className="sec-row sub-tabs">
-                <CopyChartsBtn targetRef={graphTab === "regular" ? graphGridRef : adhocGridRef} />
+                <CopyChartsBtn targetRef={tableTab === "regular" ? graphGridRef : adhocGridRef} />
               </div>
-              {graphTab === "regular" ? (
+              {tableTab === "regular" ? (
                 <ProgressChart
                   year={year}
                   dateCode={dateCode}
@@ -3673,7 +3692,7 @@ ${e.memo}` : e.task}>
           )}
 
           {/* プロジェクト進捗：案件タイプ別のステータス×四半期（全ステータスを0件でも表示） */}
-          {activeTab === "progress" && tableTab === "regular" && (renderTypes.length === 0 ? (
+          {activeTab === "progress" && progView === "list" && tableTab === "regular" && (renderTypes.length === 0 ? (
             <div className="card">
               <div className="notice">案件がありません。</div>
             </div>
@@ -3786,7 +3805,7 @@ ${e.memo}` : e.task}>
             </>
           ))}
 
-          {activeTab === "progress" && tableTab === "regular" && yearAgg && yearAgg.noDate > 0 && (
+          {activeTab === "progress" && progView === "list" && tableTab === "regular" && yearAgg && yearAgg.noDate > 0 && (
             <p className="note-line">
               ※「{dateLabel}」が空欄で四半期に振り分けられない案件が {fmt(yearAgg.noDate)} 件あります（別の基準日に切り替えると変わります）。
             </p>
