@@ -11871,3 +11871,24 @@ body {
 .sh-panel {
   border-radius: 14px;
 }
+
+/* ══════════════ ダッシュボード：タブと対象年をヘッダーの中へ ══════════════
+   ページタイトルの右に少し間を空けて縦の仕切り線を置き、その先にタブ・
+   Regular / Ad Hoc の切替・対象年のプルダウンを並べる。 */
+.head-sep {
+  flex: 0 0 auto;
+  width: 1px;
+  height: 22px;
+  margin: 0 5px;
+  background: var(--border2);
+  border-radius: 1px;
+}
+.head-left > .tabbar-row.head-tabbar {
+  margin: 0;
+  gap: 10px;
+  flex-wrap: nowrap;
+}
+/* タイトル＋タブが入るので、狭い画面では縮められるようにする */
+.head-left {
+  min-width: 0;
+}

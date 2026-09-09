@@ -2316,6 +2316,95 @@ export default function TaskBoard({ mode = "view" }) {
             </svg>
           </span>
           <span className="page-h page-h-gap">{isEdit ? "プロジェクト管理" : "ダッシュボード"}</span>
+          {/* タブと対象年はヘッダーの中に置く。
+              ページタイトルとのあいだは少し空けて、縦の仕切り線で区切る。 */}
+          {!isEdit && (
+            <>
+              <span className="head-sep" aria-hidden="true" />
+              <div className="tabbar-row head-tabbar">
+                <div className="segbar" role="tablist" aria-label="表示切替" ref={setSegEl}>
+                  <span
+                    className="segbar-thumb"
+                    style={segThumb ? { left: segThumb.left, width: segThumb.width, transform: "none" } : { opacity: 0 }}
+                    aria-hidden="true"
+                  />
+                  <button
+                    type="button"
+                    role="tab"
+                    data-tab="schedule"
+                    aria-selected={tab === "schedule"}
+                    className={"segbar-btn" + (tab === "schedule" ? " active" : "")}
+                    onClick={() => switchTab("schedule")}
+                  >
+                    スケジュール
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    data-tab="progress"
+                    aria-selected={tab === "progress"}
+                    className={"segbar-btn" + (tab === "progress" ? " active" : "")}
+                    onClick={() => switchTab("progress")}
+                  >
+                    進捗表
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    data-tab="graph"
+                    aria-selected={tab === "graph"}
+                    className={"segbar-btn" + (tab === "graph" ? " active" : "")}
+                    onClick={() => switchTab("graph")}
+                  >
+                    進捗グラフ
+                  </button>
+                </div>
+                {/* Regular Task / Ad Hoc Task の切り替えは、対象年のプルダウンの左に置く */}
+                {hasSubTabs && (
+                  <div
+                    className="segbar segbar-sm"
+                    role="tablist"
+                    aria-label={activeTab === "graph" ? "進捗グラフの表示切替" : "進捗表の表示切替"}
+                  >
+                    <span
+                      className="segbar-thumb"
+                      style={{ transform: `translateX(${subTab === "adhoc" ? "100%" : "0%"})` }}
+                      aria-hidden="true"
+                    />
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={subTab === "regular"}
+                      className={"segbar-btn" + (subTab === "regular" ? " active" : "")}
+                      onClick={() => setSubTab("regular")}
+                    >
+                      Regular Task
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={subTab === "adhoc"}
+                      className={"segbar-btn" + (subTab === "adhoc" ? " active" : "")}
+                      onClick={() => setSubTab("adhoc")}
+                    >
+                      Ad Hoc Task
+                    </button>
+                  </div>
+                )}
+                {/* 対象年は「進捗」の集計に使うもの。
+                    スケジュールは Ad Hoc の開始日・期日で表示するので出さない。 */}
+                {years.length > 0 && activeTab !== "schedule" && (
+                  <Pulldown
+                    value={year ?? ""}
+                    onChange={(v) => setYear(Number(v))}
+                    ariaLabel="対象年"
+                    icon="calendar"
+                    options={years.map((y) => ({ value: y, label: `${y} 年` }))}
+                  />
+                )}
+              </div>
+            </>
+          )}
         </div>
         <div className="head-right">
           {editable && (
@@ -2347,92 +2436,6 @@ export default function TaskBoard({ mode = "view" }) {
         </div>
       ) : (
         <>
-          {!isEdit && (
-          <div className="tabbar-row">
-            <div className="segbar" role="tablist" aria-label="表示切替" ref={setSegEl}>
-            <span
-              className="segbar-thumb"
-              style={segThumb ? { left: segThumb.left, width: segThumb.width, transform: "none" } : { opacity: 0 }}
-              aria-hidden="true"
-            />
-            <button
-              type="button"
-              role="tab"
-              data-tab="schedule"
-              aria-selected={tab === "schedule"}
-              className={"segbar-btn" + (tab === "schedule" ? " active" : "")}
-              onClick={() => switchTab("schedule")}
-            >
-              スケジュール
-            </button>
-            <button
-              type="button"
-              role="tab"
-              data-tab="progress"
-              aria-selected={tab === "progress"}
-              className={"segbar-btn" + (tab === "progress" ? " active" : "")}
-              onClick={() => switchTab("progress")}
-            >
-              進捗表
-            </button>
-            <button
-              type="button"
-              role="tab"
-              data-tab="graph"
-              aria-selected={tab === "graph"}
-              className={"segbar-btn" + (tab === "graph" ? " active" : "")}
-              onClick={() => switchTab("graph")}
-            >
-              進捗グラフ
-            </button>
-            </div>
-            {/* Regular Task / Ad Hoc Task の切り替えは、対象年のプルダウンの左に置く */}
-            {hasSubTabs && (
-              <div
-                className="segbar segbar-sm"
-                role="tablist"
-                aria-label={activeTab === "graph" ? "進捗グラフの表示切替" : "進捗表の表示切替"}
-              >
-                <span
-                  className="segbar-thumb"
-                  style={{ transform: `translateX(${subTab === "adhoc" ? "100%" : "0%"})` }}
-                  aria-hidden="true"
-                />
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={subTab === "regular"}
-                  className={"segbar-btn" + (subTab === "regular" ? " active" : "")}
-                  onClick={() => setSubTab("regular")}
-                >
-                  Regular Task
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={subTab === "adhoc"}
-                  className={"segbar-btn" + (subTab === "adhoc" ? " active" : "")}
-                  onClick={() => setSubTab("adhoc")}
-                >
-                  Ad Hoc Task
-                </button>
-              </div>
-            )}
-            {/* 対象年は「進捗」の集計に使うもの。
-                スケジュールは Ad Hoc の開始日・期日で表示するので出さない。 */}
-            {years.length > 0 && activeTab !== "schedule" && (
-              <Pulldown
-                value={year ?? ""}
-                onChange={(v) => setYear(Number(v))}
-                ariaLabel="対象年"
-                icon="calendar"
-                options={years.map((y) => ({ value: y, label: `${y} 年` }))}
-              />
-            )}
-            {/* アカウント管理はサイドバーのメニューに移設 */}
-          </div>
-          )}
-
           {isEdit && (() => {
             // 管理表の行データ（区分ごと）。数値は自動集計、設定（優先/対応者/進捗/名前/並び）を編集する。
             const regRows = (regularTypes || [])
