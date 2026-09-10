@@ -12030,7 +12030,8 @@ body {
   display: inline-block;
   padding: 1px 0;
   border-bottom: 1px dashed transparent;
-  font-size: 12.5px;
+  /* 担当者名は表の中でよく見る値なので、少しだけ大きめにする */
+  font-size: 13.5px;
   line-height: 1.3;
 }
 .wrap.persons-page .persons-table .name-stack .name-sub {
