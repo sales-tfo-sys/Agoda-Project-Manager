@@ -12076,28 +12076,16 @@ body {
   font-size: 13px;
 }
 
-/* Kintone取込のあいだのしるし。アイコンを回すと落ち着かないので、
-   その場でゆっくり明滅させるだけにする（動きを減らす設定では止める） */
-.icon-busy {
-  animation: icon-busy-pulse 1.3s ease-in-out infinite;
-}
-@keyframes icon-busy-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.35;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .icon-busy {
-    animation: none;
-    opacity: 0.6;
-  }
-}
-
 /* 施設一覧：ページ送りの下に下地の帯が見えていたので、表の枠を画面の下端まで伸ばす */
 .wrap.page-fill {
   padding-bottom: 0;
+}
+
+/* ダッシュボードの「作業工数表 → 一覧」は、ヘッダーのすぐ下から表が始まるようにする
+   （ヘッダーの下余白 10px が隙間として見えていた） */
+.wrap > .head:has(+ .tab-panel.kosu-panel) {
+  margin-bottom: 0;
+}
+.tab-panel.kosu-panel > .card.no-pad {
+  margin-top: 0;
 }

@@ -13,6 +13,7 @@ import Pulldown from "./Pulldown";
 import { cachedJson, peekJson, invalidate } from "./dataCache";
 import ResourceCharts, { useResource } from "./kosu/ResourceCharts";
 import DetailTable from "./kosu/DetailTable";
+import { useUi } from "./Ui";
 
 const TYPE_CODE = "ドロップダウン_13"; // 案件名（空欄は Hotel依頼）
 const STAGE_CODE = "ドロップダウン"; // Stage（ステータス）
@@ -1312,25 +1313,33 @@ export default function TaskBoard({ mode = "view" }) {
 
   // Kintone → Supabase の手動同期。完了後に画面を再読み込みする。
   const [syncing, setSyncing] = useState(false);
+  // 取込中／完了のメッセージは画面中央の共通オーバーレイに出す
+  const { setBusy, flashDone } = useUi();
   const syncKintone = useCallback(async () => {
     setSyncing(true);
     setError(null);
+    // 数秒〜十数秒かかるので、画面中央に「取込中」を出して待ってもらう
+    setBusy("Kintone から取り込み中…");
     try {
       const res = await fetch("/api/kintone-sync", { method: "POST" }).then((r) => r.json());
-      if (res.error) setError(res.error);
-      else {
+      if (res.error) {
+        setBusy(null);
+        setError(res.error);
+      } else {
         // 取り込んだら、ためていた案件データは捨てて取り直す
         invalidate("/api/records");
         await load();
+        flashDone("取り込みました");
       }
     } catch (e) {
+      setBusy(null);
       setError(String(e?.message || e));
     } finally {
       setSyncing(false);
     }
     // load は下で定義（同一レンダー内の関数参照なので依存に入れない）
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [setBusy, flashDone]);
 
   const load = useCallback(async () => {
     // 前に取ったものがあれば、待たせずにそのまま出す
@@ -2544,7 +2553,7 @@ export default function TaskBoard({ mode = "view" }) {
               title="Kintone取込（最新データを取り込みます・数秒〜十数秒）"
               aria-label="Kintone取込"
             >
-              <svg className={syncing ? "icon-busy" : ""} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <polyline points="8 17 12 21 16 17" />
                 <line x1="12" y1="12" x2="12" y2="21" />
                 <path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29" />

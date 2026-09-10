@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import UpdatedPop from "./UpdatedPop";
 import Pulldown from "./Pulldown";
 import { cachedJson, peekJson, invalidate } from "./dataCache";
+import { useUi } from "./Ui";
 
 const TYPE_ORDER = ["Hotel", "ACQ", "Liberty", "Temairazu", "IHM"];
 
@@ -289,6 +290,8 @@ export default function Page() {
   const [qDeb, setQDeb] = useState(""); // 実際の絞り込みに使う値（デバウンス）
   const [canSync, setCanSync] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  // 取込中／完了のメッセージは画面中央の共通オーバーレイに出す
+  const { setBusy, flashDone } = useUi();
   // ヘッダークリックでの並べ替え（col=フィールドコード, dir=asc/desc）
   const [sort, setSort] = useState({ col: null, dir: "asc" });
 
@@ -339,20 +342,26 @@ export default function Page() {
   const syncKintone = useCallback(async () => {
     setSyncing(true);
     setError(null);
+    // 数秒〜十数秒かかるので、画面中央に「取込中」を出して待ってもらう
+    setBusy("Kintone から取り込み中…");
     try {
       const res = await fetch("/api/kintone-sync", { method: "POST" }).then((r) => r.json());
-      if (res.error) setError(res.error);
-      else {
+      if (res.error) {
+        setBusy(null);
+        setError(res.error);
+      } else {
         // 取り込んだら、ためていた案件データは捨てて取り直す
         invalidate("/api/records");
         await load();
+        flashDone("取り込みました");
       }
     } catch (e) {
+      setBusy(null);
       setError(String(e?.message || e));
     } finally {
       setSyncing(false);
     }
-  }, [load]);
+  }, [load, setBusy, flashDone]);
 
   const formatDateTime = (d) =>
     d.toLocaleString("ja-JP", {
@@ -547,7 +556,7 @@ export default function Page() {
               title="Kintone取込（最新データを取り込みます・数秒〜十数秒）"
               aria-label="Kintone取込"
             >
-              <svg className={syncing ? "icon-busy" : ""} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <polyline points="8 17 12 21 16 17" />
                 <line x1="12" y1="12" x2="12" y2="21" />
                 <path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29" />
