@@ -12008,29 +12008,3 @@ body {
   font-size: 10.5px;
   line-height: 1.25;
 }
-
-/* ══════════════ アカウント管理：除外メンバーの地色 ══════════════
-   赤系だと「エラー」に見えるので、少し濃いめのラベンダーグレーにする。
-   （「除外」バッジは赤のまま残して、そこだけで状態が分かるようにする） */
-.persons-page tr.row-retired td,
-.persons-page .persons-table tbody tr.row-retired:nth-child(even) td {
-  background: #c6c3d4;
-  color: #3b3750;
-}
-.persons-page tr.row-retired:hover td {
-  background: #bdb9cd;
-}
-.persons-page .persons-table tbody tr.row-retired td {
-  border-bottom-color: #a9a5bd;
-  border-right-color: #a9a5bd;
-}
-.persons-page .persons-table tbody tr.row-retired + tr td,
-.persons-page .persons-table tbody tr:has(+ tr.row-retired) td {
-  border-bottom-color: #a9a5bd;
-}
-.persons-page .row-retired .name-main {
-  color: #332f47;
-}
-.persons-page .row-retired .name-sub {
-  color: #565273;
-}
