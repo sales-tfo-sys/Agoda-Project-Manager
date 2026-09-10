@@ -215,9 +215,10 @@ function HealthIcon() {
 // メニューの並び。
 //   admin: true  … 閲覧権限のある人（オーナー・管理者）だけに出す
 //   admin なし   … 全員に出す（ページ単位で閲覧不可にされている場合だけ隠す）
-// 作業工数管理はプロジェクト管理の下に置くが、見られる人は今までどおり全員。
 const TABS = [
   { href: "/dashboard", label: "ダッシュボード", Icon: GridIcon },
+  // プロジェクト管理はダッシュボードと対で使うので、管理者用の並びから上げてすぐ下に置く
+  { href: "/project", label: "プロジェクト管理", Icon: BoardIcon, admin: true },
   { href: "/work-requests", label: "作業依頼", Icon: WorkReqIcon },
   { href: "/", label: "施設一覧", Icon: ListIcon },
   // グラフページは一旦削除（app/graphs を除去）
@@ -229,7 +230,6 @@ const TABS = [
   { href: "/design-spec", label: "設計仕様書", Icon: SpecIcon, admin: true },
   { href: "/system-health", label: "システムヘルス", Icon: HealthIcon, admin: true },
   { href: "/kosu/persons", label: "アカウント管理", Icon: PersonIcon, admin: true },
-  { href: "/project", label: "プロジェクト管理", Icon: BoardIcon, admin: true },
   // 作業工数管理は中身（作業リソース詳細・工数明細）をダッシュボードの
   // 「作業工数表」タブ（一覧＝工数明細／グラフ＝作業リソース詳細）へ移したので、ページごと廃止した
 ];
