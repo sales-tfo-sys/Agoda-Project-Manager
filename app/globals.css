@@ -12041,3 +12041,12 @@ body {
 .wrap.persons-page .persons-table td .link-cell {
   border-bottom-color: var(--border2);
 }
+
+/* アカウント管理：アカウント列（写真・名前・メール）を少し左に寄せる
+   （取っ手のすぐ右なので、他の列と同じ 16px だと空きすぎて見える） */
+.wrap.persons-page .persons-table td.name-cell {
+  padding-left: 8px;
+}
+.wrap.persons-page .persons-table thead th:nth-child(2) {
+  padding-left: 8px;
+}
