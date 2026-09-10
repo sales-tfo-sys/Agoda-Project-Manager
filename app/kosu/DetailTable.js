@@ -31,6 +31,12 @@ function normName(v) {
     .toLowerCase();
 }
 
+// 「2026/08/06」「2026-08-06」「2026-08-06T…」→「2026-08」。取れなければ null。
+function ymOf(v) {
+  const m = String(v || "").match(/(\d{4})[-/](\d{1,2})/);
+  return m ? `${m[1]}-${String(m[2]).padStart(2, "0")}` : null;
+}
+
 // 工数明細（日次）。工数管理ページ内と単独ページの両方で使う共通部品。
 // toolbarHost を渡すと、対象月のプルダウンと対応中/完了の切替をその要素の中に描く
 // （ダッシュボードの「作業工数表」タブでは、ヘッダーのタブの右に並べるため）。
@@ -46,7 +52,7 @@ export default function DetailTable({ title, compact = false, toolbarHost = null
   const [leftOnByName, setLeftOnByName] = useState({});
 
   // ダッシュボードで編集した「作業内容（名称）」と「対応者」を反映するための対応表
-  const [link, setLink] = useState({ rename: {}, tanto: {}, tasks: {}, done: new Set(), doneNorm: new Set(), compDateByKey: {}, compDateByLink: {}, compDateByNorm: {}, order: {}, statusOf: {} });
+  const [link, setLink] = useState({ rename: {}, tanto: {}, tasks: {}, done: new Set(), doneNorm: new Set(), endByContent: {}, order: {}, statusOf: {} });
 
   const load = useCallback(async () => {
     setError(null);
@@ -77,12 +83,8 @@ export default function DetailTable({ title, compact = false, toolbarHost = null
       else {
         setData(json);
         const done = new Set();
-        const tkCompletedOn = {};
         for (const t of tk?.tasks || []) {
-          if (t.completed) {
-            done.add(`${t.task_type}|${t.content}`);
-            if (t.completed_on) tkCompletedOn[`${t.task_type}|${t.content}`] = t.completed_on;
-          }
+          if (t.completed) done.add(`${t.task_type}|${t.content}`);
         }
         setCompletedKeys(done);
 
@@ -330,9 +332,11 @@ export default function DetailTable({ title, compact = false, toolbarHost = null
         // ダッシュボードの Ad Hoc タスク一覧（シート由来＋サイト追加分）と、その進捗
         const sheetStatus = {};
         const sheetUpdated = {};
+        const sheetEnd = {};
         for (const t of adh?.tasks || []) {
           sheetStatus[t.task] = t.status;
           sheetUpdated[t.task] = t.updated_at;
+          if (t.end) sheetEnd[t.task] = t.end;
         }
         const allTasks = new Set([
           ...Object.keys(sheetStatus),
@@ -343,14 +347,19 @@ export default function DetailTable({ title, compact = false, toolbarHost = null
         // 進捗は「画面で編集した値 → シートの値」の順に採用
         const ovStatus = {};
         const ovUpdated = {};
+        const ovEnd = {};
         for (const it of ovr?.items || []) {
-          if (it.scope === "adhoc" && it?.data?.status) {
+          if (it.scope !== "adhoc") continue;
+          if (it?.data?.status) {
             ovStatus[it.key] = it.data.status;
             ovUpdated[it.key] = it.updated_at;
           }
+          if (it?.data?.end) ovEnd[it.key] = it.data.end;
         }
         const statusOf = (k) => ovStatus[k] ?? sheetStatus[k] ?? null;
         const updatedOf = (k) => ovUpdated[k] ?? sheetUpdated[k] ?? null;
+        // 期日は「画面で編集した値 → シートの値」の順に採用（ダッシュボードと同じ）
+        const endOf = (k) => ovEnd[k] ?? sheetEnd[k] ?? null;
 
         // 名前一致で紐づける照合先。Regular task の行は Ad Hoc と対応しないため除外する。
         // 取り込んだ作業（シートに無い分）も照合先に含める。
@@ -367,6 +376,7 @@ export default function DetailTable({ title, compact = false, toolbarHost = null
         const tasksOf = {};
         const statuses = {};
         const updatedAts = {};
+        const endYm = {}; // 作業内容 → 期日の月（"YYYY-MM"）
         const addTo = (content, key) => {
           if (!content) return;
           if (!tasksOf[content]) tasksOf[content] = [];
@@ -379,6 +389,9 @@ export default function DetailTable({ title, compact = false, toolbarHost = null
           statuses[content].push(statusOf(key));
           if (!updatedAts[content]) updatedAts[content] = [];
           updatedAts[content].push(updatedOf(key));
+          // 1行に複数タスクをまとめている場合は、いちばん遅い期日をその行の期日とする
+          const ym = ymOf(endOf(key));
+          if (ym && (!endYm[content] || ym > endYm[content])) endYm[content] = ym;
         };
         for (const key of allTasks) {
           if (linkedTo[key]) {
@@ -405,35 +418,24 @@ export default function DetailTable({ title, compact = false, toolbarHost = null
         }
         // 紐づいたタスクが全て Complete なら、その作業内容は完了とみなす
         const doneByLink = new Set();
-        const compDateByLink = {};
         for (const [content, sts] of Object.entries(statuses)) {
-          if (sts.length > 0 && sts.every((s) => s === "Complete")) {
-            doneByLink.add(content);
-            const dts = updatedAts[content] || [];
-            let maxD = null;
-            for (const d of dts) if (d && (!maxD || d > maxD)) maxD = d;
-            if (maxD) compDateByLink[content] = maxD;
-          }
+          if (sts.length > 0 && sts.every((s) => s === "Complete")) doneByLink.add(content);
         }
         // 進捗シートと作業工数管理シートで全角/半角カッコや空白が食い違うと
         // 名前が一致せず完了判定できないので、正規化した名前でも完了集合を作る。
         const doneNorm = new Set();
-        const compDateByNorm = {};
         for (const [k, s] of Object.entries(sheetStatus)) {
-          if (s === "Complete") {
-            const nk = normName(k);
-            doneNorm.add(nk);
-            compDateByNorm[nk] = sheetUpdated[k];
-          }
+          if (s === "Complete") doneNorm.add(normName(k));
         }
         for (const [k, s] of Object.entries(ovStatus)) {
-          if (s === "Complete") {
-            const nk = normName(k);
-            doneNorm.add(nk);
-            const d = ovUpdated[k];
-            if (d && (!compDateByNorm[nk] || d > compDateByNorm[nk])) {
-              compDateByNorm[nk] = d;
-            }
+          if (s === "Complete") doneNorm.add(normName(k));
+        }
+        // 名前が一致せず addTo に載らなかったタスクぶんも、期日を名前で引けるようにする
+        for (const k of allTasks) {
+          const ym = ymOf(endOf(k));
+          if (!ym) continue;
+          for (const n of [k, renamed[k]]) {
+            if (n && (!endYm[n] || ym > endYm[n])) endYm[n] = ym;
           }
         }
         // プロジェクト管理と同じ並び順にするための材料を、作業内容ごとに集める。
@@ -479,9 +481,7 @@ export default function DetailTable({ title, compact = false, toolbarHost = null
           tasks: tasksOf,
           done: doneByLink,
           doneNorm,
-          compDateByKey: tkCompletedOn,
-          compDateByLink,
-          compDateByNorm,
+          endByContent: endYm,
           order: orderOf,
           statusOf: statusOfContent,
         });
@@ -565,25 +565,38 @@ export default function DetailTable({ title, compact = false, toolbarHost = null
     return out;
   }, [monthIdx, monthYM]);
 
+  // 表示中の月（"YYYY-MM"）。全月表示のときは今月を使う。
+  const viewMonth = useMemo(() => {
+    const ym = monthIdx == null ? null : monthYM[monthIdx];
+    if (ym) return `${ym.y}-${String(ym.m).padStart(2, "0")}`;
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  }, [monthIdx, monthYM]);
+
   // 完了の判定：作業内容管理で完了にしたもの、または
   // 紐づいたダッシュボードの Ad Hoc タスクが全て Complete のもの。
-  // Complete になったらすぐ「完了」タブへ移す。
-  // （以前は「完了した月のあいだは対応中に残す」扱いにしていたが、
-  //   終わったタスクが対応中に居座って分かりにくいのでやめた）
+  // ただし Complete でも「期日の月」のあいだは対応中に残す。
+  //   例）期日 2026/09/30 → 9月の表では対応中、10月の表から完了。
+  // その月はまだ工数入力が続くので、期日の月までは対応中で見えていた方が扱いやすい。
+  // 期日が分からないものは、Complete になった時点で完了として扱う。
   // タブは表示の切り替えだけで、工数の集計（作業リソース詳細・担当者別内訳）や
-  // 工数入力の表示には影響しない。完了した月の工数はそのまま集計される。
+  // 工数入力の表示には影響しない。
   const isDone = useCallback(
     (r) => {
       const key = `${r.type}|${r.detail}`;
       const name = link.rename[r.detail] || r.detail;
-      return !!(
+      const complete =
         completedKeys?.has(key) ||
         link.done?.has(r.detail) ||
         link.done?.has(name) ||
-        link.doneNorm?.has(normName(name))
-      );
+        link.doneNorm?.has(normName(name));
+      if (!complete) return false;
+      const endYm =
+        link.endByContent?.[r.detail] ?? link.endByContent?.[name] ?? null;
+      if (!endYm) return true;
+      return viewMonth > endYm;
     },
-    [completedKeys, link]
+    [completedKeys, link, viewMonth]
   );
 
   // シート由来の行＋サイト側で追加した行。
