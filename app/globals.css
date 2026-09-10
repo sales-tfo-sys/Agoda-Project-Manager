@@ -12075,3 +12075,24 @@ body {
 .persons-page .person-photo-none {
   font-size: 13px;
 }
+
+/* Kintone取込のあいだのしるし。アイコンを回すと落ち着かないので、
+   その場でゆっくり明滅させるだけにする（動きを減らす設定では止める） */
+.icon-busy {
+  animation: icon-busy-pulse 1.3s ease-in-out infinite;
+}
+@keyframes icon-busy-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .icon-busy {
+    animation: none;
+    opacity: 0.6;
+  }
+}
