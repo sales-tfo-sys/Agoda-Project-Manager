@@ -357,7 +357,7 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
       title="担当者を追加"
       aria-label="担当者を追加"
     >
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M15 20v-1.6a3.6 3.6 0 0 0-3.6-3.6H6.6A3.6 3.6 0 0 0 3 18.4V20" />
         <circle cx="9" cy="7.6" r="3.6" />
         <line x1="19" y1="8" x2="19" y2="14" />

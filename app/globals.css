@@ -12050,3 +12050,11 @@ body {
 .wrap.persons-page .persons-table thead th:nth-child(2) {
   padding-left: 8px;
 }
+
+/* アカウント管理：ヘッダーの2つのボタン（編集・担当者を追加）を同じ大きさにそろえる
+   （追加ボタンだけ 34px で、ほかのページのアイコンボタン 30px と揃っていなかった） */
+.persons-page .primary-btn.icon-only.add-person-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+}
