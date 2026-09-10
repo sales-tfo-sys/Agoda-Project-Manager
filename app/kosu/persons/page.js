@@ -145,6 +145,9 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
   };
   // インライン編集：{ id, field: "name" | "email", value }
   const [edit, setEdit] = useState(null);
+  // メール・担当者名の書き換えは、いきなりクリックできると誤編集につながるので
+  // ヘッダーの編集ボタンを押しているあいだだけ触れるようにする
+  const [textEdit, setTextEdit] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -363,6 +366,26 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
     </button>
   ) : null;
 
+  // メール・担当者名の編集モードを切り替えるボタン（追加ボタンの左に置く）
+  const textEditBtn = canEdit ? (
+    <button
+      className={"icon-btn persons-edit-btn" + (textEdit ? " on" : "")}
+      onClick={() => {
+        setEdit(null);
+        setTextEdit((v) => !v);
+      }}
+      title={textEdit ? "編集を終了" : "メール・担当者名を編集"}
+      aria-label={textEdit ? "編集を終了" : "メール・担当者名を編集"}
+      aria-pressed={textEdit}
+    >
+      {textEdit ? (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+      ) : (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z" /></svg>
+      )}
+    </button>
+  ) : null;
+
   // 権限の確認が終わるまでは何も出さない（一瞬でも中身を見せない）
   if (!permsLoaded) {
     return (
@@ -413,12 +436,18 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
             </span>
             <span className="page-h page-h-gap">アカウント管理</span>
           </div>
-          <div className="head-right">{addPersonBtn}</div>
+          <div className="head-right">
+            {textEditBtn}
+            {addPersonBtn}
+          </div>
         </div>
       )}
 
       {embedded && canEdit && (
-        <div className="persons-embed-tools">{addPersonBtn}</div>
+        <div className="persons-embed-tools">
+          {textEditBtn}
+          {addPersonBtn}
+        </div>
       )}
 
       {!canEdit && (
@@ -674,7 +703,7 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                                 onKeyDown={(e) => e.key === "Enter" && saveEdit(p)}
                                 onBlur={() => saveEdit(p)}
                               />
-                            ) : canEdit ? (
+                            ) : canEdit && textEdit ? (
                               <button
                                 className="link-cell name-sub"
                                 onClick={() => setEdit({ id: p.id, field: "email", value: p.email || "" })}
@@ -700,7 +729,7 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                             onKeyDown={(e) => e.key === "Enter" && saveEdit(p)}
                             onBlur={() => saveEdit(p)}
                           />
-                        ) : canEdit ? (
+                        ) : canEdit && textEdit ? (
                           <button
                             className="link-cell"
                             onClick={() => setEdit({ id: p.id, field: "name", value: p.name })}
