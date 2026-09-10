@@ -12089,3 +12089,15 @@ body {
 .tab-panel.kosu-panel > .card.no-pad {
   margin-top: 0;
 }
+
+/* 担当者別 内訳：読みやすいように表そのものを少し大きくする
+   （文字を 11.5→13px、セルの余白を 3px 8px→6px 12px） */
+.res-card .res-table,
+.res-card .res-table td,
+.res-card .res-table thead th {
+  font-size: 13px;
+}
+.res-card .res-table thead th,
+.res-card .res-table td {
+  padding: 6px 12px;
+}
