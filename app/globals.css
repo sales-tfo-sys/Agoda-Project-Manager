@@ -12101,3 +12101,23 @@ body {
 .res-card .res-table td {
   padding: 6px 12px;
 }
+
+/* ══════════════ 作業工数表の一覧：見出し行を上に固定 ══════════════
+   ページ全体でスクロールすると見出しが流れてしまうので、
+   表の中だけを縦スクロールさせ、見出し行をその上に貼り付ける。
+   背景は不透明なので、下の行が透けることはない。 */
+.kosu-panel .dtw.dtw-embed {
+  max-height: calc(100vh - 58px);
+  overflow: auto;
+}
+.kosu-panel .dtw.dtw-embed .kosu-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+/* 左に固定している3列の見出しは、縦横どちらの固定にも勝たせる */
+.kosu-panel .dtw.dtw-embed .kosu-table thead .c-type,
+.kosu-panel .dtw.dtw-embed .kosu-table thead .c-content,
+.kosu-panel .dtw.dtw-embed .kosu-table thead .c-tanto {
+  z-index: 7;
+}
