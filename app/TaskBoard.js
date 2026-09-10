@@ -14,6 +14,7 @@ import { cachedJson, peekJson, invalidate } from "./dataCache";
 import ResourceCharts, { useResource } from "./kosu/ResourceCharts";
 import DetailTable from "./kosu/DetailTable";
 import { useUi } from "./Ui";
+import DailyReport from "./DailyReport";
 
 const TYPE_CODE = "ドロップダウン_13"; // 案件名（空欄は Hotel依頼）
 const STAGE_CODE = "ドロップダウン"; // Stage（ステータス）
@@ -2560,6 +2561,8 @@ export default function TaskBoard({ mode = "view" }) {
               </svg>
             </button>
           )}
+          {/* 毎日の報告メールの雛形（ダッシュボードのみ） */}
+          {!isEdit && <DailyReport />}
           <UpdatedPop />
         </div>
       </div>

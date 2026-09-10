@@ -785,6 +785,7 @@ export default function DesignSpecPage() {
                     閲覧専用。<b>スケジュール</b>（連続する2か月を、1つの枠に並べて表示する（月送りと「今月」は枠に1組だけなので、常に連続した月になる）。予定は Ad Hoc タスクの開始日・期日で、入っている日には印と件数を出す。一覧は日／週／月で範囲を切り替えられ、週・月は日付ごとにまとめて表示する）／<b>進捗表</b>（<b>Regular Task / Ad Hoc Task</b> と <b>一覧 / グラフ</b> の2段で切り替える。一覧は Regular Task・Pending のサマリー表、Ad Hoc Task 一覧、プロジェクト進捗（案件タイプ別のステータス×四半期）。グラフは Regular・Ad Hoc の日次推移。Regular / Ad Hoc の選択は一覧とグラフで共通）／<b>作業工数表</b>（<b>一覧 / グラフ</b> で切り替える。一覧は工数明細、グラフは週次の作業リソース詳細＝メンバー別 100% 積み上げ棒・Ad Hoc 詳細・担当者別内訳表。既定は今週、無ければ実績のある最新週）の3タブ。
                     タブと、その右の切替・プルダウン（進捗表＝一覧/グラフ・Regular/Ad Hoc・対象年／作業工数表＝一覧/グラフと、一覧なら対応中/完了・対象月、グラフなら対象週）はページヘッダーの中に置く。
                     作業工数表は案件データ（<C>/api/records</C>）を使わないので、その読み込みを待たずに表示する。
+                    ヘッダー右上には「Daily Report Template」（毎日の報告メールの雛形。To / CC / 件名 / 本文をアイコンボタンでコピーできる。文面は <C>app/DailyReport.js</C> の定数）を置く。
                     選択タブは localStorage に保存（<C>agoda-dash-tab</C>／進捗表の一覧・グラフは <C>agoda-progress-view</C>／作業工数表の一覧・グラフは <C>agoda-kosu-view</C>。旧「全体 / 案件詳細 / 進捗グラフ / 作業工数グラフ」の保存値も読み替える）。
                   </>,
                   <><C>/api/records</C>・<C>/api/adhoc</C>・<C>/api/adhoc-counts</C>・<C>/api/priority</C>・<C>/api/assign</C>・<C>/api/override</C>・<C>/api/adhoc-tasks</C>・<C>/api/kosu?list=1</C>・<C>/api/resource</C>・<C>/api/auth/me</C> ＋ 工数明細ぶん</>,
