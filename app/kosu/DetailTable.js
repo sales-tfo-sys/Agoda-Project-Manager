@@ -566,44 +566,24 @@ export default function DetailTable({ title, compact = false, toolbarHost = null
   }, [monthIdx, monthYM]);
 
   // 完了の判定：作業内容管理で完了にしたもの、または
-  // 紐づいたダッシュボードの Ad Hoc タスクが全て Complete のもの
+  // 紐づいたダッシュボードの Ad Hoc タスクが全て Complete のもの。
   // Complete になったらすぐ「完了」タブへ移す。
-  // 以前は「完了した週の金曜日までは対応中に残す」扱いだったが、
-  // 完了したものが対応中に居座って分かりにくいのでやめた。
+  // （以前は「完了した月のあいだは対応中に残す」扱いにしていたが、
+  //   終わったタスクが対応中に居座って分かりにくいのでやめた）
   // タブは表示の切り替えだけで、工数の集計（作業リソース詳細・担当者別内訳）や
-  // 工数入力の表示には影響しない。
-  // 表示中の月（"YYYY-MM"）。全月表示のときは今月を使う。
-  const viewMonth = useMemo(() => {
-    const ym = monthIdx == null ? null : monthYM[monthIdx];
-    if (ym) return `${ym.y}-${String(ym.m).padStart(2, "0")}`;
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-  }, [monthIdx, monthYM]);
-
-  // Complete でも「完了した月のあいだ」は対応中に残す。
-  // 例：9/8 に Complete → 9月の表では対応中のまま、10月の表からは完了に移る。
-  // その月の工数入力がまだ続くため、月内は対応中で見えていた方が扱いやすい。
+  // 工数入力の表示には影響しない。完了した月の工数はそのまま集計される。
   const isDone = useCallback(
     (r) => {
       const key = `${r.type}|${r.detail}`;
       const name = link.rename[r.detail] || r.detail;
-      let completedDate = null;
-      if (completedKeys?.has(key)) {
-        completedDate = link.compDateByKey?.[key];
-      } else if (link.done?.has(r.detail)) {
-        completedDate = link.compDateByLink?.[r.detail];
-      } else if (link.done?.has(name)) {
-        completedDate = link.compDateByLink?.[name];
-      } else if (link.doneNorm?.has(normName(name))) {
-        completedDate = link.compDateByNorm?.[normName(name)];
-      } else {
-        return false; // 完了していない
-      }
-      // 完了日が分からないものは、そのまま完了として扱う
-      if (!completedDate) return true;
-      return viewMonth > String(completedDate).slice(0, 7);
+      return !!(
+        completedKeys?.has(key) ||
+        link.done?.has(r.detail) ||
+        link.done?.has(name) ||
+        link.doneNorm?.has(normName(name))
+      );
     },
-    [completedKeys, link, viewMonth]
+    [completedKeys, link]
   );
 
   // シート由来の行＋サイト側で追加した行。
