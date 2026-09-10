@@ -11938,17 +11938,12 @@ body {
 .chart-grid.res-row {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
+/* 下の段に置くが、幅は中身ぶんだけ（引き伸ばさない）。左に寄せる */
 .chart-grid.res-row > .chart-card.res-card {
   grid-column: 1 / -1;
-  width: auto;
-  max-width: none;
-}
-/* 下の段は横幅いっぱいなので、表も枠の幅に合わせて広げる
-   （見出しの帯はカードの端まで伸ばしたいので、余白は表側に持たせる） */
-.res-row > .chart-card.res-card > .res-table {
-  width: calc(100% - 24px);
-  max-width: none;
-  margin: 10px 12px 11px;
+  justify-self: start;
+  width: max-content;
+  max-width: 100%;
 }
 
 /* サービスアカウントの案内モーダル：アドレスとコピーボタンを1行に並べる */
