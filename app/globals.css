@@ -12058,3 +12058,20 @@ body {
   height: 30px;
   border-radius: 9px;
 }
+
+/* ══════════════ アカウント管理：アカウント列のバランス ══════════════
+   写真の右上のログイン名を、下のメールと同じ文字サイズにする（太さで差を付ける）。
+   2段の文字が小さくなったぶん写真を 28→32px にして、行の高さ 41px は変えずに
+   写真と文字の高さがそろうようにする。 */
+.wrap.persons-page .persons-table .name-stack .name-main {
+  font-size: 10.5px;
+  line-height: 1.3;
+}
+.persons-page .person-photo,
+.persons-page .person-photo-none {
+  width: 32px;
+  height: 32px;
+}
+.persons-page .person-photo-none {
+  font-size: 13px;
+}
