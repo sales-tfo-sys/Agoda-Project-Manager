@@ -860,17 +860,7 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                       <td className="ops-td">
                         {canEdit ? (
                           <span className="pf-ops">
-                            {/* 除外したメンバーは「復帰」をその場に出す（元に戻す操作が多いため） */}
-                            {!p.active && (
-                              <button
-                                className="mini-btn pf-back"
-                                onClick={() => patch(p.id, { active: true, left_on: null })}
-                                disabled={busy}
-                                title="除外を解除する"
-                              >
-                                復帰
-                              </button>
-                            )}
+                            {/* 除外の解除は操作メニューの「除外解除」で行う */}
                             <button
                               type="button"
                               className={"pf-more" + (menu?.id === p.id ? " on" : "")}
@@ -936,7 +926,7 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                     patch(p.id, { active: true, left_on: null });
                   }}
                 >
-                  除外を解除
+                  除外解除
                 </button>
               )}
               <button
@@ -950,7 +940,7 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                   setDelTarget({ id: p.id, name: p.name });
                 }}
               >
-                削除する
+                削除
               </button>
             </div>,
             document.body
