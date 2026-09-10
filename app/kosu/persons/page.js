@@ -562,12 +562,12 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
               <thead>
                 <tr>
                   <th className="grip-th" aria-label="並べ替え" />
-                  <th className="l">担当者</th>
-                  <th className="l">メール（ログインID）</th>
+                  <th className="l">アカウント</th>
+                  <th className="l">担当者名</th>
                   <th>ログイン</th>
                   <th>権限</th>
                   <th className="grant-sub-th">権限編集</th>
-                  <th className="grant-sub-th">タスク関連</th>
+                  <th className="grant-sub-th">タスク編集</th>
                   <th>ページ権限</th>
                   <th>最終ログイン</th>
                   <th>除外日</th>
@@ -658,9 +658,16 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                             </span>
                           )}
                           <span className="name-stack">
-                            {edit?.id === p.id && edit.field === "name" ? (
+                            {/* 上段：ログイン時に取得した Google アカウント名。
+                                未ログインならメールから作った仮名を出す */}
+                            <span className="name-main">
+                              {p.login_name || romaji(p.email)}
+                            </span>
+                            {/* 下段：ログインIDになるメールアドレス（クリックで編集） */}
+                            {edit?.id === p.id && edit.field === "email" ? (
                               <input
-                                className="cell-input name-input"
+                                className="cell-input email-input"
+                                type="email"
                                 value={edit.value}
                                 autoFocus
                                 onChange={(e) => setEdit({ ...edit, value: e.target.value })}
@@ -669,31 +676,24 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                               />
                             ) : canEdit ? (
                               <button
-                                className="link-cell name-main"
-                                onClick={() => setEdit({ id: p.id, field: "name", value: p.name })}
-                                title="クリックで改名"
+                                className="link-cell name-sub"
+                                onClick={() => setEdit({ id: p.id, field: "email", value: p.email || "" })}
+                                title="クリックでメール編集"
                               >
-                                {p.name}
+                                {p.email || "未設定"}
                               </button>
                             ) : (
-                              <span className="name-main">
-                                {p.name}
-                              </span>
+                              <span className="name-sub">{p.email || "未設定"}</span>
                             )}
-                            {/* ログイン時に取得した Google アカウント名。
-                                未ログインならメールから作った仮名を出す */}
-                            <span className="name-sub">
-                              {p.login_name || romaji(p.email)}
-                            </span>
                           </span>
                           {!p.active && <span className="retired-tag">除外</span>}
                         </span>
                       </td>
+                      {/* 担当者名：登録時に入力した名前（工数明細などで使う表示名） */}
                       <td className="l">
-                        {edit?.id === p.id && edit.field === "email" ? (
+                        {edit?.id === p.id && edit.field === "name" ? (
                           <input
-                            className="cell-input email-input"
-                            type="email"
+                            className="cell-input name-input"
                             value={edit.value}
                             autoFocus
                             onChange={(e) => setEdit({ ...edit, value: e.target.value })}
@@ -703,13 +703,13 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                         ) : canEdit ? (
                           <button
                             className="link-cell"
-                            onClick={() => setEdit({ id: p.id, field: "email", value: p.email || "" })}
-                            title="クリックでメール編集"
+                            onClick={() => setEdit({ id: p.id, field: "name", value: p.name })}
+                            title="クリックで改名"
                           >
-                            {p.email || "未設定"}
+                            {p.name}
                           </button>
                         ) : (
-                          <span className="plain-cell">{p.email || "未設定"}</span>
+                          <span className="plain-cell">{p.name}</span>
                         )}
                       </td>
                       <td>
@@ -754,7 +754,7 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                         />
                       </td>
                       {/* 編集権限：管理者への個別付与だけを扱う。オーナー・メンバーは対象外＝「—」。
-                          「権限編集」「タスク関連」の2列（列見出しがラベルを兼ねる） */}
+                          「権限編集」「タスク編集」の2列（列見出しがラベルを兼ねる） */}
                       <td className="grant-cell">
                         {(p.role || "member") === "admin" ? (
                           <span className="login-cell-inner">
