@@ -11938,12 +11938,17 @@ body {
 .chart-grid.res-row {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
-/* 下の段に置くが、幅は中身ぶんだけ（引き伸ばさない）。左に寄せる */
+/* 下の段に置くが、大きさは3枚を横並びにしていた頃と同じにする。
+   幅は中身ぶん（引き伸ばさない）、高さも表の上下に同じだけ余白を取る
+   （横並びのときはグラフに合わせて伸びていて、その余白ぶん背が高かった）。 */
 .chart-grid.res-row > .chart-card.res-card {
   grid-column: 1 / -1;
   justify-self: start;
   width: max-content;
   max-width: 100%;
+}
+.res-row > .chart-card.res-card > .res-table {
+  margin: 11px 12px;
 }
 
 /* サービスアカウントの案内モーダル：アドレスとコピーボタンを1行に並べる */
