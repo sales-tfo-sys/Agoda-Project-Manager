@@ -17,6 +17,24 @@ function todayStr() {
   ).padStart(2, "0")}`;
 }
 
+// まとめている作業の代表の進捗。動いているもの（On Track → Behind → Onhold → Complete）を優先する。
+// 工数明細・プロジェクト管理と同じ順位づけ。
+const STATUS_RANK = { "On Track": 0, Behind: 1, Onhold: 2, Complete: 3 };
+function pickStatus(list) {
+  let best = null;
+  for (const st of list || []) {
+    if (!st || STATUS_RANK[st] == null) continue;
+    if (best == null || STATUS_RANK[st] < STATUS_RANK[best]) best = st;
+  }
+  return best;
+}
+function statusClass(st) {
+  if (st === "Complete") return "st-done";
+  if (st === "Onhold") return "st-hold";
+  if (st === "Behind") return "st-behind";
+  return "st-ontrack";
+}
+
 export default function KosuInputPage() {
   const [configured, setConfigured] = useState(null);
   const [persons, setPersons] = useState([]);
@@ -575,14 +593,25 @@ export default function KosuInputPage() {
                       ) : null}
                       <td className="l">
                         {t.content}
-                        {t.viaRecord && (
-                          <span
-                            className="task-rec"
-                            title="通常は表示されない作業ですが、この日に記録があるため表示しています"
-                          >
-                            記録あり
-                          </span>
-                        )}
+                        {/* Ad Hoc は進捗を出す。どの状態の作業に入力しているのかが
+                            分かるほうが、「記録あり」より役に立つため */}
+                        {!isRegular(t) &&
+                          (() => {
+                            const st = pickStatus(link.statusByContent[t.content]);
+                            if (!st) return null;
+                            return (
+                              <span
+                                className={"st-pill task-st " + statusClass(st)}
+                                title={
+                                  t.viaRecord
+                                    ? `進捗：${st}（この日に記録があるため表示しています）`
+                                    : `進捗：${st}`
+                                }
+                              >
+                                {st}
+                              </span>
+                            );
+                          })()}
                       </td>
                       <td>
                         {isRegular(t) ? (

@@ -9300,24 +9300,6 @@ td.v-strong,
 /* 工数入力：通常は出ない列・行（退職者／この日に記録がある作業）の目印。
    参照だけでなく編集もできるよう、入力表そのものに混ぜて出す。 */
 .kosu-input-table thead th .col-ret,
-.kosu-input-table tbody td .task-rec {
-  display: inline-block;
-  margin-left: 6px;
-  padding: 0 6px;
-  font-size: 9.5px;
-  font-weight: 700;
-  line-height: 15px;
-  vertical-align: 1px;
-  color: var(--ink-3);
-  background: #ffffff;
-  border: 1px solid var(--border2);
-  border-radius: 999px;
-}
-.kosu-input-table tbody td .task-rec {
-  color: var(--warn);
-  background: var(--warn-bg);
-  border-color: #ecd8a8;
-}
 
 /* タスク追加モーダル：項目が多いので本文をスクロールさせる */
 .modal-box .modal-body {
@@ -12177,4 +12159,27 @@ body {
   color: #ffffff;
   background: var(--accent);
   border-color: var(--accent);
+}
+
+/* 作業工数入力：作業名のうしろに進捗を出す。
+   表の中なので、プロジェクト管理の st-pill より一段小さくする */
+.kosu-input-table tbody td .st-pill.task-st {
+  min-width: 0;
+  margin-left: 8px;
+  padding: 1px 8px;
+  font-size: 9.5px;
+  vertical-align: 1px;
+}
+
+/* 作業リソース詳細：タイトルをもう少し内側へ寄せて大きくし、
+   棒の中の「93.8% (30h)」は一段小さくする（グラフが大きくなって目立ちすぎるため） */
+.res-row > .chart-card > .chart-head {
+  padding: 7px 0 0 18px;
+}
+.res-row > .chart-card > .chart-head .chart-title {
+  font-size: 14.5px;
+  letter-spacing: 0;
+}
+.res-row .stack-lbl {
+  font-size: 8.5px;
 }
