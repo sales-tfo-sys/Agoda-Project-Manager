@@ -12926,7 +12926,8 @@ body {
   overflow-wrap: anywhere;
 }
 
-/* 管理ページのタブ行。上（ヘッダーとの間＝6px）と下の余白をそろえる */
-.tabbar-row.manage-tabbar {
-  margin-bottom: 6px;
+/* 管理ページのタブはヘッダーの中に置く。ラベルの幅が違うので、
+   スライダーの位置と幅はJSで実測した値を当てる（他のページと同じ）。 */
+.segbar.manage-seg .segbar-btn {
+  white-space: nowrap;
 }

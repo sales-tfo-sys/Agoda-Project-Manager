@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import HidRequestsPage from "../hid-requests/page";
 import FormsPage from "../forms/page";
 import { cachedJson } from "../dataCache";
@@ -18,13 +18,57 @@ const TABS = [
 ];
 const STORE_KEY = "agoda-manage-tab";
 
+// 切り替えタブ。ラベルの幅が不揃いなので、選択中のボタンを実測して
+// スライダーを重ねる。計測はこの中で完結させる（外に状態を置くと、
+// 中身だけが作り直されたときに前の寸法が残ってしまう）。
+function ManageTabs({ items, value, onChange }) {
+  const ref = useRef(null);
+  const [thumb, setThumb] = useState(null);
+  useEffect(() => {
+    const fit = () => {
+      const el = ref.current?.querySelector(".segbar-btn.active");
+      if (el) setThumb({ left: el.offsetLeft, width: el.offsetWidth });
+    };
+    fit();
+    // 文字の読み込みなどで幅が後から変わることがあるので、描画直後にも測り直す
+    const raf = requestAnimationFrame(fit);
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(fit) : null;
+    if (ref.current && ro) ro.observe(ref.current);
+    document.fonts?.ready?.then(fit).catch(() => {});
+    window.addEventListener("resize", fit);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro?.disconnect();
+      window.removeEventListener("resize", fit);
+    };
+  }, [value, items]);
+
+  return (
+    <div className="segbar segbar-sm manage-seg" role="tablist" aria-label="管理の表示切替" ref={ref}>
+      <span
+        className="segbar-thumb"
+        style={thumb ? { left: thumb.left, width: thumb.width, transform: "none" } : { opacity: 0 }}
+        aria-hidden="true"
+      />
+      {items.map((t) => (
+        <button
+          key={t.key}
+          type="button"
+          role="tab"
+          aria-selected={t.key === value}
+          className={"segbar-btn" + (t.key === value ? " active" : "")}
+          onClick={() => onChange(t.key)}
+        >
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function ManagePage() {
   const [tab, setTab] = useState("hid");
   const [pages, setPages] = useState(null); // ページ権限（取得前は null）
-  // タブの幅が不揃いなので、選択中ボタンの実寸からスライダーを合わせる
-  // （ダッシュボードのタブと同じやり方）。
-  const [segEl, setSegEl] = useState(null);
-  const [segThumb, setSegThumb] = useState(null);
 
   useEffect(() => {
     try {
@@ -38,26 +82,6 @@ export default function ManagePage() {
       .then((j) => setPages(j?.perms?.pages || {}))
       .catch(() => setPages({}));
   }, []);
-
-  useEffect(() => {
-    if (!segEl) return;
-    const fit = () => {
-      const el = segEl.querySelector(".segbar-btn.active");
-      if (el) setSegThumb({ left: el.offsetLeft, width: el.offsetWidth });
-    };
-    fit();
-    // 文字の読み込みなどで幅が後から変わることがあるので、描画直後にも測り直す
-    const raf = requestAnimationFrame(fit);
-    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(fit) : null;
-    ro?.observe(segEl);
-    document.fonts?.ready?.then(fit).catch(() => {});
-    window.addEventListener("resize", fit);
-    return () => {
-      cancelAnimationFrame(raf);
-      ro?.disconnect();
-      window.removeEventListener("resize", fit);
-    };
-  }, [segEl, tab, pages]);
 
   const switchTab = (v) => {
     setTab(v);
@@ -79,32 +103,12 @@ export default function ManagePage() {
     );
   }
 
+  // タブはヘッダーの中（ページ名の右）に置く。他のページと同じ形。
   const tabs = shown.length > 1 && (
-    <div className="tabbar-row manage-tabbar">
-      <div className="segbar" role="tablist" aria-label="管理の表示切替" ref={setSegEl}>
-        <span
-          className="segbar-thumb"
-          style={
-            segThumb
-              ? { left: segThumb.left, width: segThumb.width, transform: "none" }
-              : { opacity: 0 }
-          }
-          aria-hidden="true"
-        />
-        {shown.map((t) => (
-          <button
-            key={t.key}
-            type="button"
-            role="tab"
-            aria-selected={t.key === active.key}
-            className={"segbar-btn" + (t.key === active.key ? " active" : "")}
-            onClick={() => switchTab(t.key)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-    </div>
+    <>
+      <span className="head-sep" aria-hidden="true" />
+      <ManageTabs items={shown} value={active.key} onChange={switchTab} />
+    </>
   );
 
   const Panel = active.Panel;

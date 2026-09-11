@@ -226,6 +226,8 @@ export default function FormsPage({ embedded, tabs } = {}) {
                 )}
               </span>
               <span className="page-h page-h-gap">{embedded ? "管理" : "フォーム回答"}</span>
+              {/* 管理ページに埋め込まれたときの切り替えタブ（ヘッダーの中に置く） */}
+              {tabs}
             </div>
             <div className="head-right">
               {canEdit && (
@@ -239,8 +241,6 @@ export default function FormsPage({ embedded, tabs } = {}) {
           </>
         )}
       </div>
-
-      {tabs}
 
       {error && <div className="banner err-banner">エラー：{error}</div>}
 
