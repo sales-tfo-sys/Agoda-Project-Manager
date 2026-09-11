@@ -22,6 +22,7 @@ function fmtUpdated(ms) {
 // embedded / tabs は「管理」ページに埋め込まれたときだけ渡される
 // （見出しを「管理」に差し替え、その下にタブ行を挟む）。
 export default function FormsPage({ embedded, tabs } = {}) {
+  const [q, setQ] = useState(""); // 回答の絞り込み（全部の列を対象に部分一致）
   const [items, setItems] = useState(null);
   const [counts, setCounts] = useState({}); // { id: {total, month, latest} | {error} }
   const [selected, setSelected] = useState(null);
@@ -114,11 +115,13 @@ export default function FormsPage({ embedded, tabs } = {}) {
   const openDetail = (id) => {
     setSelected(id);
     setGrid(null);
+    setQ("");
     loadGrid(id);
   };
   const backToList = () => {
     setSelected(null);
     setGrid(null);
+    setQ(""); // 検索は持ち越さない
   };
 
   const save = async () => {
@@ -181,8 +184,17 @@ export default function FormsPage({ embedded, tabs } = {}) {
   const monthResponses = cvals.reduce((s, c) => s + (c && !c.error ? c.month || 0 : 0), 0);
   const latestMs = cvals.reduce((m, c) => (c && !c.error && c.latest ? Math.max(m, c.latest) : m), 0);
 
+  // 検索に当たった行だけを出す。番号は元のままにして、シートと突き合わせられるようにする。
+  const shownRows = (() => {
+    const rows = grid?.rows || [];
+    const kw = q.trim().toLowerCase();
+    const all = rows.map((r, ri) => ({ r, no: ri + 1 }));
+    if (!kw) return all;
+    return all.filter(({ r }) => r.some((v) => String(v ?? "").toLowerCase().includes(kw)));
+  })();
+
   return (
-    <div className="wrap page-compact forms-page">
+    <div className={"wrap page-compact forms-page" + (selected ? " forms-detail" : "")}>
       {/* 上部ヘッダー（他ページと共通スタイル）。一覧と詳細で内容を出し分ける */}
       <div className="head">
         {selected ? (
@@ -194,10 +206,20 @@ export default function FormsPage({ embedded, tabs } = {}) {
                 </svg>
               </button>
               <span className="page-h page-h-gap">{current?.title || "フォーム回答"}</span>
-              {grid && !grid.error && (
-                <span className="forms-count-pill">
-                  {grid.total?.toLocaleString("ja-JP")} 件{grid.truncated && "（先頭のみ）"}
-                </span>
+              {/* 回答の絞り込み。どの列に入っている言葉でも引っかかる */}
+              {grid && !grid.error && (grid.rows || []).length > 0 && (
+                <label className="search-box forms-search" aria-label="回答を検索">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                    <circle cx="11" cy="11" r="7" />
+                    <line x1="16.5" y1="16.5" x2="21" y2="21" />
+                  </svg>
+                  <input
+                    type="search"
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                    placeholder="回答の中を検索..."
+                  />
+                </label>
               )}
             </div>
             <div className="head-right">
@@ -265,9 +287,9 @@ export default function FormsPage({ embedded, tabs } = {}) {
                   </tr>
                 </thead>
                 <tbody>
-                  {grid.rows.map((r, ri) => (
-                    <tr key={ri}>
-                      <td className="forms-rownum">{ri + 1}</td>
+                  {shownRows.map(({ r, no }) => (
+                    <tr key={no}>
+                      <td className="forms-rownum">{no}</td>
                       {grid.headers.map((_, ci) => {
                         const v = r[ci] ?? "";
                         // チェックボックス列（TRUE/FALSE）はチェックボックス表記で表示
@@ -291,6 +313,9 @@ export default function FormsPage({ embedded, tabs } = {}) {
                   ))}
                 </tbody>
               </table>
+              {shownRows.length === 0 && (
+                <div className="notice forms-empty">「{q}」に当てはまる回答はありません。</div>
+              )}
             </div>
           </div>
         )

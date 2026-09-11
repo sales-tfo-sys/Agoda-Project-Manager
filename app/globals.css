@@ -12951,3 +12951,17 @@ body {
   margin-left: auto;
   flex: 0 0 auto;
 }
+
+/* フォーム回答の詳細：ヘッダーと一覧の隙間を無くす */
+.wrap.page-compact.forms-page.forms-detail .head {
+  margin-bottom: 0;
+}
+/* ヘッダーに置く検索ボックス（一覧のものより控えめな幅） */
+.search-box.forms-search {
+  width: 260px;
+  height: 28px;
+  margin: 0;
+}
+.forms-empty {
+  border-top: 1px solid var(--border);
+}
