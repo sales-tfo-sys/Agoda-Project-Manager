@@ -206,20 +206,24 @@ export default function FormsPage({ embedded, tabs } = {}) {
                 </svg>
               </button>
               <span className="page-h page-h-gap">{current?.title || "フォーム回答"}</span>
-              {/* 回答の絞り込み。どの列に入っている言葉でも引っかかる */}
+              {/* 回答の絞り込み。どの列に入っている言葉でも引っかかる。
+                  ページ名との間は、ダッシュボードと同じく仕切り線で区切る */}
               {grid && !grid.error && (grid.rows || []).length > 0 && (
-                <label className="search-box forms-search" aria-label="回答を検索">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                    <circle cx="11" cy="11" r="7" />
-                    <line x1="16.5" y1="16.5" x2="21" y2="21" />
-                  </svg>
-                  <input
-                    type="search"
-                    value={q}
-                    onChange={(e) => setQ(e.target.value)}
-                    placeholder="回答の中を検索..."
-                  />
-                </label>
+                <>
+                  <span className="head-sep" aria-hidden="true" />
+                  <label className="search-box forms-search" aria-label="回答を検索">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                      <circle cx="11" cy="11" r="7" />
+                      <line x1="16.5" y1="16.5" x2="21" y2="21" />
+                    </svg>
+                    <input
+                      type="search"
+                      value={q}
+                      onChange={(e) => setQ(e.target.value)}
+                      placeholder="回答の中を検索..."
+                    />
+                  </label>
+                </>
               )}
             </div>
             <div className="head-right">
