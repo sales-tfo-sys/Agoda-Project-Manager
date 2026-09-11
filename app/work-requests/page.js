@@ -20,8 +20,16 @@ const isMaru = (v) => {
   return s !== "" && !/^(×|✗|false|no|0|-)$/i.test(s);
 };
 
+// ページはタブで2つに分かれる。登録したシートは kind で振り分ける。
+const KINDS = [
+  { key: "new", label: "新規作業依頼" },
+  { key: "adhoc", label: "Ad Hoc" },
+];
+const KIND_LS = "agoda-workreq-kind";
+
 export default function WorkRequestsPage() {
-  const [item, setItem] = useState(null); // 単一の登録シート（固定ページ）
+  const [kind, setKind] = useState("new"); // "new" | "adhoc"
+  const [items, setItems] = useState([]); // 登録済みシートの一覧
   const [grid, setGrid] = useState(null); // {headers, rows, rowKeys, overlay, total} or {error}
   const [cells, setCells] = useState({}); // rowKey -> {created, recordNo, doneDate}
   const [gridLoading, setGridLoading] = useState(false);
@@ -39,6 +47,38 @@ export default function WorkRequestsPage() {
   // 列固定用（# 〜 施設名(日本語)）の left をJSで実測
   const tableRef = useRef(null);
   const [lefts, setLefts] = useState([]);
+
+  // タブのスライダー。ラベルの幅が違うので、選んでいるボタンを実測して重ねる。
+  const segRef = useRef(null);
+  const [segThumb, setSegThumb] = useState(null);
+  useEffect(() => {
+    const measure = () => {
+      const el = segRef.current;
+      const btn = el && el.querySelector(".segbar-btn.active");
+      if (!btn) {
+        setSegThumb(null);
+        return;
+      }
+      setSegThumb({ left: btn.offsetLeft, width: btn.offsetWidth });
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [kind]);
+
+  // 選んだタブは次に開いたときも覚えておく
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(KIND_LS);
+      if (v === "new" || v === "adhoc") setKind(v);
+    } catch {}
+  }, []);
+  const switchKind = (k) => {
+    setKind(k);
+    try {
+      localStorage.setItem(KIND_LS, k);
+    } catch {}
+  };
 
   useEffect(() => {
     fetch("/api/form-config", { cache: "no-store" }).then((r) => r.json()).then(setCfg).catch(() => {});
@@ -69,29 +109,37 @@ export default function WorkRequestsPage() {
     }
   }, []);
 
-  const loadItem = useCallback(async () => {
+  const loadItems = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const j = await fetch("/api/work-requests", { cache: "no-store" }).then((r) => r.json());
       if (j.error) setError(j.error);
-      const first = (j.items || [])[0] || null;
-      setItem(first);
-      if (first) await loadGrid(first.id);
-      else {
-        setGrid(null);
-        setCells({});
-      }
+      setItems(j.items || []);
     } catch (e) {
       setError(String(e?.message || e));
     } finally {
       setLoading(false);
     }
-  }, [loadGrid]);
+  }, []);
 
   useEffect(() => {
-    loadItem();
-  }, [loadItem]);
+    loadItems();
+  }, [loadItems]);
+
+  // いま開いているタブのシート。
+  // kind を持たない古い登録は「新規作業依頼」のものとして扱う（元の1ページ構成からの引き継ぎ）。
+  const item = useMemo(() => {
+    const exact = items.find((x) => x.kind === kind);
+    if (exact) return exact;
+    if (kind === "new") return items.find((x) => !x.kind) || null;
+    return null;
+  }, [items, kind]);
+
+  // タブを切り替えたら、そのシートを読み直す
+  useEffect(() => {
+    loadGrid(item?.id || null);
+  }, [item?.id, loadGrid]);
 
   // 手動セルの保存
   const saveCell = async (rowKey, patch) => {
@@ -120,7 +168,8 @@ export default function WorkRequestsPage() {
     setBusy("保存中…");
     try {
       const method = editTarget.id ? "PATCH" : "POST";
-      const body = editTarget.id ? { id: editTarget.id, title, url } : { title, url };
+      const k = editTarget.kind || kind;
+      const body = editTarget.id ? { id: editTarget.id, title, url, kind: k } : { title, url, kind: k };
       const res = await fetch("/api/work-requests", {
         method,
         headers: { "Content-Type": "application/json" },
@@ -131,7 +180,7 @@ export default function WorkRequestsPage() {
         showToast(res.error, "err");
       } else {
         setEditTarget(null);
-        await loadItem();
+        await loadItems();
         flashDone("保存完了");
       }
     } catch (e) {
@@ -235,6 +284,8 @@ export default function WorkRequestsPage() {
     return () => window.removeEventListener("resize", measure);
   }, [grid, freezeCount, filter]);
 
+  const kindLabel = KINDS.find((k) => k.key === kind)?.label || "";
+
   const freezeProps = (pos) => {
     if (pos >= freezeCount) return {};
     const last = pos === freezeCount - 1;
@@ -255,6 +306,27 @@ export default function WorkRequestsPage() {
             </svg>
           </span>
           <span className="page-h page-h-gap">作業依頼</span>
+          {/* 新規作業依頼 / Ad Hoc の切り替え。他のページと同じくヘッダーに置く */}
+          <span className="head-sep" aria-hidden="true" />
+          <div className="segbar segbar-sm wr-kind-seg" role="tablist" aria-label="作業依頼の切替" ref={segRef}>
+            <span
+              className="segbar-thumb"
+              style={segThumb ? { left: segThumb.left, width: segThumb.width, transform: "none" } : { opacity: 0 }}
+              aria-hidden="true"
+            />
+            {KINDS.map((k) => (
+              <button
+                key={k.key}
+                type="button"
+                role="tab"
+                aria-selected={kind === k.key}
+                className={"segbar-btn" + (kind === k.key ? " active" : "")}
+                onClick={() => switchKind(k.key)}
+              >
+                {k.label}
+              </button>
+            ))}
+          </div>
           {grid && !grid.error && (
             <span className="forms-count-pill">
               {grid.total?.toLocaleString("ja-JP")} 件{grid.truncated && "（先頭のみ）"}
@@ -269,7 +341,7 @@ export default function WorkRequestsPage() {
         </div>
         <div className="head-right">
           {canEdit && item && (
-            <button className="icon-btn" onClick={() => setEditTarget({ id: item.id, title: item.title, url: item.url })} title="シートを設定" aria-label="シートを設定">
+            <button className="icon-btn" onClick={() => setEditTarget({ id: item.id, kind, title: item.title, url: item.url })} title="シートを設定" aria-label="シートを設定">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 20h9" />
                 <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
@@ -277,7 +349,7 @@ export default function WorkRequestsPage() {
             </button>
           )}
           {canEdit && !item && (
-            <button className="icon-btn" onClick={() => setEditTarget({ title: "", url: "" })} title="シートを登録" aria-label="シートを登録">
+            <button className="icon-btn" onClick={() => setEditTarget({ kind, title: kindLabel, url: "" })} title="シートを登録" aria-label="シートを登録">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
@@ -294,7 +366,7 @@ export default function WorkRequestsPage() {
       ) : !item ? (
         <div className="card">
           <div className="notice">
-            作業依頼シートがまだ登録されていません。
+            「{kindLabel}」のシートがまだ登録されていません。
             {canEdit ? "右上の＋から、GoogleスプレッドシートのURLを登録してください。" : "編集権限のあるユーザーが登録すると、ここに表示されます。"}
           </div>
         </div>
@@ -369,7 +441,7 @@ export default function WorkRequestsPage() {
       {/* シート設定モーダル */}
       <Modal
         open={!!editTarget}
-        title={editTarget?.id ? "作業依頼シートを設定" : "作業依頼シートを登録"}
+        title={`「${KINDS.find((k) => k.key === (editTarget?.kind || kind))?.label || ""}」のシートを${editTarget?.id ? "設定" : "登録"}`}
         onClose={() => setEditTarget(null)}
         footer={
           <>

@@ -12233,3 +12233,33 @@ body {
   justify-content: flex-start;
   padding-top: 18px;
 }
+
+/* 詳細の見出し列も、パネルのタイトルと同じサイトの青にそろえる。
+   白文字とのコントラストは 4.8:1（AA）。
+   行の区切りは、青の上では灰色の線が濁って見えるので、
+   見出し側だけ内側に白い細線を引いて分ける。 */
+.kv-l {
+  background: var(--brand-2);
+  color: #fff;
+  border-right-color: rgba(255, 255, 255, 0.34);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.3);
+}
+.kv {
+  border-bottom: 0;
+}
+.kv-v {
+  border-bottom: 1px solid var(--border);
+}
+.kv:last-child .kv-v {
+  border-bottom: 0;
+}
+.kv:last-child .kv-l {
+  box-shadow: none;
+}
+
+/* 作業依頼の 新規作業依頼 / Ad Hoc。
+   ラベルの長さが大きく違うので幅は文字なりにして、
+   スライダーの位置と幅はJSで実測した値を当てる（ダッシュボードのタブと同じ）。 */
+.segbar.wr-kind-seg .segbar-btn {
+  white-space: nowrap;
+}

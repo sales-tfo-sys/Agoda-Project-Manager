@@ -4,8 +4,10 @@ import { denyUnlessPageEdit } from "../../../lib/auth";
 
 export const dynamic = "force-dynamic";
 
-// 新規作業依頼シートの登録一覧。task_override(scope=workreq)に保存する。
-//   data = { title, url, sort }
+// 作業依頼シートの登録一覧。task_override(scope=workreq)に保存する。
+//   data = { title, url, sort, kind }
+// kind は画面のタブ（"new"=新規作業依頼 / "adhoc"=Ad Hoc）。
+// kind を持たない古い登録は、画面側で「新規作業依頼」として扱う。
 export async function GET() {
   if (!supabaseConfigured()) return Response.json({ items: [] });
   try {
@@ -16,6 +18,7 @@ export async function GET() {
         title: r.data?.title || "(無題)",
         url: r.data?.url || "",
         sort: r.data?.sort ?? 0,
+        kind: r.data?.kind || "",
       }))
       .sort((a, b) => a.sort - b.sort || a.title.localeCompare(b.title, "ja"));
     return Response.json({ items });
@@ -32,13 +35,14 @@ export async function POST(req) {
     const b = await req.json();
     const title = String(b?.title || "").trim();
     const url = String(b?.url || "").trim();
+    const kind = b?.kind === "adhoc" ? "adhoc" : "new";
     if (!title || !url) return Response.json({ error: "名前とURLは必須です" }, { status: 200 });
     const rows = await sb("task_override?scope=eq.workreq&select=data");
     const maxSort = (rows || []).reduce((m, r) => Math.max(m, r.data?.sort || 0), 0);
     const key = randomUUID();
     await sb("task_override", {
       method: "POST",
-      body: { scope: "workreq", key, data: { title, url, sort: maxSort + 1 } },
+      body: { scope: "workreq", key, data: { title, url, sort: maxSort + 1, kind } },
       prefer: "return=minimal",
     });
     return Response.json({ ok: true, id: key });
@@ -63,6 +67,8 @@ export async function PATCH(req) {
     if (b.title !== undefined) next.title = String(b.title).trim();
     if (b.url !== undefined) next.url = String(b.url).trim();
     if (b.sort !== undefined) next.sort = Number(b.sort);
+    // kind を持たない古い登録を編集したら、このタイミングで振り分けを確定させる
+    if (b.kind !== undefined) next.kind = b.kind === "adhoc" ? "adhoc" : "new";
     await sb(`task_override?scope=eq.workreq&key=eq.${encodeURIComponent(id)}`, {
       method: "PATCH",
       body: { data: next },
