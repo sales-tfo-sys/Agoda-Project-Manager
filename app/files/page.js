@@ -24,13 +24,127 @@ const fmtWhen = (iso) => {
   return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 };
 
-const extOf = (name) => {
-  const i = name.lastIndexOf(".");
-  return i > 0 ? name.slice(i + 1).toUpperCase() : "—";
-};
-
 // 画面の中で開いて見られるもの（それ以外はダウンロードのみ）
 const VIEWABLE = /\.(png|jpe?g|gif|webp|svg|pdf|txt|csv|md|json)$/i;
+
+// 拡張子から中身の種類を決める。
+// 一覧の「種類」はこの種類の絵で出し、文字（CSV・PDF など）は
+// マウスを乗せたときと読み上げに回す。
+const TYPES = [
+  { key: "image", label: "画像", re: /^(png|jpe?g|gif|webp|svg|bmp|heic|avif)$/i },
+  { key: "pdf", label: "PDF", re: /^pdf$/i },
+  { key: "sheet", label: "表", re: /^(csv|tsv|xls|xlsx|xlsm|numbers)$/i },
+  { key: "doc", label: "文書", re: /^(doc|docx|txt|md|rtf|pages|json|xml|html?)$/i },
+  { key: "slide", label: "スライド", re: /^(ppt|pptx|key)$/i },
+  { key: "zip", label: "圧縮ファイル", re: /^(zip|rar|7z|gz|tar)$/i },
+  { key: "video", label: "動画", re: /^(mp4|mov|avi|webm|mkv|m4v)$/i },
+  { key: "audio", label: "音声", re: /^(mp3|wav|m4a|aac|flac|ogg)$/i },
+];
+
+function typeOf(name, kind) {
+  if (kind === "folder") return { key: "folder", label: "フォルダ", ext: "フォルダ" };
+  const i = name.lastIndexOf(".");
+  const ext = i > 0 ? name.slice(i + 1) : "";
+  const hit = ext ? TYPES.find((t) => t.re.test(ext)) : null;
+  return {
+    key: hit ? hit.key : "file",
+    label: hit ? hit.label : "ファイル",
+    ext: ext ? ext.toUpperCase() : "ファイル",
+  };
+}
+
+// 種類の絵。線の太さ・大きさは一覧のほかのアイコンにそろえる。
+function TypeIcon({ kind }) {
+  const p = {
+    width: 18,
+    height: 18,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.8,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    "aria-hidden": true,
+  };
+  if (kind === "folder")
+    return (
+      <svg {...p}>
+        <path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l2 2.5h8A1.5 1.5 0 0 1 20 10v8a1.5 1.5 0 0 1-1.5 1.5h-14A1.5 1.5 0 0 1 3 18Z" />
+      </svg>
+    );
+  if (kind === "image")
+    return (
+      <svg {...p}>
+        <rect x="3" y="4.5" width="18" height="15" rx="2" />
+        <circle cx="8.5" cy="9.5" r="1.6" />
+        <path d="m4 17 4.8-4.8a1.5 1.5 0 0 1 2.1 0L16 17.3" />
+        <path d="m14 15 1.8-1.8a1.5 1.5 0 0 1 2.1 0L20 15.2" />
+      </svg>
+    );
+  if (kind === "pdf")
+    // 小さく出すと文字は読めないので、PDF は「帯の付いた書類」の形と色で見分ける
+    return (
+      <svg {...p}>
+        <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />
+        <path d="M14 3v5h5" />
+        <rect x="7.5" y="13.5" width="9" height="4.5" rx="1.2" fill="currentColor" stroke="none" />
+      </svg>
+    );
+  if (kind === "sheet")
+    return (
+      <svg {...p}>
+        <rect x="3" y="4.5" width="18" height="15" rx="2" />
+        <path d="M3 9.5h18" />
+        <path d="M9 9.5v10" />
+        <path d="M3 14.5h18" />
+      </svg>
+    );
+  if (kind === "doc")
+    return (
+      <svg {...p}>
+        <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />
+        <path d="M14 3v5h5" />
+        <path d="M8.5 13h7M8.5 16.5h5" />
+      </svg>
+    );
+  if (kind === "slide")
+    return (
+      <svg {...p}>
+        <rect x="3" y="4" width="18" height="12" rx="2" />
+        <path d="M12 16v4" />
+        <path d="M8.5 20h7" />
+      </svg>
+    );
+  if (kind === "zip")
+    return (
+      <svg {...p}>
+        <path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v11A2.5 2.5 0 0 1 16.5 20h-9A2.5 2.5 0 0 1 5 17.5Z" />
+        <path d="M12 4v3M12 8.5v2M12 12v2" />
+        <rect x="10.5" y="15" width="3" height="3.5" rx="1" />
+      </svg>
+    );
+  if (kind === "video")
+    return (
+      <svg {...p}>
+        <rect x="3" y="5.5" width="13" height="13" rx="2" />
+        <path d="m16 11 5-2.8v7.6L16 13Z" />
+      </svg>
+    );
+  if (kind === "audio")
+    return (
+      <svg {...p}>
+        <path d="M10 18V6.5l9-1.8V16" />
+        <circle cx="7.5" cy="18" r="2.5" />
+        <circle cx="16.5" cy="16" r="2.5" />
+      </svg>
+    );
+  return (
+    <svg {...p}>
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />
+      <path d="M14 3v5h5" />
+    </svg>
+  );
+}
 
 // JSON を送って JSON を受け取る。
 // サーバーが JSON でない応答（413 の "Request Entity Too Large" など）を
@@ -569,7 +683,11 @@ export default function FilesPage() {
                         <span>{f.name}</span>
                       </button>
                     </td>
-                    <td className="fx-kind">フォルダ</td>
+                    <td className="fx-kind">
+                      <span className="fx-type folder" title="フォルダ" aria-label="フォルダ" role="img">
+                        <TypeIcon kind="folder" />
+                      </span>
+                    </td>
                     <td className="fx-size">—</td>
                     <td className="fx-when">—</td>
                     <td className="fx-ops">
@@ -622,7 +740,17 @@ export default function FilesPage() {
                         </span>
                       )}
                     </td>
-                    <td className="fx-kind">{extOf(f.name)}</td>
+                    <td className="fx-kind">
+                      {(() => {
+                        const t = typeOf(f.name, "file");
+                        const label = t.ext === t.label ? t.label : `${t.ext}（${t.label}）`;
+                        return (
+                          <span className={"fx-type " + t.key} title={label} aria-label={label} role="img">
+                            <TypeIcon kind={t.key} />
+                          </span>
+                        );
+                      })()}
+                    </td>
                     <td className="fx-size">{fmtSize(f.size)}</td>
                     <td className="fx-when">{fmtWhen(f.updatedAt)}</td>
                     <td className="fx-ops">

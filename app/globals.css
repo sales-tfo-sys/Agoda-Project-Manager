@@ -12667,3 +12667,25 @@ body {
   box-shadow: inset 0 0 0 2px var(--brand-2);
   color: var(--ink);
 }
+
+/* 種類は絵で出す。文字（CSV・PDF など）はマウスを乗せたときに出る。
+   フォルダだけ青にして、ファイルは落ち着いた濃さでそろえる。 */
+.fx-type {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-2);
+  cursor: help;
+}
+.fx-type.folder {
+  color: var(--brand-2);
+}
+.fx-table th.fx-kind,
+.fx-table td.fx-kind {
+  width: 68px;
+}
+
+/* PDF だけは慣例どおり赤にする（形＝帯の付いた書類でも見分けられる） */
+.fx-type.pdf {
+  color: #c0392b;
+}
