@@ -12178,3 +12178,58 @@ body {
   background: var(--accent);
   border-color: var(--accent);
 }
+
+/* ══════════════ アカウント管理：情報の階層 ══════════════
+   この表が答える問いは「誰が入れて、何を触れるか」。
+   ①誰か（アカウント・担当者名）②何ができるか（ログイン〜ページ権限）
+   ③記録（最終ログイン・除外日・操作）の3つの帯に分け、
+   帯の境目だけ罫線を引き、帯の中は引かない。
+   格子ではなく「かたまり」として読めるようにするため、
+   色や書体は足さず、もとからある2種類の罫線の濃さだけで区別する。 */
+.wrap.persons-page .persons-table thead th,
+.wrap.persons-page .persons-table td,
+.wrap.persons-page .persons-table thead th.grant-sub-th,
+.wrap.persons-page .persons-table td.grant-cell {
+  border-right: 0;
+}
+/* 帯の境目：担当者｜権限（3列目の右）と 権限｜記録（8列目の右） */
+.wrap.persons-page .persons-table tbody td:nth-child(3),
+.wrap.persons-page .persons-table tbody td:nth-child(8) {
+  border-right: 1px solid var(--border2);
+}
+/* 見出しは青地なので、同じ境目を白の細線で引く */
+.wrap.persons-page .persons-table thead th:nth-child(3),
+.wrap.persons-page .persons-table thead th:nth-child(8) {
+  border-right: 1px solid rgba(255, 255, 255, 0.45);
+}
+/* 行の区切りは帯の境目より弱くして、縦のまとまりを主役にする */
+.wrap.persons-page .persons-table td {
+  border-bottom-color: var(--border);
+}
+/* 該当しない欄の「—」は、目が止まらない濃さまで下げる
+   （情報ではなく「ここは対象外」の印なので、読ませる必要がない） */
+.persons-page .perm-note {
+  color: var(--border2);
+}
+/* 記録の帯は参照用。操作する欄より一段引いて、権限の並びを前に出す */
+.persons-page .last-login,
+.persons-page .left-on {
+  color: var(--ink-2);
+}
+
+/* 除外日は「除外」バッジの中に持たせる（列を1本減らすため）。
+   バッジは「除外」が主、日付は従なので、日付だけ一段弱くする */
+.persons-page .retired-tag .retired-on {
+  margin-left: 6px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.72;
+}
+/* 最終ログインは記録であって操作対象ではない。
+   ただし弱めるのに色を使うと読めなくなる（--ink-3 は白地で 2.9:1 しかない）ので、
+   色は --ink-2（5.35:1 でAAを満たす）のまま、太さとサイズだけ落として後ろに下げる */
+.wrap.persons-page .persons-table .last-login {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+}

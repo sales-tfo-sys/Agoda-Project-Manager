@@ -599,7 +599,6 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                   <th className="grant-sub-th">タスク編集</th>
                   <th>ページ権限</th>
                   <th>最終ログイン</th>
-                  <th>除外日</th>
                   <th>操作</th>
                 </tr>
               </thead>
@@ -715,7 +714,14 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                               <span className="name-sub">{p.email || "未設定"}</span>
                             )}
                           </span>
-                          {!p.active && <span className="retired-tag">除外</span>}
+                          {/* 除外日は列をやめ、それが説明している人のバッジに持たせる
+                              （9行中8行が空の列になるため） */}
+                          {!p.active && (
+                            <span className="retired-tag">
+                              除外
+                              {p.left_on && <span className="retired-on">{fmtDay(p.left_on)}</span>}
+                            </span>
+                          )}
                         </span>
                       </td>
                       {/* 担当者名：登録時に入力した名前（工数明細などで使う表示名） */}
@@ -850,11 +856,6 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                       <td>
                         <span className={"last-login" + (p.last_login_at ? "" : " none")}>
                           {fmtLogin(p.last_login_at)}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={"left-on" + (p.active ? " none" : "")}>
-                          {p.active ? "—" : fmtDay(p.left_on)}
                         </span>
                       </td>
                       <td className="ops-td">
