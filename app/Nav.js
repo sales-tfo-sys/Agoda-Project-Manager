@@ -29,44 +29,22 @@ function LogoutIcon() {
 
 function ListIcon() {
   return (
-    <svg
-      width="17"
-      height="17"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <line x1="8" y1="6" x2="21" y2="6" />
-      <line x1="8" y1="12" x2="21" y2="12" />
-      <line x1="8" y1="18" x2="21" y2="18" />
-      <line x1="3.5" y1="6" x2="3.51" y2="6" />
-      <line x1="3.5" y1="12" x2="3.51" y2="12" />
-      <line x1="3.5" y1="18" x2="3.51" y2="18" />
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 21h18" />
+      <path d="M5 21V6.5a1.5 1.5 0 0 1 1.5-1.5h7A1.5 1.5 0 0 1 15 6.5V21" />
+      <path d="M15 21V11h3.5A1.5 1.5 0 0 1 20 12.5V21" />
+      <path d="M8 9h1.5M11 9H12M8 13h1.5M11 13H12M8 17h1.5M11 17H12" />
     </svg>
   );
 }
 
 function GridIcon() {
   return (
-    <svg
-      width="17"
-      height="17"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <rect x="3" y="3" width="7" height="7" rx="1.5" />
-      <rect x="14" y="3" width="7" height="7" rx="1.5" />
-      <rect x="14" y="14" width="7" height="7" rx="1.5" />
-      <rect x="3" y="14" width="7" height="7" rx="1.5" />
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="3" width="9" height="11" rx="1.5" />
+      <rect x="15" y="3" width="6" height="6" rx="1.5" />
+      <rect x="15" y="12" width="6" height="9" rx="1.5" />
+      <rect x="3" y="17" width="9" height="4" rx="1.5" />
     </svg>
   );
 }
@@ -116,40 +94,22 @@ function ChartIcon() {
 
 function FormIcon() {
   return (
-    <svg
-      width="17"
-      height="17"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-4" />
-      <rect x="9" y="2" width="6" height="4" rx="1" />
-      <line x1="8" y1="12" x2="16" y2="12" />
-      <line x1="8" y1="16" x2="13" y2="16" />
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M3 9h18" />
+      <path d="M9 9v11" />
+      <path d="M3 14.5h18" />
     </svg>
   );
 }
 
 function WorkReqIcon() {
   return (
-    <svg
-      width="17"
-      height="17"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M9 11l3 3L22 4" />
-      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 13h5l1.5 2.5h5L16 13h5" />
+      <path d="M5.5 13 7 5h10l1.5 8v6a2 2 0 0 1-2 2H7.5a2 2 0 0 1-2-2v-6Z" />
+      <path d="M12 5.5v4.5" />
+      <path d="m9.8 8 2.2 2.2L14.2 8" />
     </svg>
   );
 }
@@ -176,30 +136,28 @@ function HidIcon() {
 
 function BoardIcon() {
   return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="3" y="3" width="18" height="18" rx="2" />
-      <line x1="8.5" y1="7.5" x2="8.5" y2="13" />
-      <line x1="15.5" y1="7.5" x2="15.5" y2="16.5" />
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M5 21V4" />
+      <path d="M5 4.5h11l-2.2 3.5L16 11.5H5" />
     </svg>
   );
 }
 
 function InputIcon() {
   return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-      <path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z" />
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M20.4 12.5A8.5 8.5 0 1 1 11.5 4" />
+      <path d="M12 7.5V12l3 1.8" />
+      <path d="M17.8 3.6a1.7 1.7 0 0 1 2.4 2.4L16 10.2l-3 .8.8-3Z" />
     </svg>
   );
 }
 
 function SpecIcon() {
   return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="16" y1="13" x2="8" y2="13" />
-      <line x1="16" y1="17" x2="8" y2="17" />
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H12v17H6.5A2.5 2.5 0 0 0 4 22.5Z" />
+      <path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H12v17h5.5a2.5 2.5 0 0 1 2.5 2.5Z" />
     </svg>
   );
 }
@@ -221,11 +179,10 @@ const TABS = [
   { href: "/project", label: "プロジェクト管理", Icon: BoardIcon, admin: true },
   { href: "/work-requests", label: "作業依頼", Icon: WorkReqIcon },
   { href: "/", label: "施設一覧", Icon: ListIcon },
-  // グラフページは一旦削除（app/graphs を除去）
-  { href: "/kosu/input", label: "作業工数入力", Icon: InputIcon },
   // HID新規発行依頼・フォーム回答は、どちらもスプレッドシートから
   // 取ってくるデータなので「管理」1つにまとめ、中身はタブで切り替える
   { href: "/manage", label: "管理", Icon: FormIcon, keys: ["hid", "forms"] },
+  { href: "/kosu/input", label: "作業工数入力", Icon: InputIcon },
   { divider: true },
   { href: "/design-spec", label: "設計仕様書", Icon: SpecIcon, admin: true },
   { href: "/system-health", label: "システムヘルス", Icon: HealthIcon, admin: true },
