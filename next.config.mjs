@@ -6,6 +6,17 @@ const isDev = process.env.NODE_ENV !== "production";
 // Next.js のハイドレーション用インラインscript／styled-jsx のため
 // script-src・style-src に 'unsafe-inline' を許可する。
 // 開発時のみ HMR 用に 'unsafe-eval' と ws: を足す。
+// 資料ページのファイルの中身は、ブラウザと Supabase Storage のあいだで直接やりとりする
+// （自前のAPIを通すと、置いているサーバーの本文サイズ上限に当たって大きいファイルが送れない）。
+// そのため、その行き先だけを connect-src に足す。渡すのは1つのファイルにだけ有効な一時URLで、鍵は渡さない。
+const supabaseOrigin = (() => {
+  try {
+    return process.env.SUPABASE_URL ? new URL(process.env.SUPABASE_URL).origin : "";
+  } catch {
+    return "";
+  }
+})();
+
 const csp = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -16,7 +27,7 @@ const csp = [
   "font-src 'self' data:",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  `connect-src 'self'${isDev ? " ws:" : ""}`,
+  `connect-src 'self'${supabaseOrigin ? ` ${supabaseOrigin}` : ""}${isDev ? " ws:" : ""}`,
 ].join("; ");
 
 // 全レスポンスに付ける最低限のセキュリティヘッダー。

@@ -32,6 +32,24 @@ const extOf = (name) => {
 // 画面の中で開いて見られるもの（それ以外はダウンロードのみ）
 const VIEWABLE = /\.(png|jpe?g|gif|webp|svg|pdf|txt|csv|md|json)$/i;
 
+// JSON を送って JSON を受け取る。
+// サーバーが JSON でない応答（413 の "Request Entity Too Large" など）を
+// 返すことがあるので、そのときは中身をそのままエラー文言にする
+// （JSON.parse の失敗が画面に出ると何が起きたか分からないため）。
+async function postJson(url, body) {
+  const r = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const text = await r.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { error: text.trim().slice(0, 120) || `通信に失敗しました（${r.status}）` };
+  }
+}
+
 function FolderIcon() {
   return (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -157,7 +175,9 @@ export default function FilesPage() {
   const [moveTarget, setMoveTarget] = useState(null); // { name, kind }
   const [delTarget, setDelTarget] = useState(null); // { name, kind }
   const [saving, setSaving] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
+  const [dragOver, setDragOver] = useState(false); // パソコンからのファイル追加
+  const [dragItem, setDragItem] = useState(null); // 一覧の中でつまんでいるもの
+  const [dropOn, setDropOn] = useState(null); // 落とそうとしている先の目印
 
   const fileInput = useRef(null);
   const { setBusy, flashDone, showToast, busy } = useUi();
@@ -218,6 +238,9 @@ export default function FilesPage() {
     }
   };
 
+  // ファイルの中身は自前のAPIを通さず、発行してもらった一時URLで
+  // ストレージへ直接送る（APIを経由すると置いているサーバー側の
+  // 本文サイズ上限に当たって、大きいファイルが送れないため）。
   const uploadFiles = async (list) => {
     const arr = Array.from(list || []);
     if (arr.length === 0) return;
@@ -225,15 +248,29 @@ export default function FilesPage() {
     let ok = 0;
     try {
       for (let i = 0; i < arr.length; i++) {
+        const f = arr[i];
         setBusy(arr.length > 1 ? `アップロード中… (${i + 1}/${arr.length})` : "アップロード中…");
-        const fd = new FormData();
-        fd.append("path", path);
-        fd.append("file", arr[i]);
-        const res = await fetch("/api/files/upload", { method: "POST", body: fd }).then((r) => r.json());
+        const res = await postJson("/api/files/upload-url", {
+          path,
+          name: f.name,
+          size: f.size,
+        });
         if (res.error) {
           setBusy(null);
-          showToast(`${arr[i].name}：${res.error}`, "err");
-        } else ok++;
+          showToast(`${f.name}：${res.error}`, "err");
+          continue;
+        }
+        const put = await fetch(res.url, {
+          method: "PUT",
+          headers: { "Content-Type": f.type || "application/octet-stream" },
+          body: f,
+        });
+        if (!put.ok) {
+          setBusy(null);
+          showToast(`${f.name}：アップロードできませんでした（${put.status}）`, "err");
+          continue;
+        }
+        ok++;
       }
       await load(path);
       if (ok > 0) flashDone(`${ok}件をアップロードしました`);
@@ -274,10 +311,11 @@ export default function FilesPage() {
     }
   };
 
-  const doMove = async (toPath) => {
-    const t = moveTarget;
-    if (!t) return;
-    if (toPath === path) return setMoveTarget(null);
+  const moveItem = async (t, toPath) => {
+    if (!t || toPath === path) {
+      setMoveTarget(null);
+      return;
+    }
     setSaving(true);
     setBusy("移動中…");
     try {
@@ -300,6 +338,39 @@ export default function FilesPage() {
     } finally {
       setSaving(false);
     }
+  };
+  const doMove = (toPath) => moveItem(moveTarget, toPath);
+
+  // ── ドラッグで移動 ──
+  // 行をつまんで、フォルダの行か、上のパンくず（＝その階層）に落とす。
+  // パソコンから持ってきたファイルの追加（枠へのドロップ）と混ざらないよう、
+  // 「持っているものがファイルかどうか」で見分ける。
+  const hasOsFiles = (e) => Array.from(e.dataTransfer?.types || []).includes("Files");
+  const startDrag = (e, item) => {
+    setDragItem(item);
+    e.dataTransfer.effectAllowed = "move";
+    // 何も入れないと Firefox ではドラッグが始まらない
+    e.dataTransfer.setData("text/plain", item.name);
+  };
+  const endDrag = () => {
+    setDragItem(null);
+    setDropOn(null);
+  };
+  const allowDrop = (e, key) => {
+    if (!dragItem) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "move";
+    if (dropOn !== key) setDropOn(key);
+  };
+  const dropInto = (e, toPath, key) => {
+    if (!dragItem) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const item = dragItem;
+    endDrag();
+    if (key !== null && toPath === path) return; // いまと同じ場所
+    moveItem(item, toPath);
   };
 
   const doDelete = async () => {
@@ -357,36 +428,54 @@ export default function FilesPage() {
           {path && (
             <button
               type="button"
-              className="fx-up"
+              className="icon-btn fx-up"
               onClick={() => setPath(crumbs.slice(0, -1).join("/"))}
               title="1つ上のフォルダへ戻る"
+              aria-label="1つ上のフォルダへ戻る"
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M20 12H5" />
                 <path d="m11.5 5.5-6.5 6.5 6.5 6.5" />
               </svg>
-              戻る
             </button>
           )}
-          {/* いまどこを開いているか。クリックでその階層に戻る */}
+          {/* いまどこを開いているか。クリックでその階層に戻る。
+              ドラッグ中はここに落として上の階層へ移すこともできる。 */}
           <nav className="fx-crumbs" aria-label="いまの場所">
-            <button type="button" className={"fx-crumb" + (path === "" ? " here" : "")} onClick={() => setPath("")}>
+            <button
+              type="button"
+              className={"fx-crumb" + (path === "" ? " here" : "") + (dropOn === "crumb:" ? " dropon" : "")}
+              onClick={() => setPath("")}
+              onDragOver={(e) => allowDrop(e, "crumb:")}
+              onDragLeave={() => setDropOn(null)}
+              onDrop={(e) => dropInto(e, "", "crumb:")}
+            >
               すべての資料
             </button>
-            {crumbs.map((c, i) => (
-              <span key={i} className="fx-crumb-wrap">
-                <span className="fx-crumb-sep" aria-hidden="true">
-                  /
+            {crumbs.map((c, i) => {
+              const to = crumbs.slice(0, i + 1).join("/");
+              return (
+                <span key={i} className="fx-crumb-wrap">
+                  <span className="fx-crumb-sep" aria-hidden="true">
+                    /
+                  </span>
+                  <button
+                    type="button"
+                    className={
+                      "fx-crumb" +
+                      (i === crumbs.length - 1 ? " here" : "") +
+                      (dropOn === "crumb:" + to ? " dropon" : "")
+                    }
+                    onClick={() => goTo(i)}
+                    onDragOver={(e) => allowDrop(e, "crumb:" + to)}
+                    onDragLeave={() => setDropOn(null)}
+                    onDrop={(e) => dropInto(e, to, "crumb:" + to)}
+                  >
+                    {c}
+                  </button>
                 </span>
-                <button
-                  type="button"
-                  className={"fx-crumb" + (i === crumbs.length - 1 ? " here" : "")}
-                  onClick={() => goTo(i)}
-                >
-                  {c}
-                </button>
-              </span>
-            ))}
+              );
+            })}
           </nav>
         </div>
         <div className="head-right">
@@ -430,13 +519,14 @@ export default function FilesPage() {
         <div
           className={"card no-pad" + (dragOver ? " fx-drop" : "")}
           onDragOver={(e) => {
-            if (!canEdit) return;
+            // 一覧の中の移動と、パソコンからのファイル追加を取り違えない
+            if (!canEdit || !hasOsFiles(e)) return;
             e.preventDefault();
             setDragOver(true);
           }}
           onDragLeave={() => setDragOver(false)}
           onDrop={(e) => {
-            if (!canEdit) return;
+            if (!canEdit || !hasOsFiles(e)) return;
             e.preventDefault();
             setDragOver(false);
             uploadFiles(e.dataTransfer?.files);
@@ -454,8 +544,25 @@ export default function FilesPage() {
                 </tr>
               </thead>
               <tbody>
-                {folders.map((f) => (
-                  <tr key={`d:${f.name}`} className="fx-row">
+                {folders.map((f) => {
+                  const into = path ? `${path}/${f.name}` : f.name;
+                  const self = dragItem?.name === f.name;
+                  return (
+                  <tr
+                    key={`d:${f.name}`}
+                    className={
+                      "fx-row" +
+                      (canEdit ? " fx-draggable" : "") +
+                      (self ? " fx-dragging" : "") +
+                      (dropOn === "dir:" + f.name ? " fx-dropon" : "")
+                    }
+                    draggable={canEdit && !saving}
+                    onDragStart={(e) => startDrag(e, f)}
+                    onDragEnd={endDrag}
+                    onDragOver={(e) => !self && allowDrop(e, "dir:" + f.name)}
+                    onDragLeave={() => setDropOn(null)}
+                    onDrop={(e) => !self && dropInto(e, into, "dir:" + f.name)}
+                  >
                     <td className="fx-name">
                       <button type="button" className="fx-open fx-folder" onClick={() => openFolder(f.name)}>
                         <FolderIcon />
@@ -488,9 +595,20 @@ export default function FilesPage() {
                       )}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
                 {files.map((f) => (
-                  <tr key={`f:${f.name}`} className="fx-row">
+                  <tr
+                    key={`f:${f.name}`}
+                    className={
+                      "fx-row" +
+                      (canEdit ? " fx-draggable" : "") +
+                      (dragItem?.name === f.name ? " fx-dragging" : "")
+                    }
+                    draggable={canEdit && !saving}
+                    onDragStart={(e) => startDrag(e, f)}
+                    onDragEnd={endDrag}
+                  >
                     <td className="fx-name">
                       {VIEWABLE.test(f.name) ? (
                         <button type="button" className="fx-open" onClick={() => openFile(f.name, false)} title="開く">
@@ -670,9 +788,7 @@ export default function FilesPage() {
         )}
       </Modal>
 
-      <p className="fx-foot">
-        1ファイル {MAX_MB}MB まで。保管しているデータは、このサイトにログインできる人だけが開けます。
-      </p>
+      <p className="fx-foot">1ファイル {MAX_MB}MB まで</p>
     </div>
   );
 }

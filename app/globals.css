@@ -12599,3 +12599,71 @@ body {
   outline: 2px solid var(--brand-2);
   outline-offset: 1px;
 }
+
+/* 資料：種類・サイズ・更新は中身も中央ぞろえ。
+   サイズを右、更新を左に寄せていたせいで「—」同士がくっついて並び、
+   見出しの下に何も無いように見えていた。 */
+.fx-table tbody td.fx-kind,
+.fx-table tbody td.fx-size,
+.fx-table tbody td.fx-when {
+  text-align: center;
+}
+
+/* 上限の注記は見落とさないよう赤字（このサイトで使っている赤）。
+   背景とのコントラストは 4.9:1 以上で AA を満たす。 */
+.fx-foot {
+  color: #c0392b;
+}
+
+/* パンくず：文字を少し小さくし、途中で切れないようにする。
+   幅が足りないときは1つずつ省略するのではなく、
+   帯ごと横スクロールさせて末尾（いまいる場所）まで読めるようにする。 */
+.fx-crumb {
+  font-size: 12.5px;
+  max-width: none;
+}
+.fx-crumbs {
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+.fx-crumbs::-webkit-scrollbar {
+  height: 4px;
+}
+.fx-crumbs::-webkit-scrollbar-thumb {
+  background: var(--border2);
+  border-radius: 999px;
+}
+.fx-crumb-wrap,
+.fx-crumbs .fx-crumb {
+  flex: 0 0 auto;
+}
+
+/* 戻るはアイコンだけのボタン（ヘッダーの他のボタンと同じ見た目） */
+.icon-btn.fx-up {
+  margin-right: 10px;
+}
+
+/* 名前は太字（一覧の中でいちばん見るところなので） */
+.fx-open {
+  font-weight: 700;
+}
+
+/* ドラッグで移動：つまめる行、つまんでいる行、落とせる先の目印 */
+.fx-row.fx-draggable {
+  cursor: grab;
+}
+.fx-row.fx-dragging {
+  opacity: 0.45;
+}
+.fx-row.fx-dropon > td {
+  background: #e4efff;
+  box-shadow: inset 0 0 0 2px var(--brand-2);
+}
+.fx-crumb.dropon {
+  background: #e4efff;
+  box-shadow: inset 0 0 0 2px var(--brand-2);
+  color: var(--ink);
+}

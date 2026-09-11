@@ -5,29 +5,29 @@ import {
   MAX_FILE_BYTES,
   safeName,
   safePath,
-  upload,
+  signUploadUrl,
 } from "../../../../lib/storage";
 
 export const dynamic = "force-dynamic";
 
-// アップロード。multipart/form-data で { path, file } を受け取る。
-// 同じ名前があるときは上書きせず、末尾に (2) (3) … を付けて別名で置く。
+// アップロード用の一時URLを発行する。
+// ファイルの中身はここを通さず、ブラウザからストレージへ直接送る
+// （自前のAPIを経由すると、置いているサーバーの本文サイズ上限に引っかかるため）。
+// ここでやるのは、権限の確認・名前の検証・重複しない名前決めまで。
 export async function POST(req) {
   const denied = await denyUnlessPageEdit(req, "files");
   if (denied) return denied;
   try {
-    const form = await req.formData();
-    const dir = safePath(form.get("path") || "");
-    const file = form.get("file");
-    if (!file || typeof file === "string") {
-      return Response.json({ error: "ファイルがありません" });
-    }
-    const name = safeName(file.name);
-    if (file.size > MAX_FILE_BYTES) {
+    const b = await req.json();
+    const dir = safePath(b?.path || "");
+    const name = safeName(b?.name);
+    const size = Number(b?.size);
+    if (Number.isFinite(size) && size > MAX_FILE_BYTES) {
       return Response.json({
         error: `1ファイル ${Math.floor(MAX_FILE_BYTES / 1024 / 1024)}MB までです`,
       });
     }
+    // 同じ名前があるときは上書きせず、末尾に (2) (3) … を付ける
     let finalName = name;
     for (let i = 2; i < 100 && (await exists(joinPath(dir, finalName))); i++) {
       const dot = name.lastIndexOf(".");
@@ -35,9 +35,8 @@ export async function POST(req) {
       const ext = dot > 0 ? name.slice(dot) : "";
       finalName = `${stem} (${i})${ext}`;
     }
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    await upload(joinPath(dir, finalName), bytes, file.type || "application/octet-stream");
-    return Response.json({ ok: true, name: finalName });
+    const url = await signUploadUrl(joinPath(dir, finalName));
+    return Response.json({ url, name: finalName });
   } catch (e) {
     return Response.json({ error: String(e?.message || e) }, { status: 200 });
   }
