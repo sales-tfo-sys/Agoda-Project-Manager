@@ -12397,3 +12397,14 @@ body {
   color: var(--ink-2);
   font-size: 11.5px;
 }
+
+/* 作業依頼の「Ad Hoc Task」タブ。
+   ここに出す表はダッシュボードと同じ作りなので、
+   このページの決まり（ヘッダー直下から画面下端まで、隙間なし）に合わせる。 */
+.wrap.forms-page.wr-page .adhoc-card {
+  margin: 0;
+  border-radius: 0;
+}
+.wrap.forms-page.wr-page .adhoc-tw {
+  max-height: calc(100vh - 58px);
+}

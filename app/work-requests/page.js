@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import AdhocDoneTable, { useAdhocDone } from "../AdhocDoneTable";
 import Modal from "../Modal";
 import { useUi } from "../Ui";
 import { cachedJson } from "../dataCache";
@@ -20,15 +21,65 @@ const isMaru = (v) => {
   return s !== "" && !/^(×|✗|false|no|0|-)$/i.test(s);
 };
 
-// ページはタブで2つに分かれる。登録したシートは kind で振り分ける。
+// ページはタブで2つに分かれる。
+//   new   … 登録したスプレッドシートの一覧（シートは kind で振り分ける）
+//   adhoc … ダッシュボードの「進捗表 → Ad Hoc Task → 完了」に出ているタスク
 const KINDS = [
   { key: "new", label: "新規作業依頼" },
-  { key: "adhoc", label: "Ad Hoc" },
+  { key: "adhoc", label: "Ad Hoc Task" },
 ];
 const KIND_LS = "agoda-workreq-kind";
 
+// ヘッダーの切り替えタブ。ラベルの幅が違うので、
+// スライダーは選んでいるボタンを実測して重ねる（ダッシュボードのタブと同じ作り）。
+function SegTabs({ items, value, onChange, label }) {
+  const ref = useRef(null);
+  const [thumb, setThumb] = useState(null);
+  useEffect(() => {
+    const measure = () => {
+      const el = ref.current;
+      const btn = el && el.querySelector(".segbar-btn.active");
+      if (!btn) {
+        setThumb(null);
+        return;
+      }
+      setThumb({ left: btn.offsetLeft, width: btn.offsetWidth });
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [value, items]);
+  return (
+    <div className="segbar segbar-sm wr-kind-seg" role="tablist" aria-label={label} ref={ref}>
+      <span
+        className="segbar-thumb"
+        style={thumb ? { left: thumb.left, width: thumb.width, transform: "none" } : { opacity: 0 }}
+        aria-hidden="true"
+      />
+      {items.map((it) => (
+        <button
+          key={it.key}
+          type="button"
+          role="tab"
+          aria-selected={value === it.key}
+          className={"segbar-btn" + (value === it.key ? " active" : "")}
+          onClick={() => onChange(it.key)}
+        >
+          {it.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const FILTERS = [
+  { key: "all", label: "すべて" },
+  { key: "pending", label: "完了以外" },
+];
+
 export default function WorkRequestsPage() {
   const [kind, setKind] = useState("new"); // "new" | "adhoc"
+  const isAdhoc = kind === "adhoc";
   const [items, setItems] = useState([]); // 登録済みシートの一覧
   const [grid, setGrid] = useState(null); // {headers, rows, rowKeys, overlay, total} or {error}
   const [cells, setCells] = useState({}); // rowKey -> {created, recordNo, doneDate}
@@ -48,23 +99,8 @@ export default function WorkRequestsPage() {
   const tableRef = useRef(null);
   const [lefts, setLefts] = useState([]);
 
-  // タブのスライダー。ラベルの幅が違うので、選んでいるボタンを実測して重ねる。
-  const segRef = useRef(null);
-  const [segThumb, setSegThumb] = useState(null);
-  useEffect(() => {
-    const measure = () => {
-      const el = segRef.current;
-      const btn = el && el.querySelector(".segbar-btn.active");
-      if (!btn) {
-        setSegThumb(null);
-        return;
-      }
-      setSegThumb({ left: btn.offsetLeft, width: btn.offsetWidth });
-    };
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, [kind]);
+  // Ad Hoc Task タブは、ダッシュボードの「完了」に出ているタスクをそのまま出す
+  const adhocDone = useAdhocDone();
 
   // 選んだタブは次に開いたときも覚えておく
   useEffect(() => {
@@ -127,14 +163,12 @@ export default function WorkRequestsPage() {
     loadItems();
   }, [loadItems]);
 
-  // いま開いているタブのシート。
+  // 新規作業依頼タブのシート。
   // kind を持たない古い登録は「新規作業依頼」のものとして扱う（元の1ページ構成からの引き継ぎ）。
   const item = useMemo(() => {
-    const exact = items.find((x) => x.kind === kind);
-    if (exact) return exact;
-    if (kind === "new") return items.find((x) => !x.kind) || null;
-    return null;
-  }, [items, kind]);
+    if (isAdhoc) return null;
+    return items.find((x) => x.kind === "new") || items.find((x) => !x.kind) || null;
+  }, [items, isAdhoc]);
 
   // タブを切り替えたら、そのシートを読み直す
   useEffect(() => {
@@ -286,6 +320,19 @@ export default function WorkRequestsPage() {
 
   const kindLabel = KINDS.find((k) => k.key === kind)?.label || "";
 
+  // 絞り込んだあとに実際に出る行。件数の表示もこれを数える。
+  const visibleRows = useMemo(() => {
+    if (!grid || grid.error || !Array.isArray(grid.rows)) return [];
+    return grid.rows
+      .map((r, ri) => ({ r, rk: grid.rowKeys?.[ri] ?? `#${ri}`, ri }))
+      .filter(({ r, rk }) => filter !== "pending" || !isDone(r, cells[rk] || EMPTY_CELL));
+    // isDone は cols（シートの列の役割）に依存するので、cols も見る
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [grid, cells, filter, cols]);
+
+  // ヘッダーの件数。Ad Hoc Task タブは完了タスクの件数。
+  const shownCount = isAdhoc ? adhocDone.rows.length : visibleRows.length;
+
   const freezeProps = (pos) => {
     if (pos >= freezeCount) return {};
     const last = pos === freezeCount - 1;
@@ -306,41 +353,22 @@ export default function WorkRequestsPage() {
             </svg>
           </span>
           <span className="page-h page-h-gap">作業依頼</span>
-          {/* 新規作業依頼 / Ad Hoc の切り替え。他のページと同じくヘッダーに置く */}
+          {/* 新規作業依頼 / Ad Hoc Task の切り替え。他のページと同じくヘッダーに置く */}
           <span className="head-sep" aria-hidden="true" />
-          <div className="segbar segbar-sm wr-kind-seg" role="tablist" aria-label="作業依頼の切替" ref={segRef}>
-            <span
-              className="segbar-thumb"
-              style={segThumb ? { left: segThumb.left, width: segThumb.width, transform: "none" } : { opacity: 0 }}
-              aria-hidden="true"
-            />
-            {KINDS.map((k) => (
-              <button
-                key={k.key}
-                type="button"
-                role="tab"
-                aria-selected={kind === k.key}
-                className={"segbar-btn" + (kind === k.key ? " active" : "")}
-                onClick={() => switchKind(k.key)}
-              >
-                {k.label}
-              </button>
-            ))}
-          </div>
-          {grid && !grid.error && (
-            <span className="forms-count-pill">
-              {grid.total?.toLocaleString("ja-JP")} 件{grid.truncated && "（先頭のみ）"}
-            </span>
+          <SegTabs items={KINDS} value={kind} onChange={switchKind} label="作業依頼の切替" />
+          {/* 絞り込みもページタブと同じ形にそろえる。件数はその右に置き、
+              いま表として出ている行数を出す（絞り込むと減る） */}
+          {!isAdhoc && item && grid && !grid.error && (
+            <SegTabs items={FILTERS} value={filter} onChange={setFilter} label="表示フィルター" />
           )}
-          {item && grid && !grid.error && (
-            <div className="wr-filter" role="group" aria-label="表示フィルター">
-              <button className={"wr-filter-btn" + (filter === "all" ? " active" : "")} onClick={() => setFilter("all")}>すべて</button>
-              <button className={"wr-filter-btn" + (filter === "pending" ? " active" : "")} onClick={() => setFilter("pending")}>完了以外</button>
-            </div>
+          {((isAdhoc && !adhocDone.loading) || (!isAdhoc && grid && !grid.error)) && (
+            <span className="forms-count-pill">
+              {shownCount.toLocaleString("ja-JP")} 件{!isAdhoc && grid?.truncated && "（先頭のみ）"}
+            </span>
           )}
         </div>
         <div className="head-right">
-          {canEdit && item && (
+          {!isAdhoc && canEdit && item && (
             <button className="icon-btn" onClick={() => setEditTarget({ id: item.id, kind, title: item.title, url: item.url })} title="シートを設定" aria-label="シートを設定">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 20h9" />
@@ -348,8 +376,8 @@ export default function WorkRequestsPage() {
               </svg>
             </button>
           )}
-          {canEdit && !item && (
-            <button className="icon-btn" onClick={() => setEditTarget({ kind, title: kindLabel, url: "" })} title="シートを登録" aria-label="シートを登録">
+          {!isAdhoc && canEdit && !item && (
+            <button className="icon-btn" onClick={() => setEditTarget({ kind: "new", title: kindLabel, url: "" })} title="シートを登録" aria-label="シートを登録">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
@@ -361,7 +389,19 @@ export default function WorkRequestsPage() {
 
       {error && <div className="banner err-banner">エラー：{error}</div>}
 
-      {(loading || gridLoading) && !busy ? (
+      {isAdhoc ? (
+        adhocDone.loading ? (
+          <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>
+        ) : adhocDone.error ? (
+          <div className="banner err-banner">エラー：{adhocDone.error}</div>
+        ) : adhocDone.rows.length === 0 ? (
+          <div className="card">
+            <div className="notice">完了した Ad Hoc Task はまだありません。</div>
+          </div>
+        ) : (
+          <AdhocDoneTable rows={adhocDone.rows} />
+        )
+      ) : (loading || gridLoading) && !busy ? (
         <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>
       ) : !item ? (
         <div className="card">
@@ -392,10 +432,7 @@ export default function WorkRequestsPage() {
                 </tr>
               </thead>
               <tbody>
-                {grid.rows.map((r, ri) => {
-                  const rk = grid.rowKeys?.[ri] ?? `#${ri}`;
-                  const cell = cells[rk] || EMPTY_CELL;
-                  if (filter === "pending" && isDone(r, cell)) return null;
+                {visibleRows.map(({ r, rk, ri }) => {
                   return (
                     <tr key={ri}>
                       {grid.headers.map((_, ci) => {
