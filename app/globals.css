@@ -13000,3 +13000,268 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* ══════════════ 施設一覧の詳細画面 ══════════════
+   見出しは帯、項目は「絵＋項目名」の淡い青セルと白い値セルの組み合わせ。
+   ここで使う class は、この詳細画面だけで使っている（他の画面には影響しない）。 */
+
+.modal-body .panel {
+  border: 1px solid #e3eaf7;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(26, 37, 64, 0.04);
+  overflow: hidden;
+}
+
+/* ── 見出しの帯 ── */
+.modal-body .panel-title {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 0;
+  background: var(--head);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+  overflow: hidden;
+}
+/* 基本情報の帯だけ、青のグラデーションに白抜き */
+.modal-body .panel-hero > .panel-title {
+  background: linear-gradient(100deg, #3f5fd4 0%, #4f8ff0 52%, #55b4e2 100%);
+  color: #fff;
+  padding: 16px 20px;
+}
+.modal-body .panel-ico {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--brand-2);
+}
+.modal-body .panel-hero .panel-ico {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+.modal-body .panel-h {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.modal-body .panel-h b {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.modal-body .panel-hero .panel-h b {
+  font-size: 17px;
+}
+.modal-body .panel-h small {
+  font-size: 11.5px;
+  font-weight: 600;
+  /* 帯の青に対して 4.8:1（AA）。これより薄くすると読みにくくなる */
+  color: rgba(255, 255, 255, 0.92);
+}
+/* 右下の飾り。読む情報ではないので薄く敷くだけ */
+.modal-body .panel-deco {
+  position: absolute;
+  right: 14px;
+  bottom: -6px;
+  color: rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+}
+
+/* ── 項目の行 ── */
+.modal-body .kv-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 18px;
+  padding: 14px 18px 18px;
+}
+.modal-body .kv-col:first-child {
+  border-right: 0;
+}
+.modal-body .kv {
+  display: grid;
+  /* 「Google Form 受領日」が省略されない幅にする */
+  grid-template-columns: 168px 1fr;
+  align-items: stretch;
+  border: 0;
+  margin-bottom: 6px;
+}
+.modal-body .kv:last-child {
+  margin-bottom: 0;
+}
+.modal-body .kv-l {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 12px;
+  background: #eef4fe;
+  border: 1px solid #e0e9f8;
+  border-right: 0;
+  border-radius: 9px 0 0 9px;
+  box-shadow: none;
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.modal-body .kv-ic {
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: var(--brand-2);
+}
+/* ステータスの丸だけは「状態」の色（緑）にする */
+.modal-body .kv-ic.on {
+  color: #1f9d63;
+}
+.modal-body .kv-lt {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.modal-body .kv-v {
+  display: flex;
+  align-items: center;
+  padding: 9px 13px;
+  background: var(--surface);
+  border: 1px solid #e0e9f8;
+  border-radius: 0 9px 9px 0;
+  font-size: 13px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.modal-body .kv-v .dash {
+  color: var(--ink-3);
+}
+/* ステータスは囲みで出す */
+.modal-body .kv-pill {
+  display: inline-block;
+  padding: 2px 11px;
+  border-radius: 999px;
+  background: #e3eeff;
+  color: #24559f;
+  font-size: 12px;
+  font-weight: 700;
+}
+/* URL は行内に収めて、外部リンクの印を付ける */
+.modal-body .kv-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--accent);
+  text-decoration: none;
+}
+.modal-body .kv-link:hover {
+  text-decoration: underline;
+}
+.modal-body .kv-link-t {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.modal-body .kv-link > svg {
+  flex: none;
+}
+
+/* ── 滞留理由 ── */
+.modal-body .panel-note > .panel-title {
+  background: #e8f0fe;
+  color: var(--ink);
+}
+.modal-body .panel-note .panel-ico {
+  background: var(--surface);
+  color: var(--brand-2);
+}
+.modal-body .panel-text {
+  padding: 14px 18px 16px;
+  font-size: 13px;
+  color: var(--ink);
+  white-space: pre-wrap;
+  min-height: 20px;
+}
+
+/* ── 下段の3つ ── */
+.modal-body .box {
+  border: 1px solid #e3eaf7;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(26, 37, 64, 0.04);
+  overflow: hidden;
+}
+.modal-body .box-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border-bottom: 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.modal-body .box-ico {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: var(--surface);
+}
+.modal-body .box-text {
+  margin: 0 12px 12px;
+  padding: 12px 13px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--ink);
+  white-space: pre-wrap;
+  min-height: 40px;
+}
+.modal-body .box.tone-blue .box-title {
+  background: #e8f0fe;
+}
+.modal-body .box.tone-blue .box-ico {
+  color: #2f6be0;
+}
+.modal-body .box.tone-blue .box-text {
+  background: #f4f8ff;
+}
+.modal-body .box.tone-violet .box-title {
+  background: #efeafe;
+}
+.modal-body .box.tone-violet .box-ico {
+  color: #6a4fd0;
+}
+.modal-body .box.tone-violet .box-text {
+  background: #f7f4ff;
+}
+.modal-body .box.tone-green .box-title {
+  background: #e4f6ed;
+}
+.modal-body .box.tone-green .box-ico {
+  color: #1f9d63;
+}
+.modal-body .box.tone-green .box-text {
+  background: #f2fbf6;
+}
+
+@media (max-width: 860px) {
+  .modal-body .kv-cols {
+    grid-template-columns: 1fr;
+  }
+  .modal-body .box-row {
+    grid-template-columns: 1fr;
+  }
+}

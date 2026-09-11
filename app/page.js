@@ -130,17 +130,173 @@ function fieldValue(record, code) {
   return formatValue(record[code]);
 }
 
+// 詳細画面の項目につける小さな絵。どの項目かがひと目で分かるようにする。
+// 線の太さ・大きさはこの画面の中でそろえる。
+const DETAIL_SHAPES = {
+  doc: (
+    <>
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />
+      <path d="M14 3v5h5" />
+    </>
+  ),
+  hash: (
+    <>
+      <path d="M5 9h14M5 15h14M10 4l-2 16M16 4l-2 16" />
+    </>
+  ),
+  hotel: (
+    <>
+      <path d="M4 21V6a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v15" />
+      <path d="M15 21V11h4a1 1 0 0 1 1 1v9" />
+      <path d="M3 21h18M7.5 9h1M11 9h1M7.5 13h1M11 13h1M7.5 17h1M11 17h1" />
+    </>
+  ),
+  dot: <circle cx="12" cy="12" r="5" fill="currentColor" stroke="none" />,
+  tag: (
+    <>
+      <path d="M20.5 13.5 13 21a2 2 0 0 1-2.8 0l-7-7A2 2 0 0 1 2.6 12l.4-7a1 1 0 0 1 1-1l7-.4a2 2 0 0 1 1.5.6l7 7a2 2 0 0 1 0 2.8Z" />
+      <circle cx="7.5" cy="7.5" r="1.4" fill="currentColor" stroke="none" />
+    </>
+  ),
+  gear: (
+    <>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1v.2a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 2.6 14H2.4a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 2.6V2.4a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7h.2a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.3.8Z" />
+    </>
+  ),
+  link: (
+    <>
+      <path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7" />
+      <path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" />
+    </>
+  ),
+  card: (
+    <>
+      <rect x="2.5" y="5" width="19" height="14" rx="2" />
+      <path d="M2.5 10h19M6 14.5h4" />
+    </>
+  ),
+  key: (
+    <>
+      <circle cx="7.5" cy="15.5" r="4" />
+      <path d="m10.5 12.5 8-8M16 7l2.5 2.5M13.5 9.5 16 12" />
+    </>
+  ),
+  calendar: (
+    <>
+      <rect x="3" y="4.5" width="18" height="17" rx="2" />
+      <path d="M3 9.5h18M8 2.5v4M16 2.5v4" />
+    </>
+  ),
+  mail: (
+    <>
+      <rect x="2.5" y="5" width="19" height="14" rx="2" />
+      <path d="m3 6.5 9 6.5 9-6.5" />
+    </>
+  ),
+  person: (
+    <>
+      <circle cx="12" cy="8" r="3.6" />
+      <path d="M5 20a7 7 0 0 1 14 0" />
+    </>
+  ),
+  shield: (
+    <>
+      <path d="M12 2.5 4.5 5.5V11c0 5 3.2 9 7.5 10.5 4.3-1.5 7.5-5.5 7.5-10.5V5.5Z" />
+    </>
+  ),
+  chat: (
+    <>
+      <path d="M20.5 12c0 4.1-3.8 7.4-8.5 7.4-1 0-2-.15-2.9-.42L4 20.8l1.5-3.6C4.1 15.9 3.5 14 3.5 12 3.5 7.9 7.3 4.6 12 4.6s8.5 3.3 8.5 7.4Z" />
+    </>
+  ),
+  clock: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7v5.2l3.2 1.9" />
+    </>
+  ),
+  people: (
+    <>
+      <circle cx="9" cy="8" r="3.4" />
+      <path d="M2.8 19.5a6.2 6.2 0 0 1 12.4 0" />
+      <path d="M16.5 5.2a3.4 3.4 0 0 1 0 6.6M17.5 13.6a6.2 6.2 0 0 1 3.7 5.9" />
+    </>
+  ),
+  check: (
+    <>
+      <rect x="3.5" y="3.5" width="17" height="17" rx="3" />
+      <path d="m8 12.2 2.8 2.8L16.4 9.4" />
+    </>
+  ),
+};
+
+function DetailIcon({ name, size = 15 }) {
+  const shape = DETAIL_SHAPES[name] || DETAIL_SHAPES.doc;
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {shape}
+    </svg>
+  );
+}
+
+// 項目名 → 絵。載っていない項目は書類の絵にする。
+const DETAIL_ICON = {
+  依頼: "doc",
+  HID: "hash",
+  Hotel: "hotel",
+  ステータス: "dot",
+  CM種別: "tag",
+  CM設定: "gear",
+  URL: "link",
+  ID: "card",
+  PW: "key",
+  契約コード: "doc",
+  完了希望日: "calendar",
+  "Google Form 受領日": "doc",
+  "CM情報 受領日": "mail",
+  "作業依頼 受領日": "person",
+  Stage変更日: "calendar",
+  YCS完了メール: "mail",
+  掲載開始: "calendar",
+  DSA: "shield",
+};
+
 function DetailRow({ label, value }) {
   const isUrl = /^https?:\/\//.test(value);
+  // ステータスは他と見分けがつくよう、囲みにして出す
+  const isStatus = label === "ステータス";
   return (
     <div className="kv">
-      <div className="kv-l">{label}</div>
+      <div className="kv-l">
+        <span className={"kv-ic" + (label === "ステータス" ? " on" : "")} aria-hidden="true">
+          <DetailIcon name={DETAIL_ICON[label]} />
+        </span>
+        <span className="kv-lt">{label}</span>
+      </div>
       <div className="kv-v">
         {value ? (
           isUrl ? (
-            <a href={value} target="_blank" rel="noreferrer">
-              {value}
+            <a href={value} target="_blank" rel="noreferrer" className="kv-link">
+              <span className="kv-link-t">{value}</span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M14 4h6v6" />
+                <path d="M20 4 11 13" />
+                <path d="M18 14.5V19a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 19V8a1.5 1.5 0 0 1 1.5-1.5H10" />
+              </svg>
             </a>
+          ) : isStatus ? (
+            <span className="kv-pill">{value}</span>
           ) : (
             value
           )
@@ -151,6 +307,13 @@ function DetailRow({ label, value }) {
     </div>
   );
 }
+
+// 下段の3つ（いつまでに／誰が／なにをする）。色と絵で見分ける。
+const ACTION_BOXES = [
+  { key: "いつまでに", tone: "blue", icon: "clock" },
+  { key: "誰が", tone: "violet", icon: "people" },
+  { key: "なにをする", tone: "green", icon: "check" },
+];
 
 function DetailModal({ record, onClose }) {
   return (
@@ -169,8 +332,25 @@ function DetailModal({ record, onClose }) {
           </button>
         </div>
         <div className="modal-body">
-          <section className="panel">
-            <div className="panel-title">基本情報</div>
+          <section className="panel panel-hero">
+            {/* 見出し。左に絵、右下に薄い飾り */}
+            <div className="panel-title">
+              <span className="panel-ico" aria-hidden="true">
+                <DetailIcon name="hotel" size={22} />
+              </span>
+              <span className="panel-h">
+                <b>基本情報</b>
+                <small>ホテル・施設の基本情報と設定内容</small>
+              </span>
+              <span className="panel-deco" aria-hidden="true">
+                <svg width="150" height="64" viewBox="0 0 150 64" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M92 62V24a2 2 0 0 1 2-2h20a2 2 0 0 1 2 2v38" />
+                  <path d="M116 62V34h16a2 2 0 0 1 2 2v26" />
+                  <path d="M84 62h62" />
+                  <path d="M98 30h4M106 30h4M98 38h4M106 38h4M98 46h4M106 46h4M122 42h4M122 50h4" />
+                </svg>
+              </span>
+            </div>
             <div className="kv-cols">
               <div className="kv-col">
                 {DETAIL_LEFT.map((k) => (
@@ -193,19 +373,31 @@ function DetailModal({ record, onClose }) {
             </div>
           </section>
 
-          <section className="panel">
-            <div className="panel-title">滞留理由</div>
+          <section className="panel panel-note">
+            <div className="panel-title">
+              <span className="panel-ico" aria-hidden="true">
+                <DetailIcon name="chat" size={18} />
+              </span>
+              <span className="panel-h">
+                <b>滞留理由</b>
+              </span>
+            </div>
             <div className="panel-text">
               {fieldValue(record, FIELD_CODE["滞留理由"]) || "—"}
             </div>
           </section>
 
           <div className="box-row">
-            {["いつまでに", "誰が", "なにをする"].map((k) => (
-              <div className="box" key={k}>
-                <div className="box-title">{k}</div>
+            {ACTION_BOXES.map(({ key, tone, icon }) => (
+              <div className={"box tone-" + tone} key={key}>
+                <div className="box-title">
+                  <span className="box-ico" aria-hidden="true">
+                    <DetailIcon name={icon} size={16} />
+                  </span>
+                  {key}
+                </div>
                 <div className="box-text">
-                  {fieldValue(record, FIELD_CODE[k]) || "—"}
+                  {fieldValue(record, FIELD_CODE[key]) || "—"}
                 </div>
               </div>
             ))}
