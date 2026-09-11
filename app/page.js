@@ -762,6 +762,63 @@ export default function Page() {
       {/* 絞り込みは表の直前に置く */}
       {data && !error && (
         <div className="detail-tools list-tools">
+          {/* 並びは 年 → 四半期 → 案件名 → ステータス → 検索。
+              どれで絞るかは選択肢とアイコンで分かるので、項目名は出さない。 */}
+          {years.length > 0 && (
+            <Pulldown
+              value={periodYear}
+              onChange={setPeriodYear}
+              ariaLabel="年で絞り込み"
+              icon="calendar"
+              options={[
+                { value: "all", label: "すべての年" },
+                ...years.map((y) => ({ value: String(y), label: `${y} 年` })),
+              ]}
+            />
+          )}
+          {records.length > 0 && (
+            <Pulldown
+              value={periodQ}
+              onChange={setPeriodQ}
+              disabled={periodYear === "all"}
+              ariaLabel="四半期で絞り込み"
+              icon="calendar"
+              options={[
+                { value: "all", label: "通年" },
+                { value: "1", label: "Q1（1〜3月）" },
+                { value: "2", label: "Q2（4〜6月）" },
+                { value: "3", label: "Q3（7〜9月）" },
+                { value: "4", label: "Q4（10〜12月）" },
+              ]}
+            />
+          )}
+          {records.length > 0 && (
+            <Pulldown
+              value={typeFilter}
+              onChange={setTypeFilter}
+              ariaLabel="案件名で絞り込み"
+              icon="filter"
+              options={[
+                { value: "all", label: `すべての案件名（${records.length.toLocaleString("ja-JP")}）` },
+                ...typeList.map((t) => ({
+                  value: t,
+                  label: `${t}（${typeCounts[t].toLocaleString("ja-JP")}）`,
+                })),
+              ]}
+            />
+          )}
+          {records.length > 0 && (
+            <Pulldown
+              value={statusFilter}
+              onChange={setStatusFilter}
+              ariaLabel="ステータスで絞り込み"
+              icon="filter"
+              options={[
+                { value: "active", label: "完了以外" },
+                { value: "all", label: "すべてのステータス" },
+              ]}
+            />
+          )}
           {records.length > 0 && (
             <label className="search-box" aria-label="HID・Hotel Name で検索">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
@@ -773,73 +830,6 @@ export default function Page() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="HID・Hotel Name で検索..."
-              />
-            </label>
-          )}
-          {records.length > 0 && (
-            <label className="head-year">
-              案件名
-              <Pulldown
-                value={typeFilter}
-                onChange={setTypeFilter}
-                ariaLabel="案件名で絞り込み"
-                icon="filter"
-                options={[
-                  { value: "all", label: `すべて（${records.length.toLocaleString("ja-JP")}）` },
-                  ...typeList.map((t) => ({
-                    value: t,
-                    label: `${t}（${typeCounts[t].toLocaleString("ja-JP")}）`,
-                  })),
-                ]}
-              />
-            </label>
-          )}
-          {records.length > 0 && (
-            <label className="head-year">
-              ステータス
-              <Pulldown
-                value={statusFilter}
-                onChange={setStatusFilter}
-                ariaLabel="ステータスで絞り込み"
-                icon="filter"
-                options={[
-                  { value: "active", label: "完了以外" },
-                  { value: "all", label: "すべて" },
-                ]}
-              />
-            </label>
-          )}
-          {years.length > 0 && (
-            <label className="head-year">
-              年
-              <Pulldown
-                value={periodYear}
-                onChange={setPeriodYear}
-                ariaLabel="年で絞り込み"
-                icon="calendar"
-                options={[
-                  { value: "all", label: "すべて" },
-                  ...years.map((y) => ({ value: String(y), label: `${y} 年` })),
-                ]}
-              />
-            </label>
-          )}
-          {records.length > 0 && (
-            <label className="head-year">
-              四半期
-              <Pulldown
-                value={periodQ}
-                onChange={setPeriodQ}
-                disabled={periodYear === "all"}
-                ariaLabel="四半期で絞り込み"
-                icon="calendar"
-                options={[
-                  { value: "all", label: "通年" },
-                  { value: "1", label: "Q1（1〜3月）" },
-                  { value: "2", label: "Q2（4〜6月）" },
-                  { value: "3", label: "Q3（7〜9月）" },
-                  { value: "4", label: "Q4（10〜12月）" },
-                ]}
               />
             </label>
           )}
