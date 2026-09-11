@@ -12689,3 +12689,25 @@ body {
 .fx-type.pdf {
   color: #c0392b;
 }
+
+/* 種類は「絵＋文字」。絵で種類、文字で拡張子が分かるようにする。
+   文字色は他の列と同じにして、色を付けるのは絵だけにする。 */
+.fx-type {
+  gap: 6px;
+  cursor: default;
+}
+.fx-type > span {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+.fx-table th.fx-kind,
+.fx-table td.fx-kind {
+  width: 108px;
+}
+
+/* 作成日時の列が増えたので、日付の列は少し狭くして名前の幅を確保する */
+.fx-table th.fx-when,
+.fx-table td.fx-when {
+  width: 132px;
+}

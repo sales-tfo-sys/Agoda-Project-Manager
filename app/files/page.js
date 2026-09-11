@@ -653,6 +653,7 @@ export default function FilesPage() {
                   <th className="fx-name">名前</th>
                   <th className="fx-kind">種類</th>
                   <th className="fx-size">サイズ</th>
+                  <th className="fx-when">作成</th>
                   <th className="fx-when">更新</th>
                   <th className="fx-ops" />
                 </tr>
@@ -684,11 +685,13 @@ export default function FilesPage() {
                       </button>
                     </td>
                     <td className="fx-kind">
-                      <span className="fx-type folder" title="フォルダ" aria-label="フォルダ" role="img">
+                      <span className="fx-type folder">
                         <TypeIcon kind="folder" />
+                        <span>フォルダ</span>
                       </span>
                     </td>
                     <td className="fx-size">—</td>
+                    <td className="fx-when">—</td>
                     <td className="fx-when">—</td>
                     <td className="fx-ops">
                       {canEdit && (
@@ -743,15 +746,18 @@ export default function FilesPage() {
                     <td className="fx-kind">
                       {(() => {
                         const t = typeOf(f.name, "file");
-                        const label = t.ext === t.label ? t.label : `${t.ext}（${t.label}）`;
+                        // 拡張子の無いものは元のとおり「—」。絵で種類、文字で拡張子を出す。
+                        const text = t.ext === "ファイル" ? "—" : t.ext;
                         return (
-                          <span className={"fx-type " + t.key} title={label} aria-label={label} role="img">
+                          <span className={"fx-type " + t.key} title={`${text}（${t.label}）`}>
                             <TypeIcon kind={t.key} />
+                            <span>{text}</span>
                           </span>
                         );
                       })()}
                     </td>
                     <td className="fx-size">{fmtSize(f.size)}</td>
+                    <td className="fx-when">{fmtWhen(f.createdAt)}</td>
                     <td className="fx-when">{fmtWhen(f.updatedAt)}</td>
                     <td className="fx-ops">
                       <button className="forms-op" onClick={() => openFile(f.name, true)} title="ダウンロード" aria-label="ダウンロード">
@@ -786,7 +792,7 @@ export default function FilesPage() {
                 ))}
                 {empty && (
                   <tr>
-                    <td colSpan={5} className="fx-empty">
+                    <td colSpan={6} className="fx-empty">
                       {canEdit
                         ? "ここにはまだ何もありません。右上のボタンか、この枠へのドラッグ＆ドロップで追加できます。"
                         : "ここにはまだ何もありません。"}
