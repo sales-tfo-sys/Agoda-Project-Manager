@@ -12931,3 +12931,23 @@ body {
 .segbar.manage-seg .segbar-btn {
   white-space: nowrap;
 }
+
+/* 作業工数入力：作業内容の列は、作業名を左・進捗のバッジを右端に寄せる */
+.kosu-input-table tbody td .kosu-task-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+.kosu-input-table tbody td .kosu-task-text {
+  /* 名前が長いときは「…」で切る。切らないとバッジに重なって読めなくなる
+     （全体はマウスを乗せると出る） */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kosu-input-table tbody td .st-pill.task-st {
+  margin-left: auto;
+  flex: 0 0 auto;
+}

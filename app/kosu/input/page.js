@@ -592,26 +592,29 @@ export default function KosuInputPage() {
                         </td>
                       ) : null}
                       <td className="l">
-                        {t.content}
-                        {/* Ad Hoc は進捗を出す。どの状態の作業に入力しているのかが
-                            分かるほうが、「記録あり」より役に立つため */}
-                        {!isRegular(t) &&
-                          (() => {
-                            const st = pickStatus(link.statusByContent[t.content]);
-                            if (!st) return null;
-                            return (
-                              <span
-                                className={"st-pill task-st " + statusClass(st)}
-                                title={
-                                  t.viaRecord
-                                    ? `進捗：${st}（この日に記録があるため表示しています）`
-                                    : `進捗：${st}`
-                                }
-                              >
-                                {st}
-                              </span>
-                            );
-                          })()}
+                        {/* 作業名は左、進捗は列の右端に寄せる */}
+                        <span className="kosu-task-cell">
+                          <span className="kosu-task-text" title={t.content}>{t.content}</span>
+                          {/* Ad Hoc は進捗を出す。どの状態の作業に入力しているのかが
+                              分かるほうが、「記録あり」より役に立つため */}
+                          {!isRegular(t) &&
+                            (() => {
+                              const st = pickStatus(link.statusByContent[t.content]);
+                              if (!st) return null;
+                              return (
+                                <span
+                                  className={"st-pill task-st " + statusClass(st)}
+                                  title={
+                                    t.viaRecord
+                                      ? `進捗：${st}（この日に記録があるため表示しています）`
+                                      : `進捗：${st}`
+                                  }
+                                >
+                                  {st}
+                                </span>
+                              );
+                            })()}
+                        </span>
                       </td>
                       <td>
                         {isRegular(t) ? (
