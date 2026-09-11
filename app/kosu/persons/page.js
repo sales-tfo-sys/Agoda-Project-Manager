@@ -9,26 +9,6 @@ import { useUi } from "../../Ui";
 import Pulldown from "../../Pulldown";
 import { cachedJson } from "../../dataCache";
 
-// 役割ごとのまとまり。「その役割が何をできるか」は人ごとに繰り返さず、
-// ここで一度だけ言う（メンバー全員の行に「—」が並ぶのを無くすため）。
-const ROLE_GROUPS = [
-  {
-    key: "owner",
-    name: "オーナー",
-    desc: "すべてのページを見られる。すべてを変更できる。",
-  },
-  {
-    key: "admin",
-    name: "管理者",
-    desc: "すべてのページを見られる。変更できる範囲は個別に決める。",
-  },
-  {
-    key: "member",
-    name: "メンバー",
-    desc: "業務のページを見られる。変更できるのは作業工数入力だけ。",
-  },
-];
-
 // 権限の選択肢（モーダルと一覧で同じものを使う）
 const ROLE_OPTIONS = [
   { value: "owner", label: "オーナー" },
@@ -54,9 +34,9 @@ const DEMO = [
 
 // 最終ログインの表示（yyyy/mm/dd hh:mm）
 function fmtLogin(v) {
-  if (!v) return "未ログイン";
+  if (!v) return "—";
   const d = new Date(v);
-  if (Number.isNaN(d.getTime())) return "未ログイン";
+  if (Number.isNaN(d.getTime())) return "—";
   const p = (n) => String(n).padStart(2, "0");
   return (
     `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ` +
@@ -605,97 +585,118 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
         </div>
       ) : (
         <>
-        <div className="acct">
-          <p className="acct-lede">
-            {persons.length}人が登録されています。
-            {persons.filter((x) => x.active && x.can_login).length}人がログインできます。
-            {canEdit && !textEdit && "　変更するときは右上の編集ボタンを押してください。"}
-          </p>
-
-          {pageRows.length === 0 && (
-            <p className="acct-empty">
-              まだ誰も登録されていません。右上の＋から追加してください。
-            </p>
-          )}
-
-          {/* 役割ごとのまとまり。行には「その人だけで変わるもの」しか置かない */}
-          {ROLE_GROUPS.map((g) => {
-            const people = pageRows.filter((p) => p.active && (p.role || "member") === g.key);
-            if (people.length === 0) return null;
-            return (
-              <section className="acct-group" key={g.key}>
-                <header className="acct-ghead">
-                  <h2 className="acct-gname">{g.name}</h2>
-                  <span className="acct-gcount">{people.length}</span>
-                  <p className="acct-gdesc">{g.desc}</p>
-                </header>
-                <ul className="acct-list">
-                  {people.map((p) => {
-                    const i = activeList.indexOf(p);
-                    const isAdmin = (p.role || "member") === "admin";
-                    return (
-                      <li
-                        key={p.id}
-                        draggable={canDrag && !busy && armedId === p.id}
-                        onDragStart={() => {
-                          dragIndex.current = i;
-                        }}
-                        onDragOver={(e) => {
-                          if (!canDrag) return;
-                          e.preventDefault();
-                          if (dragOver !== i) setDragOver(i);
-                        }}
-                        onDragLeave={() => {
-                          if (dragOver === i) setDragOver(null);
-                        }}
-                        onDrop={() => {
-                          reorder(dragIndex.current, i);
-                          dragIndex.current = null;
-                          setDragOver(null);
-                          setArmedId(null);
-                        }}
-                        onDragEnd={() => {
-                          dragIndex.current = null;
-                          setDragOver(null);
-                          setArmedId(null);
-                        }}
-                        className={
-                          "acct-row" +
-                          (dragOver === i ? " is-over" : "") +
-                          (dragIndex.current === i ? " is-dragging" : "")
+        <div className="card no-pad persons-card">
+          <div className="dtw">
+            <table className="dtable persons-table">
+              <thead>
+                <tr>
+                  <th className="grip-th" aria-label="並べ替え" />
+                  <th className="l">アカウント</th>
+                  <th className="l">担当者名</th>
+                  <th>ログイン</th>
+                  <th>権限</th>
+                  <th className="grant-sub-th">権限編集</th>
+                  <th className="grant-sub-th">タスク編集</th>
+                  <th>ページ権限</th>
+                  <th>最終ログイン</th>
+                  <th>除外日</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pageRows.length === 0 && (
+                  <tr>
+                    <td className="l no-hit" colSpan={10}>
+                      担当者がまだいません。
+                    </td>
+                  </tr>
+                )}
+                {pageRows.map((p) => {
+                  const i = activeList.indexOf(p);
+                  return (
+                    <tr
+                      key={p.id}
+                      draggable={canDrag && !busy && p.active && armedId === p.id}
+                      onDragStart={() => {
+                        dragIndex.current = i;
+                      }}
+                      onDragOver={(e) => {
+                        if (!canDrag || !p.active) return;
+                        e.preventDefault();
+                        if (dragOver !== i) setDragOver(i);
+                      }}
+                      onDragLeave={() => {
+                        if (dragOver === i) setDragOver(null);
+                      }}
+                      onDrop={() => {
+                        reorder(dragIndex.current, i);
+                        dragIndex.current = null;
+                        setDragOver(null);
+                        setArmedId(null);
+                      }}
+                      onDragEnd={() => {
+                        dragIndex.current = null;
+                        setDragOver(null);
+                        setArmedId(null);
+                      }}
+                      className={
+                        (dragOver === i ? "row-dragover " : "") +
+                        (dragIndex.current === i ? "row-dragging " : "") +
+                        (p.active ? "" : "row-retired")
+                      }
+                    >
+                      <td
+                        className="grip-td"
+                        onMouseDown={() => p.active && canDrag && !busy && setArmedId(p.id)}
+                        onMouseUp={() => setArmedId(null)}
+                        title={
+                          !p.active
+                            ? "除外したメンバーは並べ替えできません"
+                            : canDrag
+                            ? "ドラッグで並べ替え"
+                            : "検索中は並べ替えできません"
                         }
                       >
-                        <span
-                          className="acct-grip"
-                          onMouseDown={() => canDrag && !busy && setArmedId(p.id)}
-                          onMouseUp={() => setArmedId(null)}
-                          title={canDrag ? "ドラッグで並べ替え" : "検索中は並べ替えできません"}
-                          aria-hidden="true"
-                        >
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-                            <circle cx="9" cy="5" r="1.7" />
-                            <circle cx="15" cy="5" r="1.7" />
-                            <circle cx="9" cy="12" r="1.7" />
-                            <circle cx="15" cy="12" r="1.7" />
-                            <circle cx="9" cy="19" r="1.7" />
-                            <circle cx="15" cy="19" r="1.7" />
-                          </svg>
-                        </span>
-
-                        {p.avatar_url ? (
-                          <img className="acct-photo" src={p.avatar_url} alt="" referrerPolicy="no-referrer" />
-                        ) : (
-                          <span className="acct-photo acct-photo-none" aria-hidden="true">
-                            {p.name?.slice(0, 1) || "?"}
+                        {p.active && (
+                          <span className="grip" aria-hidden="true">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+                              <circle cx="9" cy="5" r="1.7" />
+                              <circle cx="15" cy="5" r="1.7" />
+                              <circle cx="9" cy="12" r="1.7" />
+                              <circle cx="15" cy="12" r="1.7" />
+                              <circle cx="9" cy="19" r="1.7" />
+                              <circle cx="15" cy="19" r="1.7" />
+                            </svg>
                           </span>
                         )}
-
-                        <span className="acct-who">
-                          <span className="acct-line1">
-                            <span className="acct-name">{p.login_name || romaji(p.email)}</span>
-                            {edit?.id === p.id && edit.field === "name" ? (
+                      </td>
+                      <td className="l name-cell">
+                        {/* td 自体を flex にすると table の列幅計算から外れ、縦線がずれる。
+                            中身は内側の div で flex にする */}
+                        <span className="name-inner">
+                          {p.avatar_url ? (
+                            <img
+                              className="person-photo"
+                              src={p.avatar_url}
+                              alt=""
+                              referrerPolicy="no-referrer"
+                            />
+                          ) : (
+                            <span className="person-photo-none" aria-hidden="true">
+                              {p.name?.slice(0, 1) || "?"}
+                            </span>
+                          )}
+                          <span className="name-stack">
+                            {/* 上段：ログイン時に取得した Google アカウント名。
+                                未ログインならメールから作った仮名を出す */}
+                            <span className="name-main">
+                              {p.login_name || romaji(p.email)}
+                            </span>
+                            {/* 下段：ログインIDになるメールアドレス（クリックで編集） */}
+                            {edit?.id === p.id && edit.field === "email" ? (
                               <input
-                                className="acct-input acct-input-jp"
+                                className="cell-input email-input"
+                                type="email"
                                 value={edit.value}
                                 autoFocus
                                 onChange={(e) => setEdit({ ...edit, value: e.target.value })}
@@ -704,135 +705,162 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                               />
                             ) : canEdit && textEdit ? (
                               <button
-                                className="acct-jp acct-editable"
-                                onClick={() => setEdit({ id: p.id, field: "name", value: p.name })}
-                                title="クリックで担当者名を変更"
+                                className="link-cell name-sub"
+                                onClick={() => setEdit({ id: p.id, field: "email", value: p.email || "" })}
+                                title="クリックでメール編集"
                               >
-                                {p.name}
+                                {p.email || "未設定"}
                               </button>
                             ) : (
-                              <span className="acct-jp">{p.name}</span>
+                              <span className="name-sub">{p.email || "未設定"}</span>
                             )}
                           </span>
-                          {edit?.id === p.id && edit.field === "email" ? (
-                            <input
-                              className="acct-input acct-input-mail"
-                              type="email"
-                              value={edit.value}
-                              autoFocus
-                              onChange={(e) => setEdit({ ...edit, value: e.target.value })}
-                              onKeyDown={(e) => e.key === "Enter" && saveEdit(p)}
-                              onBlur={() => saveEdit(p)}
-                            />
-                          ) : canEdit && textEdit ? (
-                            <button
-                              className="acct-mail acct-editable"
-                              onClick={() => setEdit({ id: p.id, field: "email", value: p.email || "" })}
-                              title="クリックでメールを変更"
-                            >
-                              {p.email || "メール未設定"}
-                            </button>
-                          ) : (
-                            <span className={"acct-mail" + (p.email ? "" : " acct-mail-none")}>
-                              {p.email || "メール未設定"}
-                            </span>
-                          )}
+                          {!p.active && <span className="retired-tag">除外</span>}
                         </span>
-
-                        {/* 読むとき：許可されているものだけを印字する。
-                            許可されていないものは何も書かない（「—」も「拒否」も出さない） */}
-                        {!textEdit && (
-                          <span className="acct-grants">
-                            {!p.can_login && <span className="acct-grant acct-grant-off">ログインできない</span>}
-                            {isAdmin && p.can_edit_accounts && <span className="acct-grant">権限編集</span>}
-                            {isAdmin && p.can_edit_tasks && <span className="acct-grant">タスク編集</span>}
-                          </span>
+                      </td>
+                      {/* 担当者名：登録時に入力した名前（工数明細などで使う表示名） */}
+                      <td className="l">
+                        {edit?.id === p.id && edit.field === "name" ? (
+                          <input
+                            className="cell-input name-input"
+                            value={edit.value}
+                            autoFocus
+                            onChange={(e) => setEdit({ ...edit, value: e.target.value })}
+                            onKeyDown={(e) => e.key === "Enter" && saveEdit(p)}
+                            onBlur={() => saveEdit(p)}
+                          />
+                        ) : canEdit && textEdit ? (
+                          <button
+                            className="link-cell"
+                            onClick={() => setEdit({ id: p.id, field: "name", value: p.name })}
+                            title="クリックで改名"
+                          >
+                            {p.name}
+                          </button>
+                        ) : (
+                          <span className="plain-cell">{p.name}</span>
                         )}
-
-                        {/* 変えるとき：その人で変えられるものだけを並べる */}
-                        {textEdit && canEdit && (
-                          <span className="acct-controls">
-                            <span className="acct-ctl">
-                              <button
-                                className={"switch " + (p.can_login ? "on" : "off")}
-                                role="switch"
-                                aria-checked={p.can_login}
-                                aria-label="ログインを許可"
-                                onClick={() => {
-                                  if (!p.can_login && !p.email) {
-                                    setError("ログインを許可するには先にメールアドレスを登録してください");
-                                    return;
-                                  }
-                                  patch(p.id, { can_login: !p.can_login }, "ログインの許可設定を変更しました。");
-                                }}
-                                disabled={busy}
-                                title={p.can_login ? "クリックでログインを禁止" : "クリックでログインを許可"}
-                              >
-                                <span className="switch-knob" aria-hidden="true" />
-                              </button>
-                              <span className="acct-ctl-label">ログイン</span>
-                            </span>
-
-                            {isAdmin && (
-                              <>
-                                <span className="acct-ctl">
-                                  <button
-                                    className={"switch " + (p.can_edit_accounts ? "on" : "off")}
-                                    role="switch"
-                                    aria-checked={p.can_edit_accounts}
-                                    aria-label="権限編集を許可"
-                                    onClick={() => patch(p.id, { can_edit_accounts: !p.can_edit_accounts }, "アカウント管理の編集権限を変更しました。")}
-                                    disabled={busy || !canGrant}
-                                    title="アカウント管理を編集できる"
-                                  >
-                                    <span className="switch-knob" aria-hidden="true" />
-                                  </button>
-                                  <span className="acct-ctl-label">権限編集</span>
-                                </span>
-                                <span className="acct-ctl">
-                                  <button
-                                    className={"switch " + (p.can_edit_tasks ? "on" : "off")}
-                                    role="switch"
-                                    aria-checked={p.can_edit_tasks}
-                                    aria-label="タスク編集を許可"
-                                    onClick={() => patch(p.id, { can_edit_tasks: !p.can_edit_tasks }, "タスクの編集権限を変更しました。")}
-                                    disabled={busy || !canGrant}
-                                    title="ダッシュボードのタスクを編集できる"
-                                  >
-                                    <span className="switch-knob" aria-hidden="true" />
-                                  </button>
-                                  <span className="acct-ctl-label">タスク編集</span>
-                                </span>
-                              </>
-                            )}
-
-                            <Pulldown
-                              size="sm"
-                              value={p.role || "member"}
-                              onChange={(v) => patch(p.id, { role: v }, "権限を変更しました。")}
+                      </td>
+                      <td>
+                        <span className="login-cell-inner">
+                          <button
+                            className={"switch login-switch " + (p.can_login ? "on" : "off")}
+                            role="switch"
+                            aria-checked={p.can_login}
+                            aria-label="ログイン許可"
+                            onClick={() => {
+                              if (!p.can_login && !p.email) {
+                                setError("ログインを許可するには先にメールアドレスを登録してください");
+                                return;
+                              }
+                              patch(p.id, { can_login: !p.can_login }, "ログインの許可設定を変更しました。");
+                            }}
+                            disabled={busy || !canEdit}
+                            title={
+                              !canEdit
+                                ? undefined
+                                : p.can_login
+                                ? "クリックでログインを禁止"
+                                : "クリックでログインを許可"
+                            }
+                          >
+                            <span className="switch-knob" aria-hidden="true" />
+                          </button>
+                          <span className={"login-state " + (p.can_login ? "on" : "off")}>
+                            {p.can_login ? "許可" : "拒否"}
+                          </span>
+                        </span>
+                      </td>
+                      <td className="perm-cell">
+                        <Pulldown
+                          size="sm"
+                          className={"role-" + (p.role || "member")}
+                          value={p.role || "member"}
+                          onChange={(v) => patch(p.id, { role: v }, "権限を変更しました。")}
+                          disabled={busy || !canGrant}
+                          ariaLabel="権限"
+                          options={ROLE_OPTIONS}
+                        />
+                      </td>
+                      {/* 編集権限：管理者への個別付与だけを扱う。オーナー・メンバーは対象外＝「—」。
+                          「権限編集」「タスク編集」の2列（列見出しがラベルを兼ねる） */}
+                      <td className="grant-cell">
+                        {(p.role || "member") === "admin" ? (
+                          <span className="login-cell-inner">
+                            <button
+                              className={"switch " + (p.can_edit_accounts ? "on" : "off")}
+                              role="switch"
+                              aria-checked={p.can_edit_accounts}
+                              aria-label="アカウント管理の編集を許可"
+                              onClick={() => patch(p.id, { can_edit_accounts: !p.can_edit_accounts }, "アカウント管理の編集権限を変更しました。")}
                               disabled={busy || !canGrant}
-                              ariaLabel="役割"
-                              options={ROLE_OPTIONS}
-                            />
+                              title="アカウント管理を編集できる"
+                            >
+                              <span className="switch-knob" aria-hidden="true" />
+                            </button>
+                            <span className={"login-state " + (p.can_edit_accounts ? "on" : "off")}>
+                              {p.can_edit_accounts ? "許可" : "拒否"}
+                            </span>
                           </span>
+                        ) : (
+                          <span className="perm-note">—</span>
                         )}
-
-                        <span className="acct-seen" title="最終ログイン">
+                      </td>
+                      <td className="grant-cell">
+                        {(p.role || "member") === "admin" ? (
+                          <span className="login-cell-inner">
+                            <button
+                              className={"switch " + (p.can_edit_tasks ? "on" : "off")}
+                              role="switch"
+                              aria-checked={p.can_edit_tasks}
+                              aria-label="タスクの編集を許可"
+                              onClick={() => patch(p.id, { can_edit_tasks: !p.can_edit_tasks }, "タスクの編集権限を変更しました。")}
+                              disabled={busy || !canGrant}
+                              title="ダッシュボードのタスクを編集できる"
+                            >
+                              <span className="switch-knob" aria-hidden="true" />
+                            </button>
+                            <span className={"login-state " + (p.can_edit_tasks ? "on" : "off")}>
+                              {p.can_edit_tasks ? "許可" : "拒否"}
+                            </span>
+                          </span>
+                        ) : (
+                          <span className="perm-note">—</span>
+                        )}
+                      </td>
+                      <td>
+                        {(p.role || "member") === "owner" ? (
+                          <span className="perm-note" title="オーナーは常に全ページ閲覧・編集できます">—</span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="mini-btn pageperm-btn"
+                            onClick={() => setPpTarget(p)}
+                            disabled={!canEdit}
+                            title={canEdit ? "閲覧・編集できるページを設定" : "編集する権限がありません"}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <circle cx="11" cy="11" r="7" />
+                              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                            </svg>
+                            ページ権限
+                          </button>
+                        )}
+                      </td>
+                      <td>
+                        <span className={"last-login" + (p.last_login_at ? "" : " none")}>
                           {fmtLogin(p.last_login_at)}
                         </span>
-
-                        <span className="acct-acts">
-                          {(p.role || "member") !== "owner" && canEdit && (
-                            <button
-                              type="button"
-                              className="acct-ghost"
-                              onClick={() => setPpTarget(p)}
-                              title="見られるページを設定"
-                            >
-                              ページ権限
-                            </button>
-                          )}
-                          {canEdit && (
+                      </td>
+                      <td>
+                        <span className={"left-on" + (p.active ? " none" : "")}>
+                          {p.active ? "—" : fmtDay(p.left_on)}
+                        </span>
+                      </td>
+                      <td className="ops-td">
+                        {canEdit ? (
+                          <span className="pf-ops">
+                            {/* 除外の解除は操作メニューの「除外解除」で行う */}
                             <button
                               type="button"
                               className={"pf-more" + (menu?.id === p.id ? " on" : "")}
@@ -848,76 +876,18 @@ export default function KosuPersonsPage({ embedded = false } = {}) {
                                 <circle cx="19" cy="12" r="1.8" />
                               </svg>
                             </button>
-                          )}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </section>
-            );
-          })}
-
-          {/* 除外した人。記録は残すが、権限の話からは外す */}
-          {pageRows.some((p) => !p.active) && (
-            <section className="acct-group acct-group-out">
-              <header className="acct-ghead">
-                <h2 className="acct-gname">除外</h2>
-                <span className="acct-gcount">{pageRows.filter((p) => !p.active).length}</span>
-                <p className="acct-gdesc">ログインできない。工数の記録は残る。</p>
-              </header>
-              <ul className="acct-list">
-                {pageRows
-                  .filter((p) => !p.active)
-                  .map((p) => (
-                    <li key={p.id} className="acct-row acct-row-out">
-                      <span className="acct-grip" aria-hidden="true" />
-                      {p.avatar_url ? (
-                        <img className="acct-photo" src={p.avatar_url} alt="" referrerPolicy="no-referrer" />
-                      ) : (
-                        <span className="acct-photo acct-photo-none" aria-hidden="true">
-                          {p.name?.slice(0, 1) || "?"}
-                        </span>
-                      )}
-                      <span className="acct-who">
-                        <span className="acct-line1">
-                          <span className="acct-name">{p.login_name || romaji(p.email)}</span>
-                          <span className="acct-jp">{p.name}</span>
-                        </span>
-                        <span className="acct-mail">{p.email || "メール未設定"}</span>
-                      </span>
-                      <span className="acct-grants">
-                        <span className="acct-grant acct-grant-off">
-                          {p.left_on ? fmtDay(p.left_on) + " に除外" : "除外"}
-                        </span>
-                      </span>
-                      <span className="acct-seen" title="最終ログイン">
-                        {fmtLogin(p.last_login_at)}
-                      </span>
-                      <span className="acct-acts">
-                        {canEdit && (
-                          <button
-                            type="button"
-                            className={"pf-more" + (menu?.id === p.id ? " on" : "")}
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onClick={(e) => openMenu(e, p.id)}
-                            disabled={busy}
-                            title="操作"
-                            aria-label="操作"
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                              <circle cx="5" cy="12" r="1.8" />
-                              <circle cx="12" cy="12" r="1.8" />
-                              <circle cx="19" cy="12" r="1.8" />
-                            </svg>
-                          </button>
+                          </span>
+                        ) : (
+                          <span className="perm-note">—</span>
                         )}
-                      </span>
-                    </li>
-                  ))}
-              </ul>
-            </section>
-          )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
         </div>
         </>
       )}
