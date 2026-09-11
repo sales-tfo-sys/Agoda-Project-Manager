@@ -12925,3 +12925,8 @@ body {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+/* 管理ページのタブ行。上（ヘッダーとの間＝6px）と下の余白をそろえる */
+.tabbar-row.manage-tabbar {
+  margin-bottom: 6px;
+}

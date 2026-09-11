@@ -102,6 +102,7 @@ export default function SystemHealthPage() {
 
   const h = data?.health || null;
   const cap = data?.capacity || null;
+  const sto = data?.storage || null;
   const tables = data?.tables || [];
   const totalBytes = tables.reduce((s, t) => s + (Number(t.bytes) || 0), 0) || 1;
 
@@ -156,6 +157,23 @@ export default function SystemHealthPage() {
               }
               tone={toneLow(cap?.usedPct)}
               gauge={cap?.usedPct ?? 0}
+            />
+            {/* 資料ページのファイルは DB とは別枠で数えられるので、容量も別に出す */}
+            <Kpi
+              label="ファイル保管"
+              value={sto?.usedPct != null ? sto.usedPct.toFixed(1) + "%" : "—"}
+              sub={
+                sto
+                  ? `${toMB(sto.usedBytes).toFixed(1)} / ${Math.round(toMB(sto.limitBytes)).toLocaleString("ja-JP")} MB（${cap?.planName || "無料プラン"}）`
+                  : "—"
+              }
+              note={
+                sto
+                  ? `資料ページのファイル ${sto.files.toLocaleString("ja-JP")} 件${sto.partial ? "（深い階層は未集計）" : ""} ・ DB容量とは別枠`
+                  : "集計できませんでした"
+              }
+              tone={toneLow(sto?.usedPct)}
+              gauge={sto?.usedPct ?? 0}
             />
             <Kpi
               label="接続数"

@@ -1,5 +1,6 @@
 import { sb, supabaseConfigured } from "../../../lib/supabase";
 import { denyUnlessPerm } from "../../../lib/auth";
+import { folderStat } from "../../../lib/storage";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,11 @@ const SB_KEY =
 //    無料 = 500MB / Pro = 8192MB。環境変数でも上書きできる。
 const DB_LIMIT_MB = Number(process.env.SUPABASE_DB_LIMIT_MB || 500);
 const DB_PLAN_NAME = process.env.SUPABASE_PLAN_NAME || "無料プラン";
+
+// ── ファイル保管（資料ページ）の上限（プラン依存）──────────────────
+// ★★ プランを変更したら必ずこの値も直すこと ★★
+//    DBとは別枠で数えられる。無料 = 1GB / Pro = 100GB。環境変数でも上書きできる。
+const STORAGE_LIMIT_MB = Number(process.env.SUPABASE_STORAGE_LIMIT_MB || 1024);
 
 // ── 取り込み状況に出す「表示名 / テーブル / 日付列」──────────────────
 // ★ テーブル名・列名はクエリに埋め込むため、必ずこの固定の許可リストのみ。
@@ -153,6 +159,22 @@ export async function GET(req) {
     };
   }
 
+  // ⑥ ファイル保管（資料ページ）の使用量。
+  //    DBとは別枠なので、DB容量には出てこない。ここで数えて別に出す。
+  let storage = null;
+  try {
+    const st = await folderStat("", { left: 60 });
+    storage = {
+      limitBytes: STORAGE_LIMIT_MB * 1024 * 1024,
+      usedBytes: st.size,
+      files: st.files,
+      partial: st.partial, // 深すぎて数え切れなかったときは true
+      usedPct: STORAGE_LIMIT_MB > 0 ? (100 * st.size) / (STORAGE_LIMIT_MB * 1024 * 1024) : null,
+    };
+  } catch {
+    storage = null;
+  }
+
   return Response.json({
     ok: true,
     configured: true,
@@ -161,6 +183,7 @@ export async function GET(req) {
     tables,
     ingest,
     capacity,
+    storage,
     host: connHost(),
   });
 }

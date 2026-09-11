@@ -129,7 +129,8 @@ export default function HidRequestsPage({ embedded, tabs } = {}) {
             )}
           </span>
           <span className="page-h page-h-gap">{embedded ? "管理" : "HID新規発行依頼"}</span>
-          {items && (
+          {/* 管理ページの中に出すときは、すぐ下のタブと近くて読みづらいので件数は出さない */}
+          {!embedded && items && (
             <span className="forms-count-pill">{items.length.toLocaleString("ja-JP")} 件</span>
           )}
         </div>

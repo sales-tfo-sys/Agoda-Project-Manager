@@ -80,7 +80,7 @@ export default function ManagePage() {
   }
 
   const tabs = shown.length > 1 && (
-    <div className="tabbar-row">
+    <div className="tabbar-row manage-tabbar">
       <div className="segbar" role="tablist" aria-label="管理の表示切替" ref={setSegEl}>
         <span
           className="segbar-thumb"
