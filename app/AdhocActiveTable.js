@@ -12,10 +12,14 @@ import { useEffect, useMemo, useState } from "react";
 // ここに出す進捗。完了（Complete）・保留（Onhold）・未設定は出さない。
 const ACTIVE_STATUS = ["On Track", "Behind"];
 
-// 列幅は TaskBoard の ADHOC_COLS と同じ
+// 列幅の目安。TaskBoard の ADHOC_COLS と同じ並び（null は伸び縮みする列）。
+// この表は横スクロールさせずに画面の幅へ収めたいので、
+// px ではなく「全体に対する割合」に直して使う。こうすると画面が狭くても
+// 全部の列が見えたまま、比率を保って縮む。
 const ADHOC_COLS = [50, 330, 106, 106, 70, 70, 70, 66, 96, 116, 92, null, null, 78, 118, 240];
-const FLEX_MIN = 160;
-const ADHOC_W = ADHOC_COLS.reduce((a, b) => a + (b == null ? FLEX_MIN : b), 0);
+const FLEX_W = 160; // 伸び縮みする列の目安
+const ADHOC_TOTAL = ADHOC_COLS.reduce((a, b) => a + (b == null ? FLEX_W : b), 0);
+const colPct = (w) => `${(((w == null ? FLEX_W : w) / ADHOC_TOTAL) * 100).toFixed(4)}%`;
 
 function statusClass(st) {
   if (st === "Complete") return "st-done";
@@ -120,9 +124,13 @@ export function useAdhocActive() {
             const nTotal = Number(val("total", t.total));
             const nDone = Number(val("done", t.done));
             const hasCount = Number.isFinite(nTotal) && Number.isFinite(nDone);
+            // シート連携のURL。https のものだけボタンにする（変な値を踏まないように）
+            const sheetUrl =
+              typeof o.sheetUrl === "string" && /^https:\/\//i.test(o.sheetUrl) ? o.sheetUrl : null;
             return {
               task: t.task,
               prio: prioOf(t),
+              sheetUrl,
               name: val("name", t.task),
               start: val("start", t.start),
               end: val("end", t.end),
@@ -175,10 +183,10 @@ export default function AdhocActiveTable({ rows }) {
   return (
     <div className="qcard adhoc-card">
       <div className="dtw adhoc-tw">
-        <table className="dtable adhoc-table" style={{ width: "100%", minWidth: ADHOC_W }}>
+        <table className="dtable adhoc-table" style={{ width: "100%" }}>
           <colgroup>
             {ADHOC_COLS.map((w, ci) => (
-              <col key={ci} style={w == null ? undefined : { width: w }} />
+              <col key={ci} style={{ width: colPct(w) }} />
             ))}
           </colgroup>
           <thead>
@@ -212,6 +220,22 @@ export default function AdhocActiveTable({ rows }) {
                 <td className="l tname" title={r.name}>
                   <span className="tname-view">
                     <span className="tname-text">{r.name}</span>
+                    {r.sheetUrl && (
+                      <a
+                        className="tname-sheet"
+                        href={r.sheetUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={"スプレッドシートを開く\n" + r.sheetUrl}
+                        aria-label={`${r.name} のスプレッドシートを開く`}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <rect x="3" y="3" width="18" height="18" rx="2" />
+                          <line x1="3" y1="9" x2="21" y2="9" />
+                          <line x1="9" y1="9" x2="9" y2="21" />
+                        </svg>
+                      </a>
+                    )}
                   </span>
                 </td>
                 <td className="period">{cell(r.start)}</td>

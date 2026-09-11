@@ -12965,3 +12965,38 @@ body {
 .forms-empty {
   border-top: 1px solid var(--border);
 }
+
+/* 作業依頼の Ad Hoc Task：タスク名の右端に置く、スプレッドシートを開くボタン */
+.adhoc-table .tname-sheet {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin-left: auto;
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink-2);
+}
+.adhoc-table .tname-sheet:hover {
+  border-color: var(--brand-2);
+  background: var(--head);
+  color: var(--brand-2);
+}
+.adhoc-table .tname-sheet:focus-visible {
+  outline: 2px solid var(--brand-2);
+  outline-offset: 1px;
+}
+
+/* 作業依頼の Ad Hoc Task の表は、横スクロールさせず画面の幅に収める。
+   列幅を「決め打ち」から「割合」に変えると、足りないぶんを各列で分け合って縮む。
+   ※ダッシュボード側の同じ表には掛けない（あちらは横スクロールで全項目を見る作り）。 */
+.wr-page .adhoc-table {
+  table-layout: fixed;
+}
+.wr-page .adhoc-table td.nowrap,
+.wr-page .adhoc-table td.period {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
