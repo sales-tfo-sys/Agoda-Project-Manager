@@ -754,7 +754,7 @@ export default function FilesPage() {
               <thead>
                 <tr>
                   {canDelete && (
-                    <th className="fx-pick">
+                    <th className="fx-sel">
                       <input
                         type="checkbox"
                         checked={allPicked}
@@ -797,7 +797,7 @@ export default function FilesPage() {
                     onDrop={(e) => !self && dropInto(e, into, "dir:" + f.name)}
                   >
                     {canDelete && (
-                      <td className="fx-pick">
+                      <td className="fx-sel">
                         <input
                           type="checkbox"
                           checked={isPicked(f)}
@@ -864,7 +864,7 @@ export default function FilesPage() {
                     onDragEnd={endDrag}
                   >
                     {canDelete && (
-                      <td className="fx-pick">
+                      <td className="fx-sel">
                         <input
                           type="checkbox"
                           checked={isPicked(f)}
