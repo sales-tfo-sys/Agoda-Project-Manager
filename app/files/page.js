@@ -761,6 +761,10 @@ export default function FilesPage() {
                         onChange={toggleAll}
                         aria-label="すべて選ぶ"
                         disabled={allItems.length === 0}
+                        // 一部だけ選んでいるときは「全部ではない」形（横棒）にする
+                        ref={(el) => {
+                          if (el) el.indeterminate = picked.length > 0 && !allPicked;
+                        }}
                       />
                     </th>
                   )}

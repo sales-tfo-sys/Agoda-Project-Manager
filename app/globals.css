@@ -12718,20 +12718,63 @@ body {
   grid-template-columns: 1fr 56px 56px 56px;
 }
 
-/* 資料：まとめて削除するための選択列 */
+/* 資料：まとめて削除するための選択列。
+   見出しと中身でズレないよう、左右の余白は同じ（0）にして中央に置く。 */
 .fx-table th.fx-pick,
 .fx-table td.fx-pick {
-  width: 38px;
-  text-align: center;
-  padding-left: 10px;
+  width: 40px;
+  padding-left: 0;
   padding-right: 0;
+  text-align: center;
 }
+/* チェックは自前で描く。
+   ブラウザ標準のままだと、青い見出しの上で「白い四角」にしか見えないため。 */
 .fx-table .fx-pick input {
-  width: 15px;
-  height: 15px;
-  accent-color: var(--brand-2);
-  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  border: 1.5px solid var(--border2);
+  border-radius: 4px;
+  background-color: #fff;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 11px 11px;
   vertical-align: middle;
+  cursor: pointer;
+}
+.fx-table .fx-pick input:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.fx-table .fx-pick input:focus-visible {
+  outline: 2px solid var(--brand-2);
+  outline-offset: 2px;
+}
+/* 中身の行：選ぶと青くなって白いチェックが入る */
+.fx-table tbody .fx-pick input:checked {
+  background-color: var(--brand-2);
+  border-color: var(--brand-2);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+}
+/* 見出し（青地）：白い枠。選ぶと白く塗って青いチェック。
+   一部だけ選んでいるときは横棒にして「全部ではない」ことを示す。 */
+.fx-table thead .fx-pick input {
+  background-color: transparent;
+  border-color: rgba(255, 255, 255, 0.8);
+}
+.fx-table thead .fx-pick input:checked,
+.fx-table thead .fx-pick input:indeterminate {
+  background-color: #fff;
+  border-color: #fff;
+}
+.fx-table thead .fx-pick input:checked {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232f6be0' stroke-width='3.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+}
+.fx-table thead .fx-pick input:indeterminate {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232f6be0' stroke-width='3.6' stroke-linecap='round'%3E%3Cline x1='6' y1='12' x2='18' y2='12'/%3E%3C/svg%3E");
 }
 /* 選んだ件数つきの削除ボタン（ヘッダー右上） */
 .icon-btn.fx-bulk-del {
