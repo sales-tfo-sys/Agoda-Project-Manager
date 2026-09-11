@@ -12216,3 +12216,20 @@ body {
 .res-row .chart-with-legend .side-legend {
   max-width: 176px;
 }
+
+/* 施設一覧の詳細：見出しの帯をサイトのブランド青にそろえる。
+   グラデーションの明るい側（#5b9dff）は白文字で 2.72:1 と読みにくいので、
+   濃い側のベタ塗り（4.88:1）にする。表ヘッダーと同じ青・同じ白文字。 */
+.panel-title,
+.box-title {
+  background: var(--brand-2);
+  color: #ffffff;
+  border-bottom: 0;
+}
+
+/* 作業リソース詳細：凡例を上下中央ではなく、グラフの上端（100%の線）に合わせる */
+.res-row .chart-with-legend .side-legend {
+  align-self: stretch;
+  justify-content: flex-start;
+  padding-top: 18px;
+}
