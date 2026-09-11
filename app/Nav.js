@@ -170,7 +170,7 @@ function HealthIcon() {
   );
 }
 
-// 資料保管：中身が分かるように、書類の入ったフォルダ
+// 資料：中身が分かるように、書類の入ったフォルダ
 function FolderIcon() {
   return (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -194,7 +194,7 @@ const TABS = [
   { href: "/manage", label: "管理", Icon: FormIcon, keys: ["hid", "forms"] },
   { href: "/kosu/input", label: "作業工数入力", Icon: InputIcon },
   // 作業に使う資料の置き場（フォルダで整理してアップロード・ダウンロードする）
-  { href: "/files", label: "資料保管", Icon: FolderIcon },
+  { href: "/files", label: "資料", Icon: FolderIcon },
   { divider: true },
   { href: "/design-spec", label: "設計仕様書", Icon: SpecIcon, admin: true },
   { href: "/system-health", label: "システムヘルス", Icon: HealthIcon, admin: true },

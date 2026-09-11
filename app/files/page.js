@@ -39,12 +39,109 @@ function FolderIcon() {
     </svg>
   );
 }
+// 移動：フォルダへ入っていく矢印
+function MoveIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M13 6h4.5A1.5 1.5 0 0 1 19 7.5V18a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 18v-4" />
+      <path d="M3 9h8" />
+      <path d="m7.5 5.5 3.5 3.5-3.5 3.5" />
+    </svg>
+  );
+}
 function FileIcon() {
   return (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />
       <path d="M14 3v5h5" />
     </svg>
+  );
+}
+
+// 移動先を選ぶ小さなフォルダ一覧。フォルダだけを出し、潜って選ぶ。
+// いま開いている場所と、移動するフォルダ自身（とその中）は選べない。
+function FolderPicker({ from, target, onPick, saving }) {
+  const [at, setAt] = useState("");
+  const [folders, setFolders] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    setFolders(null);
+    fetch(`/api/files?path=${encodeURIComponent(at)}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j) => alive && setFolders(j.folders || []))
+      .catch(() => alive && setFolders([]));
+    return () => {
+      alive = false;
+    };
+  }, [at]);
+
+  const crumbs = at ? at.split("/") : [];
+  // 移動するフォルダそのもの（の中）は移動先にできない
+  const self = target?.kind === "folder" ? (from ? `${from}/${target.name}` : target.name) : null;
+  const blocked = (p) => self != null && (p === self || p.startsWith(self + "/"));
+  const here = at === from;
+
+  return (
+    <div className="fx-pick">
+      <nav className="fx-pick-crumbs" aria-label="移動先">
+        <button type="button" className="fx-crumb" onClick={() => setAt("")} disabled={at === ""}>
+          すべての資料
+        </button>
+        {crumbs.map((c, i) => (
+          <span key={i} className="fx-crumb-wrap">
+            <span className="fx-crumb-sep" aria-hidden="true">
+              /
+            </span>
+            <button
+              type="button"
+              className="fx-crumb"
+              onClick={() => setAt(crumbs.slice(0, i + 1).join("/"))}
+              disabled={i === crumbs.length - 1}
+            >
+              {c}
+            </button>
+          </span>
+        ))}
+      </nav>
+      <div className="fx-pick-list">
+        {folders == null ? (
+          <p className="fx-pick-empty">読み込み中…</p>
+        ) : folders.length === 0 ? (
+          <p className="fx-pick-empty">この中にフォルダはありません。</p>
+        ) : (
+          folders.map((f) => {
+            const p = at ? `${at}/${f.name}` : f.name;
+            const no = blocked(p);
+            return (
+              <button
+                key={f.name}
+                type="button"
+                className="fx-pick-row"
+                onClick={() => setAt(p)}
+                disabled={no}
+                title={no ? "自分自身の中へは移動できません" : undefined}
+              >
+                <FolderIcon />
+                <span>{f.name}</span>
+              </button>
+            );
+          })
+        )}
+      </div>
+      <div className="fx-pick-foot">
+        <span className="fx-pick-dest">
+          移動先：{at ? `すべての資料 / ${at.split("/").join(" / ")}` : "すべての資料"}
+        </span>
+        <button
+          className="save-btn"
+          onClick={() => onPick(at)}
+          disabled={saving || here || blocked(at)}
+          title={here ? "いまと同じ場所です" : undefined}
+        >
+          {saving ? "移動中…" : "ここへ移動"}
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -57,6 +154,7 @@ export default function FilesPage() {
   const [mkOpen, setMkOpen] = useState(false);
   const [mkName, setMkName] = useState("");
   const [renameTarget, setRenameTarget] = useState(null); // { name, kind, newName }
+  const [moveTarget, setMoveTarget] = useState(null); // { name, kind }
   const [delTarget, setDelTarget] = useState(null); // { name, kind }
   const [saving, setSaving] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -176,6 +274,34 @@ export default function FilesPage() {
     }
   };
 
+  const doMove = async (toPath) => {
+    const t = moveTarget;
+    if (!t) return;
+    if (toPath === path) return setMoveTarget(null);
+    setSaving(true);
+    setBusy("移動中…");
+    try {
+      const res = await fetch("/api/files", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path, name: t.name, toPath, kind: t.kind }),
+      }).then((r) => r.json());
+      if (res.error) {
+        setBusy(null);
+        showToast(res.error, "err");
+      } else {
+        setMoveTarget(null);
+        await load(path);
+        flashDone("移動しました");
+      }
+    } catch (e) {
+      setBusy(null);
+      showToast(String(e?.message || e), "err");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const doDelete = async () => {
     const t = delTarget;
     if (!t) return;
@@ -220,13 +346,28 @@ export default function FilesPage() {
     <div className="wrap page-compact forms-page files-page">
       <div className="head">
         <div className="head-left">
-          <span className="conn ok" title="資料保管" aria-hidden="true">
+          <span className="conn ok" title="資料" aria-hidden="true">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l2 2.5h8A1.5 1.5 0 0 1 20 10v8a1.5 1.5 0 0 1-1.5 1.5h-14A1.5 1.5 0 0 1 3 18Z" />
             </svg>
           </span>
-          <span className="page-h page-h-gap">資料保管</span>
+          <span className="page-h page-h-gap">資料</span>
           <span className="head-sep" aria-hidden="true" />
+          {/* フォルダの中にいるときだけ、1つ上へ戻るボタンを出す */}
+          {path && (
+            <button
+              type="button"
+              className="fx-up"
+              onClick={() => setPath(crumbs.slice(0, -1).join("/"))}
+              title="1つ上のフォルダへ戻る"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M20 12H5" />
+                <path d="m11.5 5.5-6.5 6.5 6.5 6.5" />
+              </svg>
+              戻る
+            </button>
+          )}
           {/* いまどこを開いているか。クリックでその階層に戻る */}
           <nav className="fx-crumbs" aria-label="いまの場所">
             <button type="button" className={"fx-crumb" + (path === "" ? " here" : "")} onClick={() => setPath("")}>
@@ -327,6 +468,9 @@ export default function FilesPage() {
                     <td className="fx-ops">
                       {canEdit && (
                         <>
+                          <button className="forms-op" onClick={() => setMoveTarget(f)} title="別のフォルダへ移動" aria-label="別のフォルダへ移動">
+                            <MoveIcon />
+                          </button>
                           <button className="forms-op" onClick={() => setRenameTarget({ ...f, newName: f.name })} title="名前を変更" aria-label="名前を変更">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M12 20h9" />
@@ -373,6 +517,9 @@ export default function FilesPage() {
                       </button>
                       {canEdit && (
                         <>
+                          <button className="forms-op" onClick={() => setMoveTarget(f)} title="別のフォルダへ移動" aria-label="別のフォルダへ移動">
+                            <MoveIcon />
+                          </button>
                           <button className="forms-op" onClick={() => setRenameTarget({ ...f, newName: f.name })} title="名前を変更" aria-label="名前を変更">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M12 20h9" />
@@ -466,6 +613,32 @@ export default function FilesPage() {
                 onKeyDown={(e) => e.key === "Enter" && doRename()}
               />
             </label>
+          </div>
+        )}
+      </Modal>
+
+      {/* 別のフォルダへ移動 */}
+      <Modal
+        open={!!moveTarget}
+        title={moveTarget?.kind === "folder" ? "フォルダを移動" : "ファイルを移動"}
+        onClose={() => setMoveTarget(null)}
+        width={520}
+        footer={
+          <button className="mini-btn" onClick={() => setMoveTarget(null)} disabled={saving}>
+            キャンセル
+          </button>
+        }
+      >
+        {moveTarget && (
+          <div className="modal-fields">
+            <p className="modal-note fx-move-what">
+              <span className="fx-move-name">
+                {moveTarget.kind === "folder" ? <FolderIcon /> : <FileIcon />}
+                <span>{moveTarget.name}</span>
+              </span>
+              を移動します。移動先のフォルダを選んでください。
+            </p>
+            <FolderPicker from={path} target={moveTarget} onPick={doMove} saving={saving} />
           </div>
         )}
       </Modal>

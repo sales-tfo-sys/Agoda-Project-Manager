@@ -61,7 +61,10 @@ export async function POST(req) {
   }
 }
 
-// 名前を変える： { path, name, newName, kind }
+// 名前を変える／別のフォルダへ移す： { path, name, newName, toPath, kind }
+//   newName だけ … 同じ場所で改名
+//   toPath だけ  … 名前はそのままで移動
+//   両方        … 移動して改名
 export async function PATCH(req) {
   const denied = await denyUnlessPageEdit(req, "files");
   if (denied) return denied;
@@ -69,11 +72,16 @@ export async function PATCH(req) {
     const b = await req.json();
     const dir = safePath(b?.path || "");
     const name = safeName(b?.name);
-    const newName = safeName(b?.newName);
-    if (name === newName) return Response.json({ ok: true });
+    const newName = b?.newName === undefined ? name : safeName(b.newName);
+    const toDir = b?.toPath === undefined ? dir : safePath(b.toPath);
+    if (name === newName && toDir === dir) return Response.json({ ok: true });
     const from = joinPath(dir, name);
-    const to = joinPath(dir, newName);
-    if (await exists(to)) return Response.json({ error: "同じ名前がすでにあります" });
+    const to = joinPath(toDir, newName);
+    // フォルダを自分自身や自分の中へは移せない（入れ子が壊れ、元に戻せなくなる）
+    if (b?.kind === "folder" && (to === from || to.startsWith(from + "/"))) {
+      return Response.json({ error: "そのフォルダの中へは移動できません" });
+    }
+    if (await exists(to)) return Response.json({ error: "移動先に同じ名前がすでにあります" });
     if (b?.kind === "folder") {
       // フォルダには実体が無いので、配下のファイルを1つずつ移す
       const keys = await walkPaths(from);

@@ -12264,7 +12264,7 @@ body {
   white-space: nowrap;
 }
 
-/* ===== 資料保管（/files） ===== */
+/* ===== 資料（/files） ===== */
 
 /* いまどこを開いているか。ヘッダーの中に置くので、行の高さに合わせる */
 .fx-crumbs {
@@ -12407,4 +12407,195 @@ body {
 }
 .wrap.forms-page.wr-page .adhoc-tw {
   max-height: calc(100vh - 58px);
+}
+
+/* 資料：移動ボタンが増えたぶん、操作列を広げる */
+.fx-table th.fx-ops,
+.fx-table td.fx-ops {
+  width: 142px;
+}
+
+/* 移動先を選ぶフォルダ一覧（モーダルの中） */
+.fx-move-what {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.fx-move-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  font-weight: 700;
+  color: var(--ink);
+}
+.fx-move-name > svg {
+  flex: 0 0 auto;
+  color: var(--brand-2);
+}
+.fx-move-name > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fx-pick {
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.fx-pick-crumbs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+  padding: 7px 10px;
+  background: var(--head);
+  border-bottom: 1px solid var(--border2);
+}
+.fx-pick-crumbs .fx-crumb:disabled {
+  color: var(--ink);
+  cursor: default;
+}
+.fx-pick-list {
+  height: 210px;
+  overflow-y: auto;
+  background: var(--surface);
+}
+.fx-pick-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: var(--ink);
+  font-size: 13px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.fx-pick-row:last-child {
+  border-bottom: 0;
+}
+.fx-pick-row > svg {
+  flex: 0 0 auto;
+  color: var(--brand-2);
+}
+.fx-pick-row:hover:not(:disabled) {
+  background: var(--head);
+}
+.fx-pick-row:disabled {
+  color: var(--ink-3);
+  cursor: not-allowed;
+}
+.fx-pick-row:disabled > svg {
+  color: var(--ink-3);
+}
+.fx-pick-empty {
+  margin: 0;
+  padding: 22px 12px;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  text-align: center;
+}
+.fx-pick-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 10px;
+  background: var(--head);
+  border-top: 1px solid var(--border2);
+}
+.fx-pick-dest {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-2);
+  font-size: 12px;
+}
+
+/* ===== 資料：見え方の調整 ===== */
+
+/* パンくずをページタイトルと同じ大きさにする。
+   文字の下端（ベースライン）は元から揃っていたが、
+   大きさが違うぶん小さいほうが下に沈んで見えていた。 */
+.fx-crumb {
+  font-size: 14px;
+}
+
+/* ヘッダーと一覧のあいだの隙間をなくす */
+.wrap.page-compact.files-page .head {
+  margin-bottom: 0;
+}
+
+/* 見出し行は中央ぞろえ（中身の並びはそのまま） */
+.fx-table thead th,
+.fx-table th.fx-name,
+.fx-table th.fx-kind,
+.fx-table th.fx-size,
+.fx-table th.fx-when {
+  text-align: center;
+}
+
+/* 一覧の文字を一段大きく */
+.fx-table thead th {
+  font-size: 13px;
+}
+.fx-table tbody td {
+  font-size: 14px;
+}
+.fx-open {
+  font-size: 14px;
+}
+.fx-empty {
+  font-size: 14px;
+}
+
+/* 下の注記は読み飛ばされないように太字 */
+.fx-foot {
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+/* パンくずは <button> なので、放っておくとブラウザ既定の書体（Arial）になり、
+   隣のページタイトルと字面・高さが違って「ずれている」ように見えていた。
+   書体と行の高さをタイトルに合わせる。 */
+.fx-crumb,
+.fx-pick-crumbs .fx-crumb {
+  font-family: inherit;
+  line-height: 21px;
+}
+
+/* 資料：1つ上のフォルダへ戻るボタン（フォルダの中にいるときだけ出る） */
+.fx-up {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  height: 26px;
+  margin-right: 8px;
+  padding: 0 10px 0 8px;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+.fx-up:hover {
+  background: var(--head);
+  color: var(--ink);
+  border-color: var(--brand-2);
+}
+.fx-up:focus-visible {
+  outline: 2px solid var(--brand-2);
+  outline-offset: 1px;
 }
