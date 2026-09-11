@@ -2,6 +2,7 @@ import { denyUnlessPageEdit, getPerms } from "../../../lib/auth";
 import {
   ensureBucket,
   exists,
+  folderStat,
   joinPath,
   KEEP,
   listDir,
@@ -37,7 +38,22 @@ export async function GET(req) {
     const path = safePath(new URL(req.url).searchParams.get("path") || "");
     await ensureBucket();
     const { folders, files } = await listDir(path);
-    return Response.json({ path, folders, files });
+    // フォルダは実体が無いので、中を数えて サイズ・作成・更新 を出す。
+    // 読み取り回数はここでまとめて上限を決め、深いフォルダで増えすぎないようにする。
+    const budget = { left: 40 };
+    const withStat = [];
+    for (const d of folders) {
+      const s = await folderStat(path ? `${path}/${d.name}` : d.name, budget);
+      withStat.push({
+        ...d,
+        size: s.size,
+        files: s.files,
+        createdAt: s.createdAt,
+        updatedAt: s.updatedAt,
+        partial: s.partial,
+      });
+    }
+    return Response.json({ path, folders: withStat, files });
   } catch (e) {
     return fail(e);
   }
@@ -97,9 +113,13 @@ export async function PATCH(req) {
 }
 
 // 消す： ?path=フォルダ&name=名前&kind=file|folder
+// 削除だけは編集とは別の許可（pages.files.del）が要る。
 export async function DELETE(req) {
-  const denied = await denyUnlessPageEdit(req, "files");
-  if (denied) return denied;
+  const { perms } = await getPerms(req);
+  if (!perms) return Response.json({ error: "ログインが必要です" }, { status: 401 });
+  if (!perms.pages?.files?.del) {
+    return Response.json({ error: "削除する権限がありません" }, { status: 403 });
+  }
   try {
     const q = new URL(req.url).searchParams;
     const dir = safePath(q.get("path") || "");

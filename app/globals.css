@@ -12711,3 +12711,169 @@ body {
 .fx-table td.fx-when {
   width: 132px;
 }
+
+/* ページ権限：「削除」の列が増えたので3列にする */
+.pp-group-head,
+.pp-row {
+  grid-template-columns: 1fr 56px 56px 56px;
+}
+
+/* 資料：まとめて削除するための選択列 */
+.fx-table th.fx-pick,
+.fx-table td.fx-pick {
+  width: 38px;
+  text-align: center;
+  padding-left: 10px;
+  padding-right: 0;
+}
+.fx-table .fx-pick input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--brand-2);
+  cursor: pointer;
+  vertical-align: middle;
+}
+/* 選んだ件数つきの削除ボタン（ヘッダー右上） */
+.icon-btn.fx-bulk-del {
+  width: auto;
+  gap: 5px;
+  padding: 0 10px;
+  color: #c0392b;
+  border-color: #e7b9b3;
+  font-weight: 800;
+  font-size: 12px;
+}
+.icon-btn.fx-bulk-del:hover:not(:disabled) {
+  background: #fdecea;
+  border-color: #c0392b;
+}
+/* 確認モーダルに出す、消すものの一覧 */
+.fx-del-list {
+  max-height: 190px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 8px 10px;
+  list-style: none;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  background: var(--head);
+}
+.fx-del-list li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 0;
+  font-size: 12.5px;
+  color: var(--ink);
+}
+.fx-del-list li > svg {
+  flex: 0 0 auto;
+  color: var(--ink-3);
+}
+.fx-del-list li > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 資料：中身を画面の中で見る窓 */
+.fx-pv-back {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  background: rgba(17, 24, 39, 0.55);
+}
+.fx-pv {
+  display: flex;
+  flex-direction: column;
+  width: min(1100px, 100%);
+  height: min(88vh, 100%);
+  overflow: hidden;
+  background: var(--surface);
+  border-radius: 12px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+}
+.fx-pv-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex: 0 0 auto;
+  padding: 10px 12px;
+  background: var(--brand-2);
+  color: #fff;
+}
+.fx-pv-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 13.5px;
+  font-weight: 800;
+}
+.fx-pv-name > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fx-pv-acts {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.fx-pv-x {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  cursor: pointer;
+}
+.fx-pv-x:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+.fx-pv-body {
+  display: grid;
+  place-items: center;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 14px;
+  overflow: auto;
+  background: var(--bg);
+}
+.fx-pv-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 6px;
+}
+.fx-pv-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 6px;
+  background: #fff;
+}
+.fx-pv-text {
+  align-self: stretch;
+  justify-self: stretch;
+  margin: 0;
+  padding: 14px 16px;
+  overflow: auto;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--ink);
+  font-size: 12.5px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

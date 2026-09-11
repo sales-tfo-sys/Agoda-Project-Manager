@@ -44,11 +44,18 @@ export async function PUT(req) {
     if (prRows?.[0]?.role === "owner") {
       return Response.json({ error: "オーナーは常に全ページ権限を持ちます" }, { status: 200 });
     }
-    // 既知のページキーのみに正規化。editable でないページの edit は常に false。
+    // 既知のページキーのみに正規化。
+    // editable でないページの edit、deletable でないページの del は常に false。
+    // 削除は編集できることが前提なので、編集が無ければ落とす。
     const clean = {};
     for (const pg of PAGES) {
       const o = inPages[pg.key];
-      clean[pg.key] = { view: !!(o && o.view), edit: pg.editable ? !!(o && o.edit) : false };
+      const edit = pg.editable ? !!(o && o.edit) : false;
+      clean[pg.key] = {
+        view: !!(o && o.view),
+        edit,
+        del: pg.deletable ? edit && !!(o && o.del) : false,
+      };
     }
     await sb("task_override?on_conflict=scope,key", {
       method: "POST",

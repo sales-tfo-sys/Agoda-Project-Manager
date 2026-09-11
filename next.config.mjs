@@ -23,7 +23,9 @@ const csp = [
   "object-src 'none'",
   "frame-ancestors 'none'",
   "form-action 'self'",
-  "img-src 'self' data: https://*.googleusercontent.com",
+  // 資料の画像・PDF は保存先から直接読み込んで画面の中で見せる
+  `img-src 'self' data: https://*.googleusercontent.com${supabaseOrigin ? ` ${supabaseOrigin}` : ""}`,
+  `frame-src 'self'${supabaseOrigin ? ` ${supabaseOrigin}` : ""}`,
   "font-src 'self' data:",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",

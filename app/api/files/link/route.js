@@ -17,7 +17,8 @@ export async function GET(req) {
     const dir = safePath(q.get("path") || "");
     const name = safeName(q.get("name"));
     const url = await signUrl(joinPath(dir, name), {
-      expiresIn: 120,
+      // 画面の中で見ているあいだに切れないよう、少し長めにする（10分）
+      expiresIn: 600,
       download: q.get("dl") === "1" ? name : null,
     });
     return Response.json({ url });

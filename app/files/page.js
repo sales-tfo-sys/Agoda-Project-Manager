@@ -26,6 +26,12 @@ const fmtWhen = (iso) => {
 
 // 画面の中で開いて見られるもの（それ以外はダウンロードのみ）
 const VIEWABLE = /\.(png|jpe?g|gif|webp|svg|pdf|txt|csv|md|json)$/i;
+// 絵として出せるもの / 紙面として出せるもの / 文字として出せるもの
+const PV_IMAGE = /\.(png|jpe?g|gif|webp|svg|bmp|avif)$/i;
+const PV_PDF = /\.pdf$/i;
+const PV_TEXT = /\.(txt|csv|tsv|md|json|xml|log)$/i;
+const pvKind = (name) =>
+  PV_IMAGE.test(name) ? "image" : PV_PDF.test(name) ? "pdf" : PV_TEXT.test(name) ? "text" : null;
 
 // 拡張子から中身の種類を決める。
 // 一覧の「種類」はこの種類の絵で出し、文字（CSV・PDF など）は
@@ -40,6 +46,13 @@ const TYPES = [
   { key: "video", label: "動画", re: /^(mp4|mov|avi|webm|mkv|m4v)$/i },
   { key: "audio", label: "音声", re: /^(mp3|wav|m4a|aac|flac|ogg)$/i },
 ];
+
+// 一覧に出す名前。拡張子は「種類」の列に出るので、ここでは省く。
+// 保存されている本当の名前（拡張子つき）は、そのまま持ち回る。
+function baseName(name) {
+  const i = name.lastIndexOf(".");
+  return i > 0 ? name.slice(0, i) : name;
+}
 
 function typeOf(name, kind) {
   if (kind === "folder") return { key: "folder", label: "フォルダ", ext: "フォルダ" };
@@ -282,23 +295,31 @@ export default function FilesPage() {
   const [data, setData] = useState(null); // { folders, files } | { error }
   const [loading, setLoading] = useState(true);
   const [canEdit, setCanEdit] = useState(false);
+  const [canDelete, setCanDelete] = useState(false);
 
   const [mkOpen, setMkOpen] = useState(false);
   const [mkName, setMkName] = useState("");
   const [renameTarget, setRenameTarget] = useState(null); // { name, kind, newName }
   const [moveTarget, setMoveTarget] = useState(null); // { name, kind }
-  const [delTarget, setDelTarget] = useState(null); // { name, kind }
+  const [delTarget, setDelTarget] = useState(null); // 削除の確認 { items:[{name,kind}] }
+  const [picked, setPicked] = useState([]); // まとめて消すために選んだもの [{name,kind}]
+  const [preview, setPreview] = useState(null); // 画面の中で見る { name, kind, url, text, error }
   const [saving, setSaving] = useState(false);
   const [dragOver, setDragOver] = useState(false); // パソコンからのファイル追加
   const [dragItem, setDragItem] = useState(null); // 一覧の中でつまんでいるもの
   const [dropOn, setDropOn] = useState(null); // 落とそうとしている先の目印
 
   const fileInput = useRef(null);
+  const dragDepth = useRef(0); // ドラッグ中の出入りの数（leave の判定に使う）
   const { setBusy, flashDone, showToast, busy } = useUi();
 
   useEffect(() => {
     cachedJson("/api/auth/me", 60 * 1000)
-      .then((d) => setCanEdit(!!d?.perms?.pages?.files?.edit))
+      .then((d) => {
+        setCanEdit(!!d?.perms?.pages?.files?.edit);
+        // 削除は編集とは別の許可（人ごとに外せる）
+        setCanDelete(!!d?.perms?.pages?.files?.del);
+      })
       .catch(() => {});
   }, []);
 
@@ -316,7 +337,16 @@ export default function FilesPage() {
 
   useEffect(() => {
     load(path);
+    setPicked([]); // 場所が変わったら選び直し
   }, [load, path]);
+
+  // プレビューは Esc でも閉じられるようにする
+  useEffect(() => {
+    if (!preview) return;
+    const onKey = (e) => e.key === "Escape" && setPreview(null);
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [preview]);
 
   // パンくず。先頭は保管庫そのもの。
   const crumbs = path ? path.split("/") : [];
@@ -488,21 +518,26 @@ export default function FilesPage() {
   };
 
   const doDelete = async () => {
-    const t = delTarget;
-    if (!t) return;
+    const items = delTarget?.items || [];
+    if (items.length === 0) return;
     setSaving(true);
-    setBusy("削除中…");
+    let ok = 0;
     try {
-      const q = new URLSearchParams({ path, name: t.name, kind: t.kind });
-      const res = await fetch(`/api/files?${q.toString()}`, { method: "DELETE" }).then((r) => r.json());
-      if (res.error) {
-        setBusy(null);
-        showToast(res.error, "err");
-      } else {
-        setDelTarget(null);
-        await load(path);
-        flashDone("削除しました");
+      for (let i = 0; i < items.length; i++) {
+        setBusy(items.length > 1 ? `削除中… (${i + 1}/${items.length})` : "削除中…");
+        const t = items[i];
+        const q = new URLSearchParams({ path, name: t.name, kind: t.kind });
+        const res = await fetch(`/api/files?${q.toString()}`, { method: "DELETE" }).then((r) => r.json());
+        if (res.error) {
+          setBusy(null);
+          showToast(`${t.name}：${res.error}`, "err");
+        } else ok++;
       }
+      setDelTarget(null);
+      setPicked([]);
+      await load(path);
+      if (ok > 0) flashDone(`${ok}件を削除しました`);
+      else setBusy(null);
     } catch (e) {
       setBusy(null);
       showToast(String(e?.message || e), "err");
@@ -511,24 +546,91 @@ export default function FilesPage() {
     }
   };
 
-  // 一時URLを取り、別タブで開く（表示）／保存する（ダウンロード）
+  // ── まとめて選ぶ ──
+  const pickKey = (it) => `${it.kind}:${it.name}`;
+  const isPicked = (it) => picked.some((x) => pickKey(x) === pickKey(it));
+  const togglePick = (it) =>
+    setPicked((prev) =>
+      prev.some((x) => pickKey(x) === pickKey(it))
+        ? prev.filter((x) => pickKey(x) !== pickKey(it))
+        : [...prev, it]
+    );
+
+  // 一時URLを取る。dl=true なら添付として落とすためのURL。
+  const linkOf = async (name, dl) => {
+    const q = new URLSearchParams({ path, name, ...(dl ? { dl: "1" } : {}) });
+    const res = await fetch(`/api/files/link?${q.toString()}`, { cache: "no-store" }).then((r) => r.json());
+    if (res.error) throw new Error(res.error);
+    return res.url;
+  };
+
+  // 別タブで開く（表示）／保存する（ダウンロード）
   const openFile = async (name, dl) => {
     try {
-      const q = new URLSearchParams({ path, name, ...(dl ? { dl: "1" } : {}) });
-      const res = await fetch(`/api/files/link?${q.toString()}`, { cache: "no-store" }).then((r) => r.json());
-      if (res.error) return showToast(res.error, "err");
-      window.open(res.url, "_blank", "noopener,noreferrer");
+      window.open(await linkOf(name, dl), "_blank", "noopener,noreferrer");
     } catch (e) {
       showToast(String(e?.message || e), "err");
+    }
+  };
+
+  // 画面の中で中身を見る。
+  // 画像・PDF は一時URLをそのまま貼り、文字のファイルは読み込んで出す。
+  const openPreview = async (name) => {
+    const kind = pvKind(name);
+    if (!kind) return openFile(name, true); // 見られないものはダウンロード
+    setPreview({ name, kind, url: null, text: null, error: null });
+    try {
+      const url = await linkOf(name, false);
+      if (kind === "text") {
+        const r = await fetch(url);
+        if (!r.ok) throw new Error(`読み込めませんでした（${r.status}）`);
+        const t = await r.text();
+        setPreview({ name, kind, url, text: t.slice(0, 200000), error: null });
+      } else {
+        setPreview({ name, kind, url, text: null, error: null });
+      }
+    } catch (e) {
+      setPreview({ name, kind, url: null, text: null, error: String(e?.message || e) });
     }
   };
 
   const folders = data?.folders || [];
   const files = data?.files || [];
   const empty = !loading && !data?.error && folders.length === 0 && files.length === 0;
+  const allItems = [...folders, ...files].map((f) => ({ name: f.name, kind: f.kind }));
+  const allPicked = allItems.length > 0 && picked.length === allItems.length;
+  const toggleAll = () => setPicked(allPicked ? [] : allItems);
 
   return (
-    <div className="wrap page-compact forms-page files-page">
+    // パソコンから持ってきたファイルは、一覧のどこに落としても受け取る。
+    // 受け口を表だけにしていると、行の上に落としたときに取りこぼすことがあった。
+    <div
+      className="wrap page-compact forms-page files-page"
+      onDragEnter={(e) => {
+        if (!canEdit || !hasOsFiles(e)) return;
+        e.preventDefault();
+        dragDepth.current += 1;
+        setDragOver(true);
+      }}
+      onDragOver={(e) => {
+        if (!canEdit || !hasOsFiles(e)) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+      }}
+      onDragLeave={(e) => {
+        if (!canEdit || !hasOsFiles(e)) return;
+        // 子要素をまたぐたびに leave が飛ぶので、出入りの数を数えて判断する
+        dragDepth.current = Math.max(0, dragDepth.current - 1);
+        if (dragDepth.current === 0) setDragOver(false);
+      }}
+      onDrop={(e) => {
+        if (!canEdit || !hasOsFiles(e)) return;
+        e.preventDefault();
+        dragDepth.current = 0;
+        setDragOver(false);
+        uploadFiles(e.dataTransfer?.files);
+      }}
+    >
       <div className="head">
         <div className="head-left">
           <span className="conn ok" title="資料" aria-hidden="true">
@@ -593,6 +695,22 @@ export default function FilesPage() {
           </nav>
         </div>
         <div className="head-right">
+          {/* まとめて削除。選んでいるときだけ出す */}
+          {canDelete && picked.length > 0 && (
+            <button
+              className="icon-btn fx-bulk-del"
+              onClick={() => setDelTarget({ items: picked })}
+              title={`選んだ ${picked.length} 件を削除`}
+              disabled={saving}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M4 7h16" />
+                <path d="M9 7V5h6v2" />
+                <path d="M6.5 7 7 20h10l.5-13" />
+              </svg>
+              {picked.length}
+            </button>
+          )}
           {canEdit && (
             <>
               <button className="icon-btn" onClick={() => setMkOpen(true)} title="フォルダを作成" aria-label="フォルダを作成" disabled={saving}>
@@ -630,26 +748,22 @@ export default function FilesPage() {
           <span className="loader-ring" role="status" aria-label="読み込み中" />
         </div>
       ) : (
-        <div
-          className={"card no-pad" + (dragOver ? " fx-drop" : "")}
-          onDragOver={(e) => {
-            // 一覧の中の移動と、パソコンからのファイル追加を取り違えない
-            if (!canEdit || !hasOsFiles(e)) return;
-            e.preventDefault();
-            setDragOver(true);
-          }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={(e) => {
-            if (!canEdit || !hasOsFiles(e)) return;
-            e.preventDefault();
-            setDragOver(false);
-            uploadFiles(e.dataTransfer?.files);
-          }}
-        >
+        <div className={"card no-pad" + (dragOver ? " fx-drop" : "")}>
           <div className="tw forms-tw">
             <table className="fx-table">
               <thead>
                 <tr>
+                  {canDelete && (
+                    <th className="fx-pick">
+                      <input
+                        type="checkbox"
+                        checked={allPicked}
+                        onChange={toggleAll}
+                        aria-label="すべて選ぶ"
+                        disabled={allItems.length === 0}
+                      />
+                    </th>
+                  )}
                   <th className="fx-name">名前</th>
                   <th className="fx-kind">種類</th>
                   <th className="fx-size">サイズ</th>
@@ -678,6 +792,16 @@ export default function FilesPage() {
                     onDragLeave={() => setDropOn(null)}
                     onDrop={(e) => !self && dropInto(e, into, "dir:" + f.name)}
                   >
+                    {canDelete && (
+                      <td className="fx-pick">
+                        <input
+                          type="checkbox"
+                          checked={isPicked(f)}
+                          onChange={() => togglePick({ name: f.name, kind: f.kind })}
+                          aria-label={`${f.name} を選ぶ`}
+                        />
+                      </td>
+                    )}
                     <td className="fx-name">
                       <button type="button" className="fx-open fx-folder" onClick={() => openFolder(f.name)}>
                         <FolderIcon />
@@ -690,9 +814,12 @@ export default function FilesPage() {
                         <span>フォルダ</span>
                       </span>
                     </td>
-                    <td className="fx-size">—</td>
-                    <td className="fx-when">—</td>
-                    <td className="fx-when">—</td>
+                    {/* フォルダには実体が無いので、中身を数えた値を出す */}
+                    <td className="fx-size" title={f.files != null ? `${f.files.toLocaleString("ja-JP")} 個のファイル` : undefined}>
+                      {f.size != null ? fmtSize(f.size) : "—"}
+                    </td>
+                    <td className="fx-when">{fmtWhen(f.createdAt)}</td>
+                    <td className="fx-when">{fmtWhen(f.updatedAt)}</td>
                     <td className="fx-ops">
                       {canEdit && (
                         <>
@@ -705,13 +832,15 @@ export default function FilesPage() {
                               <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
                             </svg>
                           </button>
-                          <button className="forms-op danger" onClick={() => setDelTarget(f)} title="削除" aria-label="削除">
+                          {canDelete && (
+                          <button className="forms-op danger" onClick={() => setDelTarget({ items: [{ name: f.name, kind: f.kind }] })} title="削除" aria-label="削除">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M4 7h16" />
                               <path d="M9 7V5h6v2" />
                               <path d="M6.5 7 7 20h10l.5-13" />
                             </svg>
                           </button>
+                          )}
                         </>
                       )}
                     </td>
@@ -730,16 +859,26 @@ export default function FilesPage() {
                     onDragStart={(e) => startDrag(e, f)}
                     onDragEnd={endDrag}
                   >
+                    {canDelete && (
+                      <td className="fx-pick">
+                        <input
+                          type="checkbox"
+                          checked={isPicked(f)}
+                          onChange={() => togglePick({ name: f.name, kind: f.kind })}
+                          aria-label={`${f.name} を選ぶ`}
+                        />
+                      </td>
+                    )}
                     <td className="fx-name">
                       {VIEWABLE.test(f.name) ? (
-                        <button type="button" className="fx-open" onClick={() => openFile(f.name, false)} title="開く">
+                        <button type="button" className="fx-open" onClick={() => openPreview(f.name)} title={f.name}>
                           <FileIcon />
-                          <span>{f.name}</span>
+                          <span>{baseName(f.name)}</span>
                         </button>
                       ) : (
-                        <span className="fx-open plain">
+                        <span className="fx-open plain" title={f.name}>
                           <FileIcon />
-                          <span>{f.name}</span>
+                          <span>{baseName(f.name)}</span>
                         </span>
                       )}
                     </td>
@@ -778,13 +917,15 @@ export default function FilesPage() {
                               <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
                             </svg>
                           </button>
-                          <button className="forms-op danger" onClick={() => setDelTarget(f)} title="削除" aria-label="削除">
+                          {canDelete && (
+                          <button className="forms-op danger" onClick={() => setDelTarget({ items: [{ name: f.name, kind: f.kind }] })} title="削除" aria-label="削除">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M4 7h16" />
                               <path d="M9 7V5h6v2" />
                               <path d="M6.5 7 7 20h10l.5-13" />
                             </svg>
                           </button>
+                          )}
                         </>
                       )}
                     </td>
@@ -792,7 +933,7 @@ export default function FilesPage() {
                 ))}
                 {empty && (
                   <tr>
-                    <td colSpan={6} className="fx-empty">
+                    <td colSpan={canDelete ? 7 : 6} className="fx-empty">
                       {canEdit
                         ? "ここにはまだ何もありません。右上のボタンか、この枠へのドラッグ＆ドロップで追加できます。"
                         : "ここにはまだ何もありません。"}
@@ -895,6 +1036,61 @@ export default function FilesPage() {
         )}
       </Modal>
 
+      {/* 中身を見る */}
+      {preview && (
+        <div
+          className="fx-pv-back"
+          onMouseDown={(e) => e.target === e.currentTarget && setPreview(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={preview.name}
+        >
+          <div className="fx-pv">
+            <div className="fx-pv-head">
+              <span className="fx-pv-name" title={preview.name}>
+                {preview.kind === "image" ? <TypeIcon kind="image" /> : preview.kind === "pdf" ? <TypeIcon kind="pdf" /> : <TypeIcon kind="doc" />}
+                <span>{preview.name}</span>
+              </span>
+              <span className="fx-pv-acts">
+                <button className="mini-btn" onClick={() => openFile(preview.name, false)}>
+                  別のタブで開く
+                </button>
+                <button className="mini-btn" onClick={() => openFile(preview.name, true)}>
+                  ダウンロード
+                </button>
+                <button className="fx-pv-x" onClick={() => setPreview(null)} aria-label="閉じる">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+                    <line x1="5" y1="5" x2="19" y2="19" />
+                    <line x1="19" y1="5" x2="5" y2="19" />
+                  </svg>
+                </button>
+              </span>
+            </div>
+            <div className="fx-pv-body">
+              {preview.error ? (
+                <div className="banner err-banner">エラー：{preview.error}</div>
+              ) : preview.kind === "image" ? (
+                preview.url ? (
+                  <img className="fx-pv-img" src={preview.url} alt={preview.name} />
+                ) : (
+                  <span className="loader-ring" role="status" aria-label="読み込み中" />
+                )
+              ) : preview.kind === "pdf" ? (
+                preview.url ? (
+                  <iframe className="fx-pv-frame" src={preview.url} title={preview.name} />
+                ) : (
+                  <span className="loader-ring" role="status" aria-label="読み込み中" />
+                )
+              ) : preview.text != null ? (
+                <pre className="fx-pv-text">{preview.text}</pre>
+              ) : (
+                <span className="loader-ring" role="status" aria-label="読み込み中" />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 削除の確認 */}
       <Modal
         open={!!delTarget}
@@ -914,10 +1110,23 @@ export default function FilesPage() {
         {delTarget && (
           <div className="modal-fields">
             <p className="modal-note">
-              「{delTarget.name}」を削除します。
-              {delTarget.kind === "folder" && "中に入っているファイルもすべて消えます。"}
+              {delTarget.items.length === 1
+                ? `「${delTarget.items[0].name}」を削除します。`
+                : `選んだ ${delTarget.items.length} 件を削除します。`}
+              {delTarget.items.some((x) => x.kind === "folder") &&
+                "フォルダの中に入っているファイルもすべて消えます。"}
               元には戻せません。
             </p>
+            {delTarget.items.length > 1 && (
+              <ul className="fx-del-list">
+                {delTarget.items.map((x) => (
+                  <li key={x.kind + x.name}>
+                    {x.kind === "folder" ? <FolderIcon /> : <FileIcon />}
+                    <span>{x.name}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
       </Modal>

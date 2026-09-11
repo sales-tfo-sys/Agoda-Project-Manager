@@ -77,11 +77,20 @@ export default function PagePermModal({ person, onClose }) {
 
   const toggle = (key, field) =>
     setPages((prev) => {
-      const cur = prev[key] || { view: false, edit: false };
+      const cur = prev[key] || { view: false, edit: false, del: false };
       const nextCell = { ...cur, [field]: !cur[field] };
-      // 編集ONなら閲覧も自動ON。閲覧OFFなら編集もOFF。
+      // 上の権限を付けたら下も自動で付き、外したら上も外れる。
+      //   閲覧 ← 編集 ← 削除
+      if (field === "del" && nextCell.del) {
+        nextCell.edit = true;
+        nextCell.view = true;
+      }
       if (field === "edit" && nextCell.edit) nextCell.view = true;
-      if (field === "view" && !nextCell.view) nextCell.edit = false;
+      if (field === "edit" && !nextCell.edit) nextCell.del = false;
+      if (field === "view" && !nextCell.view) {
+        nextCell.edit = false;
+        nextCell.del = false;
+      }
       const next = { ...prev, [key]: nextCell };
       persist(next); // その場で保存
       return next;
@@ -140,9 +149,10 @@ export default function PagePermModal({ person, onClose }) {
                   <span className="pp-group-name">{g.group}</span>
                   <span className="pp-col">閲覧</span>
                   <span className="pp-col">編集</span>
+                  <span className="pp-col">削除</span>
                 </div>
                 {g.pages.map((pg) => {
-                  const v = pages[pg.key] || { view: false, edit: false };
+                  const v = pages[pg.key] || { view: false, edit: false, del: false };
                   return (
                     <div key={pg.key} className="pp-row">
                       <span className="pp-page">
@@ -155,6 +165,15 @@ export default function PagePermModal({ person, onClose }) {
                       {pg.editable ? (
                         <label className="pp-chk">
                           <input type="checkbox" checked={!!v.edit} onChange={() => toggle(pg.key, "edit")} aria-label={`${pg.label} 編集`} />
+                        </label>
+                      ) : (
+                        <span className="pp-na">—</span>
+                      )}
+                      {/* 削除を別に管理するページだけチェックを出す。
+                          それ以外は「編集できれば消せる」ままなので — にする。 */}
+                      {pg.deletable ? (
+                        <label className="pp-chk">
+                          <input type="checkbox" checked={!!v.del} onChange={() => toggle(pg.key, "del")} aria-label={`${pg.label} 削除`} />
                         </label>
                       ) : (
                         <span className="pp-na">—</span>

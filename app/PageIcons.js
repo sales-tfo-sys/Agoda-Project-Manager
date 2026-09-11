@@ -78,6 +78,13 @@ const SHAPES = {
     </>
   ),
   systemHealth: <path d="M22 12h-4l-3 9L9 3l-3 9H2" />,
+  // 資料：メニューと同じ、書類の入ったフォルダ
+  files: (
+    <>
+      <path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l2 2.5h8A1.5 1.5 0 0 1 20 10v8a1.5 1.5 0 0 1-1.5 1.5h-14A1.5 1.5 0 0 1 3 18Z" />
+      <path d="M8.5 12.5h7M8.5 15.5h4.5" />
+    </>
+  ),
 };
 
 export default function PageIcon({ pageKey, size = 15 }) {
