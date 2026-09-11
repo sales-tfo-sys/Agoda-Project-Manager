@@ -239,8 +239,9 @@ export default function ResourceCharts({ resource, wi, weekLabel }) {
     <div className="chart-grid res-row">
       <section className="chart-card" ref={mainChartRef}>
         <div className="chart-head">
-          <h3 className="chart-title">メンバー別リソース割合</h3>
-          <CopyChartBtn targetRef={mainChartRef} sub={weekLabel(wi)} />
+          <h3 className="chart-title">メンバー別リソース割合（{weekLabel(wi)}）</h3>
+          {/* 期間はタイトルに入っているので、コピー画像に副題は出さない */}
+          <CopyChartBtn targetRef={mainChartRef} />
         </div>
         <div className="chart-with-legend">
           <Stacked100 persons={persons} series={mainSeries} valuesFor={mainValues} />
@@ -255,10 +256,8 @@ export default function ResourceCharts({ resource, wi, weekLabel }) {
 
       <section className="chart-card" ref={detailChartRef}>
         <div className="chart-head">
-          <h3 className="chart-title">Ad Hoc 詳細</h3>
-          {detailSeries.length > 0 && (
-            <CopyChartBtn targetRef={detailChartRef} sub={weekLabel(wi)} />
-          )}
+          <h3 className="chart-title">Ad Hoc 詳細（{weekLabel(wi)}）</h3>
+          {detailSeries.length > 0 && <CopyChartBtn targetRef={detailChartRef} />}
         </div>
         {detailSeries.length === 0 ? (
           <div className="notice">この週の Ad Hoc 作業はありません。</div>

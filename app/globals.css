@@ -12183,3 +12183,36 @@ body {
 .res-row .stack-lbl {
   font-size: 8.5px;
 }
+
+/* 作業リソース詳細：凡例の文字を大きくしても崩れないよう幅を確保する。
+   グラフ側が少し狭くなるが、長いタスク名が読めないほうが困る。
+   左右のグラフで同じ固定幅にして、プロット領域の大きさは揃えたままにする。 */
+.res-row .side-legend {
+  flex: 0 0 176px;
+  width: 176px;
+  gap: 9px;
+}
+.res-row .side-legend .legend-item {
+  min-width: 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  /* 折り返した2行目以降も、点のぶん字下げされた位置で頭が揃う */
+  align-items: flex-start;
+  /* HID1197585 のように切れ目のない長い語も枠内に収める */
+  overflow-wrap: anywhere;
+}
+.res-row .side-legend .legend-dot {
+  margin-top: 3px;
+}
+
+/* 作業リソース詳細：縦軸の％は目盛りなので、凡例を優先して一段小さくする
+   （進捗グラフ側の axis-txt には影響させない） */
+.res-row .axis-txt {
+  font-size: 9.5px;
+}
+
+/* 上流の .chart-with-legend .side-legend { max-width: 150px } が
+   幅を頭打ちにしていたので、作業リソース詳細だけ外す */
+.res-row .chart-with-legend .side-legend {
+  max-width: 176px;
+}
