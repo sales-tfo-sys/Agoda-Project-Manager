@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import AdhocDoneTable, { useAdhocDone } from "../AdhocDoneTable";
+import AdhocActiveTable, { useAdhocActive } from "../AdhocActiveTable";
 import Modal from "../Modal";
 import { useUi } from "../Ui";
 import { cachedJson } from "../dataCache";
@@ -23,7 +23,7 @@ const isMaru = (v) => {
 
 // ページはタブで2つに分かれる。
 //   new   … 登録したスプレッドシートの一覧（シートは kind で振り分ける）
-//   adhoc … ダッシュボードの「進捗表 → Ad Hoc Task → 完了」に出ているタスク
+//   adhoc … 進行中の Ad Hoc タスク（On Track / Behind）
 const KINDS = [
   { key: "new", label: "新規作業依頼" },
   { key: "adhoc", label: "Ad Hoc Task" },
@@ -99,8 +99,8 @@ export default function WorkRequestsPage() {
   const tableRef = useRef(null);
   const [lefts, setLefts] = useState([]);
 
-  // Ad Hoc Task タブは、ダッシュボードの「完了」に出ているタスクをそのまま出す
-  const adhocDone = useAdhocDone();
+  // Ad Hoc Task タブは、進行中（On Track / Behind）のタスクを出す
+  const adhocActive = useAdhocActive();
 
   // 選んだタブは次に開いたときも覚えておく
   useEffect(() => {
@@ -331,7 +331,7 @@ export default function WorkRequestsPage() {
   }, [grid, cells, filter, cols]);
 
   // ヘッダーの件数。Ad Hoc Task タブは完了タスクの件数。
-  const shownCount = isAdhoc ? adhocDone.rows.length : visibleRows.length;
+  const shownCount = isAdhoc ? adhocActive.rows.length : visibleRows.length;
 
   const freezeProps = (pos) => {
     if (pos >= freezeCount) return {};
@@ -361,7 +361,7 @@ export default function WorkRequestsPage() {
           {!isAdhoc && item && grid && !grid.error && (
             <SegTabs items={FILTERS} value={filter} onChange={setFilter} label="表示フィルター" />
           )}
-          {((isAdhoc && !adhocDone.loading) || (!isAdhoc && grid && !grid.error)) && (
+          {((isAdhoc && !adhocActive.loading) || (!isAdhoc && grid && !grid.error)) && (
             <span className="forms-count-pill">
               {shownCount.toLocaleString("ja-JP")} 件{!isAdhoc && grid?.truncated && "（先頭のみ）"}
             </span>
@@ -390,16 +390,16 @@ export default function WorkRequestsPage() {
       {error && <div className="banner err-banner">エラー：{error}</div>}
 
       {isAdhoc ? (
-        adhocDone.loading ? (
+        adhocActive.loading ? (
           <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>
-        ) : adhocDone.error ? (
-          <div className="banner err-banner">エラー：{adhocDone.error}</div>
-        ) : adhocDone.rows.length === 0 ? (
+        ) : adhocActive.error ? (
+          <div className="banner err-banner">エラー：{adhocActive.error}</div>
+        ) : adhocActive.rows.length === 0 ? (
           <div className="card">
-            <div className="notice">完了した Ad Hoc Task はまだありません。</div>
+            <div className="notice">進行中の Ad Hoc Task はありません。</div>
           </div>
         ) : (
-          <AdhocDoneTable rows={adhocDone.rows} />
+          <AdhocActiveTable rows={adhocActive.rows} />
         )
       ) : (loading || gridLoading) && !busy ? (
         <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>

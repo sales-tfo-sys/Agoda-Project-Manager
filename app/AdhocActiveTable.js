@@ -2,21 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-// ダッシュボード「進捗表 → Ad Hoc Task → 完了」に出ているタスクを、そのまま読み取り専用で出す表。
+// 進行中の Ad Hoc タスク（On Track / Behind）を読み取り専用で出す表。
+// 完了（Complete）・保留（Onhold）・進捗が未設定のものは出さない。
 //
-// ※仕分けと値の出し方は app/TaskBoard.js の Ad Hoc 一覧と同じ規則にしてある。
-//   あちらを直したらこちらも合わせること（列・優先順・完了当日の扱い）。
+// ※列と値の出し方は app/TaskBoard.js の Ad Hoc 一覧と同じ規則にしてある。
+//   あちらを直したらこちらも合わせること（列・優先順の決め方）。
 //   ここは見るだけなので、編集まわり（優先順のドラッグ・シート連携の設定等）は持たない。
+
+// ここに出す進捗。完了（Complete）・保留（Onhold）・未設定は出さない。
+const ACTIVE_STATUS = ["On Track", "Behind"];
 
 // 列幅は TaskBoard の ADHOC_COLS と同じ
 const ADHOC_COLS = [50, 330, 106, 106, 70, 70, 70, 66, 96, 116, 92, null, null, 78, 118, 240];
 const FLEX_MIN = 160;
 const ADHOC_W = ADHOC_COLS.reduce((a, b) => a + (b == null ? FLEX_MIN : b), 0);
-
-function todayKey(d = new Date()) {
-  const p = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-}
 
 function statusClass(st) {
   if (st === "Complete") return "st-done";
@@ -35,7 +34,7 @@ function num(v) {
 
 const cell = (v) => (v === null || v === undefined || v === "" ? "—" : v);
 
-export function useAdhocDone() {
+export function useAdhocActive() {
   const [state, setState] = useState({ loading: true, rows: [], error: null });
 
   useEffect(() => {
@@ -43,12 +42,13 @@ export function useAdhocDone() {
     (async () => {
       try {
         const get = (u) => fetch(u, { cache: "no-store" }).then((r) => r.json());
-        const [aj, cj, oj, nj, gj] = await Promise.all([
+        const [aj, cj, oj, nj, gj, pj] = await Promise.all([
           get("/api/adhoc").catch(() => null),
           get("/api/adhoc-tasks").catch(() => null),
           get("/api/override").catch(() => null),
           get("/api/adhoc-counts").catch(() => null),
           get("/api/assign").catch(() => null),
+          get("/api/priority").catch(() => null),
         ]);
         if (!alive) return;
 
@@ -59,6 +59,12 @@ export function useAdhocDone() {
           if (it.scope === "adhoc") ov[it.key] = it.data || {};
         }
         const counts = nj?.items || {};
+        // 優先順。一度も設定していないものだけ、シート由来の # を使う（TaskBoard と同じ）
+        const prio = {};
+        for (const it of pj?.items || []) {
+          if (it.scope === "adhoc") prio[it.key] = it.priority;
+        }
+        const prioOf = (t) => (prio[t.task] === undefined ? t.no ?? null : prio[t.task]);
         const personById = new Map((gj?.persons || []).map((p) => [p.id, p]));
         const assignOf = {};
         for (const it of gj?.items || []) {
@@ -74,23 +80,32 @@ export function useAdhocDone() {
             .map((c) => ({ task: c.task, customId: c.id })),
         ];
 
-        // 完了にした当日だけは、まだ「完了」に移さない（ダッシュボードと同じ規則）
-        const today = todayKey();
-        const done = merged.filter((t) => {
-          const o = ov[t.task] || {};
-          const st = o.status ?? t.status;
-          return st === "Complete" && o.completedOn !== today;
+        // 進行中（On Track / Behind）だけ。完了・保留・未設定は出さない。
+        const active = merged.filter((t) => {
+          const st = (ov[t.task] || {}).status ?? t.status;
+          return ACTIVE_STATUS.includes(st);
         });
 
-        // 完了は開始日の新しい順
-        const startKey = (t) => {
-          const s = (ov[t.task] || {}).start ?? t.start;
-          const m = s && String(s).match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
-          return m ? Number(m[1]) * 10000 + Number(m[2]) * 100 + Number(m[3]) : -Infinity;
+        // 並びはダッシュボードの「対応中」と同じ：優先順、同じ優先順の中は手で決めた順（seq）
+        const seqOf = (t) => {
+          const v = (ov[t.task] || {}).seq;
+          const n = Number(v);
+          return v != null && Number.isFinite(n) ? n : null;
+        };
+        const byPriority = (a, b) => {
+          const pa = prioOf(a) == null ? Infinity : prioOf(a);
+          const pb = prioOf(b) == null ? Infinity : prioOf(b);
+          if (pa !== pb) return pa - pb;
+          const sa = seqOf(a);
+          const sb = seqOf(b);
+          if (sa == null && sb == null) return 0;
+          if (sa == null) return 1;
+          if (sb == null) return -1;
+          return sa - sb;
         };
 
-        const rows = [...done]
-          .sort((a, b) => startKey(b) - startKey(a))
+        const rows = [...active]
+          .sort(byPriority)
           .map((t) => {
             const o = ov[t.task] || {};
             const val = (k, src) => (o[k] !== undefined ? o[k] : src);
@@ -107,6 +122,7 @@ export function useAdhocDone() {
             const hasCount = Number.isFinite(nTotal) && Number.isFinite(nDone);
             return {
               task: t.task,
+              prio: prioOf(t),
               name: val("name", t.task),
               start: val("start", t.start),
               end: val("end", t.end),
@@ -154,7 +170,7 @@ export function useAdhocDone() {
   return state;
 }
 
-export default function AdhocDoneTable({ rows }) {
+export default function AdhocActiveTable({ rows }) {
   const list = useMemo(() => rows || [], [rows]);
   return (
     <div className="qcard adhoc-card">
@@ -189,10 +205,9 @@ export default function AdhocDoneTable({ rows }) {
           </thead>
           <tbody>
             {list.map((r, i) => (
-              <tr key={r.task + i} className="row-done">
-                {/* 完了したタスクは優先順を持たない */}
+              <tr key={r.task + i}>
                 <td className="prio-td">
-                  <span className="prio-none">—</span>
+                  <span className="prio-view">{r.prio ?? "—"}</span>
                 </td>
                 <td className="l tname" title={r.name}>
                   <span className="tname-view">
