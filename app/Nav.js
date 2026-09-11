@@ -170,6 +170,16 @@ function HealthIcon() {
   );
 }
 
+// 資料保管：中身が分かるように、書類の入ったフォルダ
+function FolderIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l2 2.5h8A1.5 1.5 0 0 1 20 10v8a1.5 1.5 0 0 1-1.5 1.5h-14A1.5 1.5 0 0 1 3 18Z" />
+      <path d="M8.5 12.5h7M8.5 15.5h4.5" />
+    </svg>
+  );
+}
+
 // メニューの並び。
 //   admin: true  … 閲覧権限のある人（オーナー・管理者）だけに出す
 //   admin なし   … 全員に出す（ページ単位で閲覧不可にされている場合だけ隠す）
@@ -183,6 +193,8 @@ const TABS = [
   // 取ってくるデータなので「管理」1つにまとめ、中身はタブで切り替える
   { href: "/manage", label: "管理", Icon: FormIcon, keys: ["hid", "forms"] },
   { href: "/kosu/input", label: "作業工数入力", Icon: InputIcon },
+  // 作業に使う資料の置き場（フォルダで整理してアップロード・ダウンロードする）
+  { href: "/files", label: "資料保管", Icon: FolderIcon },
   { divider: true },
   { href: "/design-spec", label: "設計仕様書", Icon: SpecIcon, admin: true },
   { href: "/system-health", label: "システムヘルス", Icon: HealthIcon, admin: true },

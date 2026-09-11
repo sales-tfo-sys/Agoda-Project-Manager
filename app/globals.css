@@ -12263,3 +12263,137 @@ body {
 .segbar.wr-kind-seg .segbar-btn {
   white-space: nowrap;
 }
+
+/* ===== 資料保管（/files） ===== */
+
+/* いまどこを開いているか。ヘッダーの中に置くので、行の高さに合わせる */
+.fx-crumbs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  overflow: hidden;
+}
+.fx-crumb {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 3px 7px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.fx-crumb:hover {
+  background: var(--head);
+  color: var(--ink);
+}
+.fx-crumb.here {
+  color: var(--ink);
+  cursor: default;
+}
+.fx-crumb.here:hover {
+  background: transparent;
+}
+.fx-crumb-wrap {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+.fx-crumb-sep {
+  color: var(--ink-3);
+  font-size: 12px;
+  padding: 0 1px;
+}
+
+/* 一覧。名前の列だけ伸ばして、残りは内容なりの幅にする */
+.fx-table {
+  width: 100%;
+}
+.fx-table th.fx-name,
+.fx-table td.fx-name {
+  width: auto;
+  text-align: left;
+}
+.fx-table th.fx-kind,
+.fx-table td.fx-kind {
+  width: 92px;
+  text-align: left;
+}
+.fx-table th.fx-size,
+.fx-table td.fx-size {
+  width: 96px;
+  text-align: right;
+}
+.fx-table th.fx-when,
+.fx-table td.fx-when {
+  width: 140px;
+  text-align: left;
+}
+.fx-table th.fx-ops,
+.fx-table td.fx-ops {
+  width: 108px;
+  text-align: right;
+  white-space: nowrap;
+}
+.fx-table td.fx-ops .forms-op + .forms-op {
+  margin-left: 4px;
+}
+
+/* 名前のセル。フォルダは押せる（開く）、ファイルは開けるものだけ押せる */
+.fx-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 13px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.fx-open > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fx-open > svg {
+  flex: 0 0 auto;
+  color: var(--ink-3);
+}
+.fx-open.fx-folder > svg {
+  color: var(--brand-2);
+}
+.fx-open:hover:not(.plain) > span {
+  text-decoration: underline;
+}
+.fx-open.plain {
+  cursor: default;
+}
+
+.fx-empty {
+  padding: 28px 16px;
+  color: var(--ink-2);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* ドラッグ中の受け皿 */
+.files-page .card.fx-drop {
+  outline: 2px dashed var(--brand-2);
+  outline-offset: -4px;
+  background: #f3f7ff;
+}
+
+.fx-foot {
+  margin: 10px 2px 0;
+  color: var(--ink-2);
+  font-size: 11.5px;
+}
