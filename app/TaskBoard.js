@@ -341,6 +341,11 @@ const ALLOW_TASK_DELETE = false;
 
 // 進捗フラグ（Regular Task / Ad Hoc Task 共通）
 const STATUS_OPTIONS = ["On Track", "Behind", "Onhold", "Complete"];
+function todayKey(d = new Date()) {
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
 function statusClass(st) {
   if (st === "Complete") return "st-done";
   if (st === "Onhold") return "st-hold";
@@ -1643,6 +1648,10 @@ export default function TaskBoard({ mode = "view" }) {
         if (sc.total != null) next.total = sc.total;
         if (sc.done != null) next.done = sc.done;
       }
+      // 完了にした日も残す。進捗表の一覧では、この日のあいだだけ
+      // 「完了」へ移さずに対応中へ置いたままにする（Agoda への報告に
+      //  この表をコピーして渡すため、完了した当日は一覧に見えている必要がある）。
+      next.completedOn = todayKey();
     }
     ovRef.current = { ...ovRef.current, [k]: next };
     setOv(ovRef.current);
@@ -3294,8 +3303,13 @@ ${e.memo}` : e.task}>
             ];
             // 進捗を編集した場合はその値で「完了」を判定する
             const statusOf = (t) => ovOf("adhoc", t.task).status ?? t.status;
-            const active = merged.filter((t) => statusOf(t) !== "Complete");
-            const done = merged.filter((t) => statusOf(t) === "Complete");
+            // 完了にした当日だけは「完了」へ移さず、Complete のまま対応中に置く。
+            // この表をコピーして Agoda に報告するので、完了した当日は一覧に
+            // 残っていないと「完了したこと」を伝えられないため。
+            const today = todayKey();
+            const completedToday = (t) => ovOf("adhoc", t.task).completedOn === today;
+            const active = merged.filter((t) => statusOf(t) !== "Complete" || completedToday(t));
+            const done = merged.filter((t) => statusOf(t) === "Complete" && !completedToday(t));
             const doneCount = done.length;
             // 開始日を比較用の数値（YYYYMMDD）に。未設定は最後に回す
             const startKey = (t) => {

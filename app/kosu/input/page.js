@@ -252,9 +252,11 @@ export default function KosuInputPage() {
 
   // 表示する作業：
   //  ・Regular task は従来どおり常に固定表示（進捗・担当の絞り込みをしない）
-  //  ・Ad Hoc task は進捗が「On Track / Behind」のものだけ（Onhold・Complete は出さない）
-  //    ※グルーピングでまとめた作業は、まとめ元のどれかが On Track / Behind なら表示する
+  //  ・Ad Hoc task は進捗が「On Track / Behind / Complete」のものだけ（Onhold は出さない）
+  //    ※グルーピングでまとめた作業は、まとめ元のどれかが該当すれば表示する
   //    ※進捗が未設定のものは判断できないので従来どおり表示する
+  //  ・Complete は「開始日〜期日」の範囲内だけ表示する。
+  //    完了した当日の工数を入力できないと困るため、進捗だけでは隠さない。
   //  ・あわせて、開始日より前の日付では表示しない
   const visibleTasks = useMemo(() => {
     const base = tasks.filter((t) => {
@@ -264,9 +266,14 @@ export default function KosuInputPage() {
 
       if (isRegular(t)) return true;
 
-      // 進捗による絞り込み（Ad Hoc のみ）
+      // 進捗による絞り込み（Ad Hoc のみ）。
+      // Complete をここで弾くと、下の「開始日〜期日」の判定が一度も実行されず、
+      // 完了した当日の工数が入力できなくなる。期間の判定に任せる。
       const stList = (link.statusByContent[t.content] || []).filter(Boolean);
-      if (stList.length > 0 && !stList.some((s) => s === "On Track" || s === "Behind")) {
+      if (
+        stList.length > 0 &&
+        !stList.some((s) => s === "On Track" || s === "Behind" || s === "Complete")
+      ) {
         return false;
       }
 
@@ -320,12 +327,15 @@ export default function KosuInputPage() {
       }
 
       if (isCompleted) {
-        // 完了済みの場合、期日（または完了日）より後なら隠す
+        // 完了済みは「期日（無ければ完了日）」までしか出さない
         if (effEnd && dStr > effEnd) {
           return false;
         }
-        // 完了済みで期間設定が一切ない場合は、安全のためそのまま隠すか判断が必要ですが、
-        // 現状は上の期間チェックを抜ければ表示されます。
+        // 期日も完了日も分からない完了済みは、いつまでも出し続けてしまうので隠す。
+        // すでに記録がある日は、下の救済（recorded）で拾われるので直せなくならない。
+        if (!effEnd) {
+          return false;
+        }
       }
 
       // Ad Hoc も全メンバーが入力できるようにするため、担当の有無や
