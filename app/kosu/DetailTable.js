@@ -298,17 +298,22 @@ export default function DetailTable({ title, compact = false, toolbarHost = null
             }
           }
 
-          // Regular task と「トータル作業時間」はメンバー全員が対象なので、
-          // シートに行が無い在籍メンバー（後から追加した人）の行を足す。
-          // これが無いと、新しく追加したメンバーは工数明細に出ず、
-          // 工数入力した値も表示されない。
+          // ③ すべての作業（Regular・Ad Hoc・トータル作業時間）はメンバー全員が対象なので、
+          // 行が無い在籍メンバーの行を足す。
+          // Ad Hoc も担当者に限らず全員が工数入力できる（作業工数入力ページ・2026-09-04）ので、
+          // 一覧も同じく全員分の行を出す。①②は担当者・対応者・記録がある人しか作らないため、
+          // ここで足さないと「登録した担当者の2名だけ行がある」状態になり、
+          // 担当外の人が入力した値が一覧に出ない（2026-09-14に3件で発覚）。
+          // 既にある行（シート行・①②で足した行）とは「作業内容×担当名」で重複を避ける。
           const commonOf = {}; // 作業内容 → { type, unit, 既にある担当名 }
-          for (const r of sheetRows) {
-            if (/ad\s*hoc/i.test(r.type || "")) continue; // Ad Hoc は上のブロックで処理済み
-            if (!commonOf[r.detail]) {
-              commonOf[r.detail] = { type: r.type, unit: r.unit, names: new Set() };
-            }
-            if (r.tanto) commonOf[r.detail].names.add(r.tanto);
+          const addCommon = (detail, type, unit) => {
+            if (!detail) return;
+            if (!commonOf[detail]) commonOf[detail] = { type, unit, names: new Set() };
+          };
+          for (const r of sheetRows) addCommon(r.detail, r.type, r.unit);
+          for (const t of extraTasks) addCommon(t.content, t.task_type, t.unit);
+          for (const r of [...sheetRows, ...extra]) {
+            if (r.tanto && commonOf[r.detail]) commonOf[r.detail].names.add(r.tanto);
           }
           for (const [content, info] of Object.entries(commonOf)) {
             const tid = taskIdOf.get(content);
@@ -326,6 +331,10 @@ export default function DetailTable({ title, compact = false, toolbarHost = null
               extra.push(mkRow(info.type, content, p.name, info.unit || "count", vals));
             }
           }
+          // ①で担当者が1人もいない作業に置いた「担当なし」の仮の行は、③で全員分の行が
+          // 足された作業では要らないので外す（空の行が1本余計に並ばないように）。
+          const named = new Set(extra.filter((r) => r.tanto).map((r) => r.detail));
+          extra = extra.filter((r) => r.tanto || !named.has(r.detail));
         }
         setExtraRows(extra);
 
