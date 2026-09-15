@@ -32,12 +32,12 @@ const isMaru = (v) => {
 
 // ページはタブで分かれる。
 //   new       … 登録したスプレッドシートの一覧（シートは kind で振り分ける）
-//   adhoc     … 進行中の Ad Hoc タスク（On Track / Behind）
 //   temairazu … 管理 → フォーム回答 の「新規参画(Temairazu)」と同じ回答一覧
+//   adhoc     … 進行中の Ad Hoc タスク（On Track / Behind）
 const KINDS = [
   { key: "new", label: "新規作業依頼" },
-  { key: "adhoc", label: "Ad Hoc Task" },
   { key: "temairazu", label: "Temairazu" },
+  { key: "adhoc", label: "Ad Hoc Task" },
 ];
 const KIND_KEYS = KINDS.map((k) => k.key);
 // フォーム回答に登録してあるシートのうち、どれを Temairazu タブに出すか（名前で探す）
