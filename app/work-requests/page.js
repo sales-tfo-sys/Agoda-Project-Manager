@@ -10,6 +10,14 @@ import { cachedJson } from "../dataCache";
 const EMPTY_CELL = { created: false, recordNo: "", doneDate: "" };
 // ISO(YYYY-MM-DD) → 表示用 YYYY/MM/DD
 const fmtDate = (v) => (v ? String(v).replace(/-/g, "/") : "");
+// 最終読込の表示（YYYY/MM/DD HH:MM）
+const fmtStamp = (iso) => {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+};
 // 日付文字列（2025/10/10 等）→ ISO(YYYY-MM-DD)
 const toISO = (v) => {
   const m = String(v || "").trim().match(/(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/);
@@ -369,6 +377,34 @@ export default function WorkRequestsPage() {
           )}
         </div>
         <div className="head-right">
+          {/* 最終読込。いつ時点の内容なのかを分かるようにする。
+              新規作業依頼：スプレッドシートを実際に読んだ時刻（サーバーで最大1分ためている）
+              Ad Hoc Task ：このページがデータベースを読んだ時刻（その場で読むので、これがデータの時点） */}
+          {(() => {
+            const at = isAdhoc
+              ? adhocActive.loadedAt
+              : grid && !grid.error
+              ? grid.fetchedAt
+              : null;
+            const text = fmtStamp(at);
+            if (!text) return null;
+            return (
+              <span
+                className="updated"
+                title={
+                  isAdhoc
+                    ? "このページが Ad Hoc タスクを読み込んだ時刻です。ページを開き直すと読み直します。"
+                    : "スプレッドシートを読み込んだ時刻です。シートの内容はサーバーで最大1分ためているため、開いた時刻より少し前になることがあります。ページを開き直すと読み直します。"
+                }
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7v5l3 2" />
+                </svg>
+                最終読込：{text}
+              </span>
+            );
+          })()}
           {!isAdhoc && canEdit && item && (
             <button className="icon-btn" onClick={() => setEditTarget({ id: item.id, kind, title: item.title, url: item.url })} title="シートを設定" aria-label="シートを設定">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">

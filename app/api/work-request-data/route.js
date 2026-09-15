@@ -1,4 +1,4 @@
-import { cached } from "../../../lib/cache";
+import { cachedEntry } from "../../../lib/cache";
 import { sb, supabaseConfigured } from "../../../lib/supabase";
 import { fetchSheetGrid } from "../../../lib/formSheet";
 
@@ -22,8 +22,13 @@ export async function GET(req) {
     const url = rows?.[0]?.data?.url;
     if (!url) return Response.json({ error: "URLが未登録です" }, { status: 200 });
 
-    const grid = await cached(`workreqgrid:${id}`, 60 * 1000, () => fetchSheetGrid(url));
+    // シートの中身と、それを実際に読んだ時刻を組で受け取る。
+    // サーバー側で最大1分ためているので、画面を開いた時刻ではなく、こちらを「最終読込」として出す。
+    const { value: grid, at } = await cachedEntry(`workreqgrid:${id}`, 60 * 1000, () =>
+      fetchSheetGrid(url)
+    );
     if (grid?.error) return Response.json(grid);
+    const fetchedAt = new Date(at).toISOString();
 
     // 手動入力の overlay を読み込む（scope=workreqcell, key=`<sheetId>::<rowKey>`）
     // key の前方一致で該当シート分だけ取得する（like の * は PostgREST のワイルドカード）。
@@ -39,7 +44,7 @@ export async function GET(req) {
     }
 
     const rowKeys = (grid.rows || []).map((r, i) => rowKeyOf(r, i));
-    return Response.json({ ...grid, rowKeys, overlay });
+    return Response.json({ ...grid, rowKeys, overlay, fetchedAt });
   } catch (e) {
     return Response.json({ error: String(e?.message || e) }, { status: 200 });
   }

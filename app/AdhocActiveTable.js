@@ -39,7 +39,7 @@ function num(v) {
 const cell = (v) => (v === null || v === undefined || v === "" ? "—" : v);
 
 export function useAdhocActive() {
-  const [state, setState] = useState({ loading: true, rows: [], error: null });
+  const [state, setState] = useState({ loading: true, rows: [], error: null, loadedAt: null });
 
   useEffect(() => {
     let alive = true;
@@ -165,9 +165,9 @@ export function useAdhocActive() {
             };
           });
 
-        setState({ loading: false, rows, error: null });
+        setState({ loading: false, rows, error: null, loadedAt: new Date().toISOString() });
       } catch (e) {
-        if (alive) setState({ loading: false, rows: [], error: String(e?.message || e) });
+        if (alive) setState({ loading: false, rows: [], error: String(e?.message || e), loadedAt: null });
       }
     })();
     return () => {
