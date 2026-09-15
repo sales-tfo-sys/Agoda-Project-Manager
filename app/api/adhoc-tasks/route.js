@@ -21,9 +21,10 @@ export async function POST(req) {
   }
   const denied = await denyUnlessPerm(req, "editTasks");
   if (denied) return denied;
+  let task = ""; // 失敗時の文言でも使うので try の外に置く
   try {
     const b = await req.json();
-    const task = String(b?.task || "").trim();
+    task = String(b?.task || "").trim();
     // プロジェクト管理で選んだ区分を工数側にも引き継ぐ。
     // Regular は「常時表示の作業」として工数入力に固定表示させる。
     const isRegular = String(b?.board || "") === "regular";
@@ -64,6 +65,25 @@ export async function POST(req) {
   } catch (e) {
     const msg = String(e?.message || e);
     if (msg.includes("duplicate")) {
+      // 同じ名前が見当たらないのに弾かれるのは、たいてい「改名したタスクの元の名前」とぶつかっている。
+      // タスクは改名しても中の名前（元の名前）は変わらないので、元の名前は使えないまま残る。
+      // どのタスクとぶつかっているかを教える（一覧で探しても見つからないため）。
+      try {
+        const rows = await sb(
+          `task_override?scope=eq.adhoc&key=eq.${encodeURIComponent(task)}&select=data`
+        ).catch(() => null);
+        const shownAs = rows?.[0]?.data?.name;
+        if (shownAs && shownAs !== task) {
+          return Response.json(
+            {
+              error: `「${task}」は、「${shownAs}」に改名したタスクの元の名前として使われているため追加できません。別の名前で追加してください。`,
+            },
+            { status: 200 }
+          );
+        }
+      } catch {
+        /* 下の一般的な文言にする */
+      }
       return Response.json({ error: "同じ名前のタスクが既にあります" }, { status: 200 });
     }
     return Response.json({ error: msg }, { status: 200 });

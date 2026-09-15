@@ -2827,13 +2827,17 @@ export default function TaskBoard({ mode = "view" }) {
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z" /></svg>
                         )}
                       </button>
-                      {/* 追加はモーダルで行う（表の見出し行にフォームを差し込まない） */}
-                      <button type="button" className="icon-btn" onClick={openAdd} title="タスク追加" aria-label="タスク追加">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <line x1="12" y1="5" x2="12" y2="19" />
-                          <line x1="5" y1="12" x2="19" y2="12" />
-                        </svg>
-                      </button>
+                      {/* 追加はモーダルで行う（表の見出し行にフォームを差し込まない）。
+                          編集中は出さない：表を直している最中に行が増えると紛らわしいため、
+                          追加は編集していないときに行う */}
+                      {!mngEdit && (
+                        <button type="button" className="icon-btn" onClick={openAdd} title="タスク追加" aria-label="タスク追加">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                          </svg>
+                        </button>
+                      )}
                     </>,
                     mngActions
                   )}
