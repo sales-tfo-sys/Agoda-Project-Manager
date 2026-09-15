@@ -87,7 +87,8 @@ export default function WorkRequestsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [canEdit, setCanEdit] = useState(false);
-  const [filter, setFilter] = useState("all"); // "all" | "pending"（完了以外）
+  // 開いたときは「完了以外」（まだ手を付けるべき依頼だけを見たいため）
+  const [filter, setFilter] = useState("pending"); // "all" | "pending"（完了以外）
 
   const [editTarget, setEditTarget] = useState(null); // シート設定モーダル
   const [editRow, setEditRow] = useState(null); // 3項目の編集モーダル { rk }
