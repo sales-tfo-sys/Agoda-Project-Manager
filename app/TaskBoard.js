@@ -2608,6 +2608,8 @@ export default function TaskBoard({ mode = "view" }) {
               </svg>
             </button>
           )}
+          {/* 作業工数表の一覧は表の上に見出しの行がないので、更新バッジはヘッダーの右上に置く */}
+          {!isEdit && activeTab === "ktable" && kosuView === "list" && kosuBadge}
           {/* 毎日の報告メールの雛形（ダッシュボードのみ） */}
           {!isEdit && <DailyReport />}
           {/* 更新時刻は、ダッシュボードでは各表・グラフの右上にバッジで出す。
@@ -2623,7 +2625,7 @@ export default function TaskBoard({ mode = "view" }) {
       {activeTab === "ktable" && !isEdit ? (
         kosuView === "list" ? (
           <div className="tab-panel kosu-panel">
-            <DetailTable compact toolbarHost={kosuTools} badge={kosuBadge} />
+            <DetailTable compact toolbarHost={kosuTools} />
           </div>
         ) : res.error ? (
           <div className="card">
