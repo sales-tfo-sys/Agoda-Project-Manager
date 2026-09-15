@@ -146,8 +146,15 @@ export default function KosuInputPage() {
         const startByContent = {};
         const endByContent = {};
         const targetsOf = (key) => {
-          // 集約先が指定されていればそこだけ、無ければ元の名前と改名後の両方に効かせる
-          if (linkedTo[key]) return [linkedTo[key]];
+          // 集約先が指定されていればそこだけ、無ければ元の名前と改名後の両方に効かせる。
+          // 集約先の作業内容そのものが改名されていると、この画面ではその新しい名前で出る
+          // （/api/kosu-tasks が改名後の名前に差し替えて返す）ので、そちらにも効かせる。
+          // 例：「Room mapping 14」を「Room mapping 16」に改名し、工数の集約先が
+          //     「Room mapping 14」のまま → 画面は「Room mapping 16」なのに進捗が付かなかった。
+          if (linkedTo[key]) {
+            const t = linkedTo[key];
+            return renamed[t] ? [t, renamed[t]] : [t];
+          }
           return renamed[key] ? [key, renamed[key]] : [key];
         };
         for (const it of asg?.items || []) {
