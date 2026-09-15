@@ -3654,15 +3654,33 @@ ${e.memo}` : e.task}>
                                           </svg>
                                         </span>
                                       )}
-                                      {o.sheetUrl && (
-                                        <span className="sheet-mark" title={"シート連携中（受注数・完了数を自動取得）\n" + o.sheetUrl} aria-label="シート連携あり">
-                                          <svg width="12.5" height="12.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-                                            <rect x="3" y="3" width="18" height="18" rx="2" />
-                                            <line x1="3" y1="9" x2="21" y2="9" />
-                                            <line x1="9" y1="9" x2="9" y2="21" />
-                                          </svg>
-                                        </span>
-                                      )}
+                                      {/* シート連携の印。押すとそのスプレッドシートを別タブで開く。
+                                          https のURLだけリンクにし、それ以外は今までどおり印だけ出す */}
+                                      {o.sheetUrl &&
+                                        (/^https:\/\//i.test(o.sheetUrl) ? (
+                                          <a
+                                            className="sheet-mark is-link"
+                                            href={o.sheetUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            title={"スプレッドシートを開く（受注数・完了数を自動取得中）\n" + o.sheetUrl}
+                                            aria-label={`${val("name", t.task)} のスプレッドシートを開く`}
+                                          >
+                                            <svg width="12.5" height="12.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                              <rect x="3" y="3" width="18" height="18" rx="2" />
+                                              <line x1="3" y1="9" x2="21" y2="9" />
+                                              <line x1="9" y1="9" x2="9" y2="21" />
+                                            </svg>
+                                          </a>
+                                        ) : (
+                                          <span className="sheet-mark" title={"シート連携中（受注数・完了数を自動取得）\n" + o.sheetUrl} aria-label="シート連携あり">
+                                            <svg width="12.5" height="12.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+                                              <rect x="3" y="3" width="18" height="18" rx="2" />
+                                              <line x1="3" y1="9" x2="21" y2="9" />
+                                              <line x1="9" y1="9" x2="9" y2="21" />
+                                            </svg>
+                                          </span>
+                                        ))}
                                       {!o.noGraph && ONGOING.includes(status) && (
                                         <span
                                           className="graph-mark"

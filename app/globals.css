@@ -13265,3 +13265,22 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ダッシュボードの Ad Hoc 一覧：シート連携の印を押せるようにした。
+   見た目は今までの緑の印のまま、乗せたときだけ押せることが分かるようにする */
+.adhoc-table .tname-marks a.sheet-mark.is-link {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.adhoc-table .tname-marks a.sheet-mark.is-link:hover {
+  background: #e3f4ea;
+  color: #136b3b;
+}
+.adhoc-table .tname-marks a.sheet-mark.is-link:focus-visible {
+  outline: 2px solid #1c8a4e;
+  outline-offset: 1px;
+}
