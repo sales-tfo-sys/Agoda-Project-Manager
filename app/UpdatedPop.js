@@ -47,12 +47,10 @@ function ClockIcon({ size = 15 }) {
  * rows: [{ key, label, at, note, watch }] … ページ固有の行（省略可）
  *   watch=false の行は「利用者の操作で動くもの」。古くても注意の判定に使わない。
  * label: セクションの見出し（既定「Kintone 取込」）
- * extraUrl: 開いたときに追加の行（{ rows }）を取りに行く先（省略可）
  */
-export default function UpdatedPop({ rows = [], label = "Kintone 取込", extraUrl = null }) {
+export default function UpdatedPop({ rows = [], label = "Kintone 取込" }) {
   const [open, setOpen] = useState(false);
   const [snap, setSnap] = useState(null);
-  const [extra, setExtra] = useState([]);
   const wrapRef = useRef(null);
 
   // 開いたときだけ取りに行く（軽いエンドポイントだが毎回は要らない）
@@ -63,12 +61,6 @@ export default function UpdatedPop({ rows = [], label = "Kintone 取込", extraU
       .then((r) => r.json())
       .then((j) => alive && setSnap(j))
       .catch(() => {});
-    if (extraUrl) {
-      fetch(extraUrl, { cache: "no-store" })
-        .then((r) => r.json())
-        .then((j) => alive && setExtra(Array.isArray(j?.rows) ? j.rows : []))
-        .catch(() => {});
-    }
     const onDown = (e) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
     };
@@ -80,7 +72,7 @@ export default function UpdatedPop({ rows = [], label = "Kintone 取込", extraU
       document.removeEventListener("mousedown", onDown);
       document.removeEventListener("keydown", onKey);
     };
-  }, [open, extraUrl]);
+  }, [open]);
 
   const list = [
     {
@@ -90,7 +82,6 @@ export default function UpdatedPop({ rows = [], label = "Kintone 取込", extraU
       note: snap?.count != null ? `${Number(snap.count).toLocaleString("ja-JP")} 件` : null,
     },
     ...rows,
-    ...extra,
   ];
   // 注意の判定は「取込で更新するデータ」だけで行う（watch=false の行は対象外）。
   // 編集や工数入力は、休みの日などに動かなくても異常ではないため。

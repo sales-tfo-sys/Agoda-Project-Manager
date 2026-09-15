@@ -9,6 +9,7 @@ import Modal from "./Modal";
 import Calendar from "./Calendar";
 import { holidayName, dowLabel } from "../lib/holidays";
 import UpdatedPop from "./UpdatedPop";
+import UpdatedBadge from "./UpdatedBadge";
 import Pulldown from "./Pulldown";
 import { cachedJson, peekJson, invalidate } from "./dataCache";
 import ResourceCharts, { useResource } from "./kosu/ResourceCharts";
@@ -1147,6 +1148,7 @@ function SummaryTable({
   edit = false,
   onToggleEdit,
   notes = [],
+  badge = null,
 }) {
   const ordered = prioOf
     ? [...types].sort((a, b) => {
@@ -1167,6 +1169,8 @@ function SummaryTable({
       <div className="sec-row">
         <div className="sec-head">{title}</div>
         {onToggleEdit && <EditToggle on={edit} onToggle={onToggleEdit} />}
+        {/* 更新バッジ（画像のコピーには写らない） */}
+        {badge}
         <CopyTableBtn targetRef={cardRef} />
       </div>
       <div className="copy-area" ref={cardRef}>
@@ -1316,6 +1320,32 @@ export default function TaskBoard({ mode = "view" }) {
   const [updatedAt, setUpdatedAt] = useState(null);
   // 受注数・完了数（シート連携）を実際にシートから読んだ時刻（いちばん古いセル）
   const [countsReadAt, setCountsReadAt] = useState(null);
+  // 表・グラフの「更新」バッジ用：編集・スケジュール・工数の最後に動いた時刻
+  const [fresh, setFresh] = useState({});
+  // Regular の表・グラフ：Kintone を取り込んだ時刻
+  const regularBadge = (
+    <UpdatedBadge
+      at={updatedAt}
+      sources={[
+        { name: "Kintone 取込", at: updatedAt },
+        { name: "タスクの編集", at: fresh.edits },
+      ]}
+    />
+  );
+  // Ad Hoc の表・グラフ：受注数・完了数をシートから読んだ時刻
+  const adhocBadge = (
+    <UpdatedBadge
+      at={countsReadAt || fresh.edits}
+      sources={[
+        { name: "受注数・完了数（シート）", at: countsReadAt },
+        { name: "タスクの編集", at: fresh.edits },
+      ]}
+    />
+  );
+  // 作業工数表：工数の入力
+  const kosuBadge = (
+    <UpdatedBadge at={fresh.kosu} sources={[{ name: "作業工数の入力", at: fresh.kosu }]} />
+  );
   const [dateCode, setDateCode] = useState("作成日時");
   const [year, setYear] = useState(null);
 
@@ -1366,6 +1396,11 @@ export default function TaskBoard({ mode = "view" }) {
         // 表示は「Kintone を取り込んだ時刻」（保存済みなら fetchedAt）
         setUpdatedAt(json.fetchedAt ? new Date(json.fetchedAt) : new Date());
       }
+      // 表・グラフの「更新」バッジ用の時刻
+      fetch("/api/data-freshness", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((j) => setFresh(j.times || {}))
+        .catch(() => {});
       // Ad Hoc のシート連携（受注数・完了数）も取得。更新のたびに最新化する。
       fetch("/api/adhoc-counts", { cache: "no-store" })
         .then((r) => r.json())
@@ -2575,24 +2610,9 @@ export default function TaskBoard({ mode = "view" }) {
           )}
           {/* 毎日の報告メールの雛形（ダッシュボードのみ） */}
           {!isEdit && <DailyReport />}
-          {/* ダッシュボードでは、Kintone のほかに画面に出ているデータの更新時刻もまとめて出す */}
-          {isEdit ? (
-            <UpdatedPop />
-          ) : (
-            <UpdatedPop
-              extraUrl="/api/data-freshness"
-              rows={[
-                {
-                  key: "counts",
-                  label: "受注数・完了数（シート連携）",
-                  note: "シートから読んだ時刻",
-                  at: countsReadAt,
-                  // 画面を開くたびに読み直す（サーバーで最大1分ためる）ので、古さの注意は出さない
-                  watch: false,
-                },
-              ]}
-            />
-          )}
+          {/* 更新時刻は、ダッシュボードでは各表・グラフの右上にバッジで出す。
+              ヘッダーの時計ボタンはプロジェクト管理だけに残す */}
+          {isEdit && <UpdatedPop />}
         </div>
       </div>
 
@@ -2603,7 +2623,7 @@ export default function TaskBoard({ mode = "view" }) {
       {activeTab === "ktable" && !isEdit ? (
         kosuView === "list" ? (
           <div className="tab-panel kosu-panel">
-            <DetailTable compact toolbarHost={kosuTools} />
+            <DetailTable compact toolbarHost={kosuTools} badge={kosuBadge} />
           </div>
         ) : res.error ? (
           <div className="card">
@@ -2615,7 +2635,7 @@ export default function TaskBoard({ mode = "view" }) {
           </div>
         ) : (
           <div className="tab-panel">
-            <ResourceCharts resource={res.resource} wi={res.wi} weekLabel={res.weekLabel} />
+            <ResourceCharts resource={res.resource} wi={res.wi} weekLabel={res.weekLabel} badge={kosuBadge} />
           </div>
         )
       ) : error ? (
@@ -3103,6 +3123,7 @@ ${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めません�
                 edit={editable}
                 onToggleEdit={undefined}
                 notes={REGULAR_NOTES}
+                badge={regularBadge}
               />
             )}
             {pending &&
@@ -3129,6 +3150,7 @@ ${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めません�
                     edit={editable}
                     onToggleEdit={undefined}
                     notes={REGULAR_NOTES}
+                    badge={regularBadge}
                   />
                 ) : null;
               })()}
@@ -3222,6 +3244,10 @@ ${o.sheetUrl}`} aria-label={sheetErrors[row.key] ? "シートを読めません�
                       ))}
                     </span>
                     <span className="sched-count">{total} 件</span>
+                    <UpdatedBadge
+                      at={fresh.schedule}
+                      sources={[{ name: "タスクの期間・予定の変更", at: fresh.schedule }]}
+                    />
                     {canEditTasks && (
                       <button
                         type="button"
@@ -3428,6 +3454,7 @@ ${e.memo}` : e.task}>
                   <p className="table-note">
                     ※作業工数が５営業日以上かかるプロジェクトについては、グラフ化を行っております。
                   </p>
+                  {adhocBadge}
                   <CopyTableBtn targetRef={adhocCardRef} maxCols={11} />
                 </div>
                 <div className="qcard adhoc-card">
@@ -3826,6 +3853,7 @@ ${e.memo}` : e.task}>
             <div className="tab-panel">
               {/* 切り替えは上のタブ行に移したので、ここはコピーボタンだけ */}
               <div className="sec-row sub-tabs">
+                {tableTab === "regular" ? regularBadge : adhocBadge}
                 <CopyChartsBtn targetRef={tableTab === "regular" ? graphGridRef : adhocGridRef} />
               </div>
               {tableTab === "regular" ? (

@@ -13290,3 +13290,59 @@ body {
   background: var(--ink-3);
   box-shadow: none;
 }
+
+/* ══════════════ 表・グラフの右上の「更新」バッジ ══════════════ */
+/* ヘッダーの「最終読込」（.updated）と同じ見た目を、表の横に置ける大きさに縮めたもの。
+   画像のコピーは表・注記・グラフ・見出しの要素だけを描くので、このバッジは写らない */
+.upd-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  height: 22px;
+  box-sizing: border-box;
+  padding: 0 9px;
+  border: 1px solid rgba(120, 160, 240, 0.28);
+  background: #eef4fe;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--ink-2);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  cursor: default;
+}
+.upd-badge svg {
+  flex: none;
+  opacity: 0.8;
+}
+/* 見出しの行では右に寄せ、すぐ右のコピーボタンと並べる */
+.sec-row .upd-badge,
+.chart-head .upd-badge {
+  margin-left: auto;
+}
+.upd-badge + .icon-btn.copy-btn {
+  margin-left: 0;
+}
+/* Ad Hoc の注記の行：コピーボタンと下の余白をそろえる */
+.note-row .upd-badge {
+  margin-bottom: 4px;
+}
+/* スケジュールの見出し：件数のすぐ右 */
+.sched-panel-head .sched-count + .upd-badge {
+  margin-left: 2px;
+}
+/* 担当者別 内訳：カードの高さを変えないよう、見出しの帯の右端に重ねる */
+.res-card {
+  position: relative;
+}
+.upd-badge-float {
+  position: absolute;
+  top: 5px;
+  right: 8px;
+}
+/* 見出しの行は部品の間隔が 22px と広いので、バッジとコピーボタンの間だけ詰める */
+.sec-row .upd-badge + .icon-btn.copy-btn {
+  margin-left: -14px;
+}

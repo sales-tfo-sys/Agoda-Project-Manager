@@ -40,7 +40,8 @@ function ymOf(v) {
 // 工数明細（日次）。工数管理ページ内と単独ページの両方で使う共通部品。
 // toolbarHost を渡すと、対象月のプルダウンと対応中/完了の切替をその要素の中に描く
 // （ダッシュボードの「作業工数表」タブでは、ヘッダーのタブの右に並べるため）。
-export default function DetailTable({ title, compact = false, toolbarHost = null }) {
+// badge は、その並びの最後に置く「更新」バッジ。
+export default function DetailTable({ title, compact = false, toolbarHost = null, badge = null }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [monthIdx, setMonthIdx] = useState(null);
@@ -788,6 +789,7 @@ export default function DetailTable({ title, compact = false, toolbarHost = null
           <>
             {modeTabs}
             {monthPulldown}
+            {badge}
           </>,
           toolbarHost
         )

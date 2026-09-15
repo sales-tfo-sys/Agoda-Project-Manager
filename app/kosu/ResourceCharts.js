@@ -180,7 +180,8 @@ export function useResource(active = true) {
   return { resource, error, wi, setWi, weekLabel, weekOptions, ready: !!resource && wi != null };
 }
 
-export default function ResourceCharts({ resource, wi, weekLabel }) {
+// badge … 各カードの右上に置く「更新」バッジ（画像のコピーには写らない）
+export default function ResourceCharts({ resource, wi, weekLabel, badge = null }) {
   const mainChartRef = useRef(null);
   const detailChartRef = useRef(null);
   const persons = resource?.persons || [];
@@ -241,6 +242,7 @@ export default function ResourceCharts({ resource, wi, weekLabel }) {
         <div className="chart-head">
           <h3 className="chart-title">メンバー別リソース割合（{weekLabel(wi)}）</h3>
           {/* 期間はタイトルに入っているので、コピー画像に副題は出さない */}
+          {badge}
           <CopyChartBtn targetRef={mainChartRef} />
         </div>
         <div className="chart-with-legend">
@@ -257,6 +259,7 @@ export default function ResourceCharts({ resource, wi, weekLabel }) {
       <section className="chart-card" ref={detailChartRef}>
         <div className="chart-head">
           <h3 className="chart-title">Ad Hoc 詳細（{weekLabel(wi)}）</h3>
+          {badge}
           {detailSeries.length > 0 && <CopyChartBtn targetRef={detailChartRef} />}
         </div>
         {detailSeries.length === 0 ? (
@@ -272,6 +275,7 @@ export default function ResourceCharts({ resource, wi, weekLabel }) {
       {/* 報告メール用の数値表（同じ行の3つ目） */}
       <section className="chart-card res-card">
         <h3 className="chart-title">担当者別 内訳</h3>
+        {badge && <span className="upd-badge-float">{badge}</span>}
         <table className="dtable res-table">
           <thead>
             <tr>
