@@ -1314,6 +1314,8 @@ export default function TaskBoard({ mode = "view" }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [updatedAt, setUpdatedAt] = useState(null);
+  // 受注数・完了数（シート連携）を実際にシートから読んだ時刻（いちばん古いセル）
+  const [countsReadAt, setCountsReadAt] = useState(null);
   const [dateCode, setDateCode] = useState("作成日時");
   const [year, setYear] = useState(null);
 
@@ -1369,6 +1371,7 @@ export default function TaskBoard({ mode = "view" }) {
         .then((r) => r.json())
         .then((j) => {
           setSheetCounts(j.items || {});
+          setCountsReadAt(j.readAt || null);
           setSheetErrors(j.errors || {});
           // 完了済みタスクでサーバーが焼き付けた件数を、こちらの上書きデータにも入れておく。
           // 入れておかないと、次に何か編集して保存したときに消えてしまう。
@@ -2572,7 +2575,24 @@ export default function TaskBoard({ mode = "view" }) {
           )}
           {/* 毎日の報告メールの雛形（ダッシュボードのみ） */}
           {!isEdit && <DailyReport />}
-          <UpdatedPop />
+          {/* ダッシュボードでは、Kintone のほかに画面に出ているデータの更新時刻もまとめて出す */}
+          {isEdit ? (
+            <UpdatedPop />
+          ) : (
+            <UpdatedPop
+              extraUrl="/api/data-freshness"
+              rows={[
+                {
+                  key: "counts",
+                  label: "受注数・完了数（シート連携）",
+                  note: "シートから読んだ時刻",
+                  at: countsReadAt,
+                  // 画面を開くたびに読み直す（サーバーで最大1分ためる）ので、古さの注意は出さない
+                  watch: false,
+                },
+              ]}
+            />
+          )}
         </div>
       </div>
 

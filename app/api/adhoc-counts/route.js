@@ -1,4 +1,4 @@
-import { cached } from "../../../lib/cache";
+import { cachedEntry } from "../../../lib/cache";
 import { readAdhocItems } from "../../../lib/adhocStore";
 import { sb, supabaseConfigured } from "../../../lib/supabase";
 import { extractSheetId, extractGid, fetchSheetCell } from "../../../lib/sheetCell";
@@ -34,13 +34,19 @@ export async function GET() {
     // 焼き付けた値。クライアント側の上書きデータにも混ぜてもらう
     // （そうしないと、次に何か編集して保存したときに消えてしまう）
     const frozen = {};
+    // シートのセルを読んだ時刻のうち、いちばん古いもの。
+    // 表の受注数・完了数は「少なくともこの時刻より新しい」ことを画面に出すのに使う。
+    let oldestRead = null;
     // 失敗は投げずに { err } で返し、受注数・完了数のどちらが原因でも理由を拾えるようにする
     const cell = (id, gid, ref) =>
       ref
-        ? cached(`sheetcell:${id}:${gid || ""}:${ref}`, 60 * 1000, () =>
+        ? cachedEntry(`sheetcell:${id}:${gid || ""}:${ref}`, 60 * 1000, () =>
             fetchSheetCell(id, gid, ref)
           ).then(
-            (v) => ({ v }),
+            ({ value, at }) => {
+              if (oldestRead == null || at < oldestRead) oldestRead = at;
+              return { v: value };
+            },
             (e) => ({ err: String(e?.message || e) })
           )
         : Promise.resolve({ v: null });
@@ -91,7 +97,13 @@ export async function GET() {
       })
     );
 
-    return Response.json({ items, errors, frozen });
+    return Response.json({
+      items,
+      errors,
+      frozen,
+      // 読んだセルが1つも無ければ null（完了済みで保存値だけを返した場合など）
+      readAt: oldestRead != null ? new Date(oldestRead).toISOString() : null,
+    });
   } catch (e) {
     return Response.json(
       { items: {}, errors: {}, frozen: {}, error: String(e?.message || e) },

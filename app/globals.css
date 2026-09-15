@@ -13284,3 +13284,9 @@ body {
   outline: 2px solid #1c8a4e;
   outline-offset: 1px;
 }
+
+/* 最終更新日時：利用者の操作で動くデータ（古くても異常ではない）は灰色の点 */
+.upop-dot.info {
+  background: var(--ink-3);
+  box-shadow: none;
+}
