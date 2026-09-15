@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AdhocActiveTable, { useAdhocActive } from "../AdhocActiveTable";
+import FormAnswersTable, { filterFormRows } from "../FormAnswersTable";
 import Modal from "../Modal";
 import { useUi } from "../Ui";
 import { cachedJson } from "../dataCache";
@@ -29,13 +30,18 @@ const isMaru = (v) => {
   return s !== "" && !/^(×|✗|false|no|0|-)$/i.test(s);
 };
 
-// ページはタブで2つに分かれる。
-//   new   … 登録したスプレッドシートの一覧（シートは kind で振り分ける）
-//   adhoc … 進行中の Ad Hoc タスク（On Track / Behind）
+// ページはタブで分かれる。
+//   new       … 登録したスプレッドシートの一覧（シートは kind で振り分ける）
+//   adhoc     … 進行中の Ad Hoc タスク（On Track / Behind）
+//   temairazu … 管理 → フォーム回答 の「新規参画(Temairazu)」と同じ回答一覧
 const KINDS = [
   { key: "new", label: "新規作業依頼" },
   { key: "adhoc", label: "Ad Hoc Task" },
+  { key: "temairazu", label: "Temairazu" },
 ];
+const KIND_KEYS = KINDS.map((k) => k.key);
+// フォーム回答に登録してあるシートのうち、どれを Temairazu タブに出すか（名前で探す）
+const TEMAIRAZU_FORM = /temairazu/i;
 const KIND_LS = "agoda-workreq-kind";
 
 // ヘッダーの切り替えタブ。ラベルの幅が違うので、
@@ -86,8 +92,12 @@ const FILTERS = [
 ];
 
 export default function WorkRequestsPage() {
-  const [kind, setKind] = useState("new"); // "new" | "adhoc"
+  const [kind, setKind] = useState("new"); // "new" | "adhoc" | "temairazu"
   const isAdhoc = kind === "adhoc";
+  const isForm = kind === "temairazu";
+  // Temairazu タブ：フォーム回答シートの中身と検索語
+  const [form, setForm] = useState({ loading: false, title: null, grid: null, error: null });
+  const [formQ, setFormQ] = useState("");
   const [items, setItems] = useState([]); // 登録済みシートの一覧
   const [grid, setGrid] = useState(null); // {headers, rows, rowKeys, overlay, total} or {error}
   const [cells, setCells] = useState({}); // rowKey -> {created, recordNo, doneDate}
@@ -115,7 +125,7 @@ export default function WorkRequestsPage() {
   useEffect(() => {
     try {
       const v = localStorage.getItem(KIND_LS);
-      if (v === "new" || v === "adhoc") setKind(v);
+      if (KIND_KEYS.includes(v)) setKind(v);
     } catch {}
   }, []);
   const switchKind = (k) => {
@@ -175,9 +185,42 @@ export default function WorkRequestsPage() {
   // 新規作業依頼タブのシート。
   // kind を持たない古い登録は「新規作業依頼」のものとして扱う（元の1ページ構成からの引き継ぎ）。
   const item = useMemo(() => {
-    if (isAdhoc) return null;
+    if (kind !== "new") return null;
     return items.find((x) => x.kind === "new") || items.find((x) => !x.kind) || null;
-  }, [items, isAdhoc]);
+  }, [items, kind]);
+
+  // Temairazu タブを開いたら、フォーム回答に登録してある Temairazu のシートを読む
+  useEffect(() => {
+    if (!isForm) return;
+    let alive = true;
+    setForm((f) => ({ ...f, loading: true, error: null }));
+    (async () => {
+      try {
+        const list = await fetch("/api/form-sheets", { cache: "no-store" }).then((r) => r.json());
+        const sheet = (list.items || []).find((x) => TEMAIRAZU_FORM.test(x.title || ""));
+        if (!sheet) {
+          if (alive)
+            setForm({
+              loading: false,
+              title: null,
+              grid: null,
+              error: "管理 → フォーム回答 に、名前に「Temairazu」を含むシートが登録されていません。",
+            });
+          return;
+        }
+        const grid = await fetch(`/api/form-sheet-data?id=${encodeURIComponent(sheet.id)}`, {
+          cache: "no-store",
+        }).then((r) => r.json());
+        if (alive) setForm({ loading: false, title: sheet.title, grid, error: null });
+      } catch (e) {
+        if (alive) setForm({ loading: false, title: null, grid: null, error: String(e?.message || e) });
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [isForm]);
+  const formRows = useMemo(() => filterFormRows(form.grid, formQ), [form.grid, formQ]);
 
   // タブを切り替えたら、そのシートを読み直す
   useEffect(() => {
@@ -339,8 +382,9 @@ export default function WorkRequestsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [grid, cells, filter, cols]);
 
-  // ヘッダーの件数。Ad Hoc Task タブは完了タスクの件数。
-  const shownCount = isAdhoc ? adhocActive.rows.length : visibleRows.length;
+  // ヘッダーの件数（いま表に出ている行数）
+  const shownCount = isAdhoc ? adhocActive.rows.length : isForm ? formRows.length : visibleRows.length;
+  const formReady = isForm && !form.loading && form.grid && !form.grid.error;
 
   const freezeProps = (pos) => {
     if (pos >= freezeCount) return {};
@@ -367,12 +411,24 @@ export default function WorkRequestsPage() {
           <SegTabs items={KINDS} value={kind} onChange={switchKind} label="作業依頼の切替" />
           {/* 絞り込みもページタブと同じ形にそろえる。件数はその右に置き、
               いま表として出ている行数を出す（絞り込むと減る） */}
-          {!isAdhoc && item && grid && !grid.error && (
+          {kind === "new" && item && grid && !grid.error && (
             <SegTabs items={FILTERS} value={filter} onChange={setFilter} label="表示フィルター" />
           )}
-          {((isAdhoc && !adhocActive.loading) || (!isAdhoc && grid && !grid.error)) && (
+          {/* Temairazu：フォーム回答と同じく、全部の列を対象に検索できる */}
+          {formReady && (form.grid.rows || []).length > 0 && (
+            <label className="search-box forms-search" aria-label="回答を検索">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" />
+                <line x1="16.5" y1="16.5" x2="21" y2="21" />
+              </svg>
+              <input type="search" value={formQ} onChange={(e) => setFormQ(e.target.value)} placeholder="回答の中を検索..." />
+            </label>
+          )}
+          {((isAdhoc && !adhocActive.loading) || formReady || (kind === "new" && grid && !grid.error)) && (
             <span className="forms-count-pill">
-              {shownCount.toLocaleString("ja-JP")} 件{!isAdhoc && grid?.truncated && "（先頭のみ）"}
+              {shownCount.toLocaleString("ja-JP")} 件
+              {kind === "new" && grid?.truncated && "（先頭のみ）"}
+              {isForm && form.grid?.truncated && "（先頭のみ）"}
             </span>
           )}
         </div>
@@ -383,6 +439,10 @@ export default function WorkRequestsPage() {
           {(() => {
             const at = isAdhoc
               ? adhocActive.loadedAt
+              : isForm
+              ? formReady
+                ? form.grid.fetchedAt
+                : null
               : grid && !grid.error
               ? grid.fetchedAt
               : null;
@@ -405,7 +465,7 @@ export default function WorkRequestsPage() {
               </span>
             );
           })()}
-          {!isAdhoc && canEdit && item && (
+          {kind === "new" && canEdit && item && (
             <button className="icon-btn" onClick={() => setEditTarget({ id: item.id, kind, title: item.title, url: item.url })} title="シートを設定" aria-label="シートを設定">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 20h9" />
@@ -413,7 +473,7 @@ export default function WorkRequestsPage() {
               </svg>
             </button>
           )}
-          {!isAdhoc && canEdit && !item && (
+          {kind === "new" && canEdit && !item && (
             <button className="icon-btn" onClick={() => setEditTarget({ kind: "new", title: kindLabel, url: "" })} title="シートを登録" aria-label="シートを登録">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19" />
@@ -437,6 +497,22 @@ export default function WorkRequestsPage() {
           </div>
         ) : (
           <AdhocActiveTable rows={adhocActive.rows} />
+        )
+      ) : isForm ? (
+        form.loading ? (
+          <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>
+        ) : form.error ? (
+          <div className="card">
+            <div className="notice">{form.error}</div>
+          </div>
+        ) : form.grid?.error ? (
+          <div className="banner warn-banner">{form.grid.error}</div>
+        ) : !form.grid || (form.grid.headers || []).length === 0 ? (
+          <div className="card">
+            <div className="notice">データがありません。</div>
+          </div>
+        ) : (
+          <FormAnswersTable headers={form.grid.headers} rows={formRows} q={formQ} />
         )
       ) : (loading || gridLoading) && !busy ? (
         <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>

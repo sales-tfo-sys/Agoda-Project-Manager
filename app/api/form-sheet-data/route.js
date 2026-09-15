@@ -1,4 +1,4 @@
-import { cached } from "../../../lib/cache";
+import { cachedEntry } from "../../../lib/cache";
 import { sb, supabaseConfigured } from "../../../lib/supabase";
 import { fetchSheetGrid } from "../../../lib/formSheet";
 
@@ -15,8 +15,12 @@ export async function GET(req) {
     );
     const url = rows?.[0]?.data?.url;
     if (!url) return Response.json({ error: "URLが未登録です" }, { status: 200 });
-    const data = await cached(`formgrid:${id}`, 60 * 1000, () => fetchSheetGrid(url));
-    return Response.json(data);
+    // 中身と、それを実際にシートから読んだ時刻を組で受け取る（サーバーで最大1分ためている）
+    const { value: data, at } = await cachedEntry(`formgrid:${id}`, 60 * 1000, () =>
+      fetchSheetGrid(url)
+    );
+    if (data?.error) return Response.json(data);
+    return Response.json({ ...data, fetchedAt: new Date(at).toISOString() });
   } catch (e) {
     return Response.json({ error: String(e?.message || e) }, { status: 200 });
   }

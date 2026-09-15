@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Modal from "../Modal";
 import { useUi } from "../Ui";
 import ManageIcon from "../manage/ManageIcon";
+import FormAnswersTable, { filterFormRows } from "../FormAnswersTable";
 import { cachedJson } from "../dataCache";
 
 // 最終回答日時のラベル整形（今日 HH:MM / 昨日 HH:MM / M/D HH:MM）
@@ -184,14 +185,8 @@ export default function FormsPage({ embedded, tabs } = {}) {
   const monthResponses = cvals.reduce((s, c) => s + (c && !c.error ? c.month || 0 : 0), 0);
   const latestMs = cvals.reduce((m, c) => (c && !c.error && c.latest ? Math.max(m, c.latest) : m), 0);
 
-  // 検索に当たった行だけを出す。番号は元のままにして、シートと突き合わせられるようにする。
-  const shownRows = (() => {
-    const rows = grid?.rows || [];
-    const kw = q.trim().toLowerCase();
-    const all = rows.map((r, ri) => ({ r, no: ri + 1 }));
-    if (!kw) return all;
-    return all.filter(({ r }) => r.some((v) => String(v ?? "").toLowerCase().includes(kw)));
-  })();
+  // 検索に当たった行だけを出す（作業依頼の Temairazu タブと同じ決まり）
+  const shownRows = filterFormRows(grid, q);
 
   return (
     <div className={"wrap page-compact forms-page" + (selected ? " forms-detail" : "")}>
@@ -279,49 +274,7 @@ export default function FormsPage({ embedded, tabs } = {}) {
         ) : !grid || (grid.headers || []).length === 0 ? (
           <div className="notice">データがありません。</div>
         ) : (
-          <div className="card no-pad">
-            <div className="tw forms-tw">
-              <table>
-                <thead>
-                  <tr>
-                    <th className="forms-rownum">#</th>
-                    {grid.headers.map((h, ci) => (
-                      <th key={ci}>{h || ""}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {shownRows.map(({ r, no }) => (
-                    <tr key={no}>
-                      <td className="forms-rownum">{no}</td>
-                      {grid.headers.map((_, ci) => {
-                        const v = r[ci] ?? "";
-                        // チェックボックス列（TRUE/FALSE）はチェックボックス表記で表示
-                        const b = String(v).trim().toUpperCase();
-                        const isBool = b === "TRUE" || b === "FALSE";
-                        return (
-                          <td key={ci} className={isBool ? "forms-check-cell" : undefined} title={v || undefined}>
-                            {isBool ? (
-                              <span
-                                className={"forms-check" + (b === "TRUE" ? " on" : "")}
-                                role="img"
-                                aria-label={b === "TRUE" ? "チェックあり" : "チェックなし"}
-                              />
-                            ) : (
-                              v
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {shownRows.length === 0 && (
-                <div className="notice forms-empty">「{q}」に当てはまる回答はありません。</div>
-              )}
-            </div>
-          </div>
+          <FormAnswersTable headers={grid.headers} rows={shownRows} q={q} />
         )
       ) : items === null && !busy ? (
         <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>
