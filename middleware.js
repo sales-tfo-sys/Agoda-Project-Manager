@@ -24,14 +24,25 @@ const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_K
 // 失敗しても「保護オフ（全公開）」に落ちない。初期設定が済んだら必ず有効化する。
 const FORCE_AUTH = /^(1|true|yes|on)$/i.test(process.env.AUTH_REQUIRED || "");
 
-async function sbGet(path) {
-  const res = await fetch(`${URL_}/rest/v1/${path}`, {
-    headers: { apikey: KEY, Authorization: `Bearer ${KEY}` },
-    cache: "no-store",
-  });
-  if (!res.ok) throw new Error(`supabase ${res.status}`);
-  return res.json();
+// Supabase への問い合わせ。応答が遅いときは待ち続けず、上限で打ち切る。
+// （画面を1回開くと API が十数本同時に走り、そのたびにここを通るので、
+//  混んでいると1本あたり数秒かかることがある）
+async function sbGet(path, timeoutMs = 4000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${URL_}/rest/v1/${path}`, {
+      headers: { apikey: KEY, Authorization: `Bearer ${KEY}` },
+      cache: "no-store",
+      signal: ctrl.signal,
+    });
+    if (!res.ok) throw new Error(`supabase ${res.status}`);
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
 }
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // 保護を有効にする条件は「実際にログインできる状態になっていること」。
 //   ① 許可リストに在籍中＋ログイン許可の担当者がいる
@@ -82,37 +93,54 @@ async function authEnabled() {
 // セッション検証結果を短時間キャッシュ（同一Cookieの連続アクセスで毎回問い合わせない）
 const sessionCache = new Map(); // sid -> { val, at }
 const SESSION_TTL = 60000;
+// 問い合わせに失敗したとき、この時間内に「有効」と確認できていれば、それを使う。
+// ※ログイン許可を外した人がアクセスできてしまうのは、障害中のこの時間だけ。
+const SESSION_STALE_MAX = 10 * 60000;
 
-// セッション＋本人の役割/個別付与を返す（ページ閲覧権限の判定に使う）
+// セッション＋本人の役割/個別付与を返す（ページ閲覧権限の判定に使う）。
+//   ok: true  … 有効
+//   ok: false … Supabase が「無い／期限切れ／ログイン不可」と答えた（＝本当に無効）
+//   ok: null  … 問い合わせ自体に失敗して確かめられなかった（無効とは限らない）
+//
+// 以前は失敗も ok:false にしていたため、Supabase が一瞬遅れただけで
+// ログイン画面へ飛ばされ、しかも Cookie まで消されていた（しょっちゅう戻される原因）。
 async function getAccess(sid) {
   if (!sid || !/^[0-9a-f-]{36}$/i.test(sid)) return { ok: false };
   const hit = sessionCache.get(sid);
   if (hit && Date.now() - hit.at < SESSION_TTL) return hit.val;
-  try {
-    const rows = await sbGet(
-      `app_session?id=eq.${encodeURIComponent(sid)}` +
-        `&select=expires_at,kosu_person!inner(id,role,active,can_login,can_edit_accounts,can_edit_tasks)`
-    );
-    const s = rows?.[0];
-    let val = { ok: false };
-    if (s && new Date(s.expires_at).getTime() >= Date.now()) {
-      const p = s.kosu_person;
-      if (p?.active === true && p?.can_login === true) {
-        val = {
-          ok: true,
-          personId: p.id,
-          role: p.role,
-          cea: !!p.can_edit_accounts,
-          cet: !!p.can_edit_tasks,
-        };
+
+  // 一時的な失敗なら1回だけやり直す
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const rows = await sbGet(
+        `app_session?id=eq.${encodeURIComponent(sid)}` +
+          `&select=expires_at,kosu_person!inner(id,role,active,can_login,can_edit_accounts,can_edit_tasks)`
+      );
+      const s = rows?.[0];
+      let val = { ok: false };
+      if (s && new Date(s.expires_at).getTime() >= Date.now()) {
+        const p = s.kosu_person;
+        if (p?.active === true && p?.can_login === true) {
+          val = {
+            ok: true,
+            personId: p.id,
+            role: p.role,
+            cea: !!p.can_edit_accounts,
+            cet: !!p.can_edit_tasks,
+          };
+        }
       }
+      if (sessionCache.size > 200) sessionCache.clear();
+      sessionCache.set(sid, { val, at: Date.now() });
+      return val;
+    } catch {
+      if (attempt === 0) await sleep(300);
     }
-    sessionCache.set(sid, { val, at: Date.now() });
-    if (sessionCache.size > 200) sessionCache.clear();
-    return val;
-  } catch {
-    return { ok: false };
   }
+
+  // 確かめられなかった。少し前に「有効」と確認できていれば、それで通す。
+  if (hit && hit.val.ok === true && Date.now() - hit.at < SESSION_STALE_MAX) return hit.val;
+  return { ok: null };
 }
 
 // 本人のページ権限（保存済みの上書き）を短時間キャッシュ
@@ -133,6 +161,16 @@ async function pagePermsOf(personId) {
   }
 }
 
+// ログイン状態を確かめられなかったときに一瞬だけ出す画面。
+// 2秒後に同じページを読み直す（そのときに確認できれば、そのまま開く）。
+const RETRY_HTML = `<!doctype html><html lang="ja"><head><meta charset="utf-8">
+<meta http-equiv="refresh" content="2"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>接続を確認しています</title>
+<style>body{margin:0;display:grid;place-items:center;min-height:100vh;background:#f4f7fd;color:#1a2540;
+font:14px "Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",Meiryo,system-ui,sans-serif}
+p{margin:0}small{display:block;margin-top:6px;color:#5a6a8c}</style></head>
+<body><div><p>接続を確認しています…</p><small>自動で読み直します。ログインし直す必要はありません。</small></div></body></html>`;
+
 export async function middleware(req) {
   const { pathname, search } = req.nextUrl;
   if (isPublic(pathname)) return NextResponse.next();
@@ -142,6 +180,21 @@ export async function middleware(req) {
 
   const sid = req.cookies.get(SESSION_COOKIE)?.value;
   const access = await getAccess(sid);
+
+  // 確かめられなかっただけのときは、ログアウト扱いにしない（Cookie も消さない）。
+  // 通しもしない（本当に有効かは分からないため）。少し待ってやり直してもらう。
+  if (access.ok === null) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { error: "ログイン状態を一時的に確認できませんでした。もう一度お試しください" },
+        { status: 503, headers: { "Retry-After": "2" } }
+      );
+    }
+    return new NextResponse(RETRY_HTML, {
+      status: 503,
+      headers: { "Content-Type": "text/html; charset=utf-8", "Retry-After": "2", "Cache-Control": "no-store" },
+    });
+  }
 
   if (!access.ok) {
     if (pathname.startsWith("/api/")) {
