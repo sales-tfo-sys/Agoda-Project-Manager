@@ -42,6 +42,12 @@ const KINDS = [
 const KIND_KEYS = KINDS.map((k) => k.key);
 // フォーム回答に登録してあるシートのうち、どれを Temairazu タブに出すか（名前で探す）
 const TEMAIRAZU_FORM = /temairazu/i;
+// Temairazu の一覧で、初めは畳んでおく列（2〜4列目と 7〜33列目）。
+// 見出しのボタンでまとめて開閉できる。ここは0始まりの番号で持つ。
+const TEMAIRAZU_HIDDEN = [
+  ...Array.from({ length: 3 }, (_, i) => 1 + i), // 2〜4列目
+  ...Array.from({ length: 27 }, (_, i) => 6 + i), // 7〜33列目
+];
 const KIND_LS = "agoda-workreq-kind";
 
 // ヘッダーの切り替えタブ。ラベルの幅が違うので、
@@ -560,6 +566,7 @@ export default function WorkRequestsPage() {
             rows={formRows}
             q={formQ}
             checkCols={formCheckCols}
+            hiddenCols={TEMAIRAZU_HIDDEN}
             onToggle={canEdit ? toggleFormCheck : undefined}
           />
         )

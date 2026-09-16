@@ -13445,3 +13445,51 @@ button.forms-mark:disabled {
 button.forms-mark.busy {
   opacity: 0.55;
 }
+
+/* ══════════════ 回答一覧：畳んでいる列 ══════════════ */
+/* 閉じているまとまりは細い1列にして、見出しのボタンで開閉する */
+.forms-tw th.forms-colfold,
+.forms-tw td.forms-colfold {
+  width: 40px;
+  min-width: 40px;
+  padding: 0 4px;
+  text-align: center;
+  color: var(--ink-3);
+  background: #f5f8fe;
+}
+.forms-tw th.forms-colfold {
+  padding: 0;
+}
+.forms-tw .fold-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-width: 34px;
+  height: 24px;
+  padding: 0 5px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.18);
+  color: inherit;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+.forms-tw .fold-btn:hover {
+  background: rgba(255, 255, 255, 0.34);
+}
+.forms-tw .fold-btn:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 1px;
+}
+.forms-tw .fold-btn.in-head {
+  min-width: 20px;
+  margin-right: 6px;
+  padding: 0 4px;
+}
+.forms-tw .fold-ar {
+  font-size: 13px;
+}

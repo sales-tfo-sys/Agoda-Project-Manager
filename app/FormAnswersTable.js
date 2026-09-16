@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 // フォーム回答（スプレッドシート）の回答を表で出す。
 // 管理 → フォーム回答 と、作業依頼の Temairazu タブで同じものを使う。
@@ -71,14 +71,46 @@ export function detectCheckCols(grid) {
   return out;
 }
 
+// 隠す列（0始まりの列番号）を、隣り合うものごとにまとめる。
+// まとまりごとに1つのボタンにして、押すと開く／閉じるができるようにする。
+function groupsOf(hiddenCols) {
+  const list = [...new Set((hiddenCols || []).map(Number))]
+    .filter((n) => Number.isInteger(n) && n >= 0)
+    .sort((a, b) => a - b);
+  const groups = [];
+  for (const c of list) {
+    const last = groups[groups.length - 1];
+    if (last && c === last[last.length - 1] + 1) last.push(c);
+    else groups.push([c]);
+  }
+  return groups;
+}
+
 /**
  * headers / rows … 表の中身（rows は filterFormRows の戻り値）
  * checkCols      … detectCheckCols の結果（省略時は TRUE/FALSE のセルだけチェック表示）
  * onToggle       … (rowIdx, colIdx, text) => Promise。渡すと押して切り替えられる
+ * hiddenCols     … 初めは隠しておく列（0始まり）。見出しのボタンで開閉できる
  */
-export default function FormAnswersTable({ headers, rows, q, checkCols, onToggle }) {
+export default function FormAnswersTable({ headers, rows, q, checkCols, onToggle, hiddenCols }) {
   // いま書き込み中のセル（"行-列"）。二重に押せないようにする
   const [busy, setBusy] = useState(null);
+  // 開いている列のまとまり（まとまりの先頭の列番号で覚える）
+  const [openCols, setOpenCols] = useState([]);
+  const groups = useMemo(() => groupsOf(hiddenCols), [hiddenCols]);
+  // 列番号 → そこから始まるまとまり
+  const groupAt = useMemo(() => {
+    const m = new Map();
+    for (const g of groups) m.set(g[0], g);
+    return m;
+  }, [groups]);
+  const hidden = useMemo(() => {
+    const set = new Set();
+    for (const g of groups) if (!openCols.includes(g[0])) for (const c of g) set.add(c);
+    return set;
+  }, [groups, openCols]);
+  const toggleGroup = (start) =>
+    setOpenCols((v) => (v.includes(start) ? v.filter((x) => x !== start) : [...v, start]));
 
   const toggle = async (rowIdx, ci, text) => {
     if (!onToggle || busy) return;
@@ -98,9 +130,43 @@ export default function FormAnswersTable({ headers, rows, q, checkCols, onToggle
           <thead>
             <tr>
               <th className="forms-rownum">#</th>
-              {headers.map((h, ci) => (
-                <th key={ci}>{h || ""}</th>
-              ))}
+              {headers.map((h, ci) => {
+                const g = groupAt.get(ci);
+                // 閉じているまとまりは、見出しを1つの「開く」ボタンにまとめる
+                if (g && hidden.has(ci)) {
+                  return (
+                    <th key={ci} className="forms-colfold">
+                      <button
+                        type="button"
+                        className="fold-btn"
+                        onClick={() => toggleGroup(ci)}
+                        title={`${g.length}列を開く`}
+                        aria-label={`隠している${g.length}列を開く`}
+                      >
+                        <span className="fold-n">{g.length}</span>
+                        <span className="fold-ar" aria-hidden="true">›</span>
+                      </button>
+                    </th>
+                  );
+                }
+                if (hidden.has(ci)) return null;
+                return (
+                  <th key={ci}>
+                    {g && (
+                      <button
+                        type="button"
+                        className="fold-btn in-head"
+                        onClick={() => toggleGroup(ci)}
+                        title={`${g.length}列を閉じる`}
+                        aria-label={`この${g.length}列を閉じる`}
+                      >
+                        <span className="fold-ar" aria-hidden="true">‹</span>
+                      </button>
+                    )}
+                    {h || ""}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
@@ -108,6 +174,14 @@ export default function FormAnswersTable({ headers, rows, q, checkCols, onToggle
               <tr key={no}>
                 <td className="forms-rownum">{no}</td>
                 {headers.map((_, ci) => {
+                  if (hidden.has(ci)) {
+                    // 閉じているまとまりは、行でも1つのセルにまとめる
+                    return groupAt.has(ci) ? (
+                      <td key={ci} className="forms-colfold" aria-hidden="true">
+                        ⋯
+                      </td>
+                    ) : null;
+                  }
                   const v = r[ci] ?? "";
                   // 印の列かどうか。列ごとの判定（checkCols）があればそれを優先する。
                   // 無いときは、そのセルが TRUE/FALSE のときだけチェック表示（元の動き）。
