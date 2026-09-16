@@ -136,6 +136,31 @@ export default function FormAnswersTable({ headers, rows, q, checkCols, onToggle
                   const on = isOn(v);
                   const rowIdx = no - 1;
                   const k = `${rowIdx}-${ci}`;
+                  // 〇 ✖ で運用している列は、チェックの四角ではなく、その印のまま出す
+                  if (col.kind === "mark") {
+                    const mark = on ? col.on || "〇" : col.off || "";
+                    return (
+                      <td key={ci} className="forms-check-cell" title={v || undefined}>
+                        {onToggle ? (
+                          <button
+                            type="button"
+                            className={
+                              "forms-mark" + (on ? " on" : " off") + (busy === k ? " busy" : "")
+                            }
+                            onClick={() => toggle(rowIdx, ci, !on, textFor(col, !on))}
+                            disabled={!!busy}
+                            aria-pressed={on}
+                            aria-label={(headers[ci] || "") + (on ? "：" + mark : "：" + (mark || "空欄"))}
+                            title="押すと切り替わります（シートにも反映されます）"
+                          >
+                            {mark || "－"}
+                          </button>
+                        ) : (
+                          <span className={"forms-mark" + (on ? " on" : " off")}>{mark}</span>
+                        )}
+                      </td>
+                    );
+                  }
                   return (
                     <td key={ci} className="forms-check-cell" title={v || undefined}>
                       {onToggle ? (

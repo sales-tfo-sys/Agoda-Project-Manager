@@ -13397,3 +13397,46 @@ body {
 .forms-check.is-btn.busy {
   opacity: 0.55;
 }
+
+/* ══════════════ 〇／✖ の列（フォーム回答・Temairazu） ══════════════ */
+/* チェックの四角ではなく、シートと同じ 〇 ✖ の印をそのまま出す。
+   押せるときはボタン、押せないときはただの文字 */
+.forms-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 4px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+}
+.forms-mark.on {
+  color: #1f7ae0;
+}
+.forms-mark.off {
+  color: #c0392b;
+}
+button.forms-mark {
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, box-shadow 0.12s;
+}
+button.forms-mark:hover {
+  border-color: #cfdcf3;
+  background: #f1f6ff;
+}
+button.forms-mark:focus-visible {
+  outline: 2px solid #2f6be0;
+  outline-offset: 1px;
+}
+button.forms-mark:disabled {
+  cursor: default;
+}
+button.forms-mark.busy {
+  opacity: 0.55;
+}
