@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 //     id     … 登録済みフォームシートの id（scope=form）
 //     row    … 画面の行番号（0始まり）、rowKey … その行の先頭列の値
 //     col    … 画面の列番号（0始まり）、header … その列の見出し
-//     value  … true / false
+//     value  … true / false、text … シートに入れる値（TRUE/FALSE か 〇/空）
 //
 // 画面を開いたあとに誰かが行を足していると位置がずれるので、
 // 行と列が画面で見えていたものと同じかを必ず確かめてから書く。
@@ -26,6 +26,13 @@ export async function POST(req) {
     const rowKey = String(b?.rowKey ?? "");
     const header = String(b?.header ?? "");
     const value = !!b?.value;
+    // 書き込めるのはチェック欄の値だけ（自由な文字は入れさせない）。
+    // 列によって書き方が違う（TRUE/FALSE の列、〇/✖ の列、〇/空欄 の列）ので、
+    // 印として使われるものだけを許す。
+    const ALLOWED = value
+      ? ["TRUE", "〇", "○", "◯", "✓", "✔", "●", "◎", "レ"]
+      : ["FALSE", "", "×", "✕", "✖", "✗", "✘", "☓", "＊", "－", "ー", "-"];
+    const text = ALLOWED.includes(String(b?.text ?? "")) ? String(b?.text ?? "") : ALLOWED[0];
     if (!id || !Number.isInteger(row) || !Number.isInteger(col) || row < 0 || col < 0) {
       return Response.json({ error: "行と列の指定が正しくありません" }, { status: 200 });
     }
@@ -51,7 +58,7 @@ export async function POST(req) {
         const heads = (grid.headers || []).map((x) => String(x || ""));
         let c = heads[col] === header ? col : heads.indexOf(header);
         if (header && c < 0) return [];
-        return [{ col: c, value: value ? "TRUE" : "FALSE" }];
+        return [{ col: c, value: text }];
       }
     );
     if (res.error) return Response.json({ error: res.error }, { status: 200 });

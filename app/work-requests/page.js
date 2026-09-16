@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AdhocActiveTable, { useAdhocActive } from "../AdhocActiveTable";
-import FormAnswersTable, { filterFormRows } from "../FormAnswersTable";
+import FormAnswersTable, { detectCheckCols, filterFormRows } from "../FormAnswersTable";
 import Modal from "../Modal";
 import { useUi } from "../Ui";
 import { cachedJson } from "../dataCache";
@@ -222,6 +222,8 @@ export default function WorkRequestsPage() {
     };
   }, [isForm]);
   const formRows = useMemo(() => filterFormRows(form.grid, formQ), [form.grid, formQ]);
+  // チェック欄の列（空欄のままの行も押せるように、列ごとに判定する）
+  const formCheckCols = useMemo(() => detectCheckCols(form.grid), [form.grid]);
 
   // タブを切り替えたら、そのシートを読み直す
   useEffect(() => {
@@ -249,7 +251,7 @@ export default function WorkRequestsPage() {
   };
 
   // Temairazu のチェック欄：画面で切り替えて、スプレッドシートにも書き戻す
-  const toggleFormCheck = async (rowIdx, ci, next) => {
+  const toggleFormCheck = async (rowIdx, ci, next, text) => {
     const sheet = form.sheetId;
     const grid = form.grid;
     if (!sheet || !grid) return;
@@ -261,7 +263,7 @@ export default function WorkRequestsPage() {
         const rows = f.grid.rows.map((r, i) => (i === rowIdx ? r.map((c, j) => (j === ci ? v : c)) : r));
         return { ...f, grid: { ...f.grid, rows } };
       });
-    put(next ? "TRUE" : "FALSE");
+    put(text);
     try {
       const res = await fetch("/api/form-sheet-cell", {
         method: "POST",
@@ -273,6 +275,7 @@ export default function WorkRequestsPage() {
           col: ci,
           header: String(grid.headers[ci] ?? ""),
           value: next,
+          text,
         }),
       }).then((r) => r.json());
       if (res?.error) {
@@ -556,6 +559,7 @@ export default function WorkRequestsPage() {
             headers={form.grid.headers}
             rows={formRows}
             q={formQ}
+            checkCols={formCheckCols}
             onToggle={canEdit ? toggleFormCheck : undefined}
           />
         )
