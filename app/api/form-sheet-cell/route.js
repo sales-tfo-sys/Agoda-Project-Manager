@@ -5,12 +5,12 @@ import { invalidate } from "../../../lib/cache";
 
 export const dynamic = "force-dynamic";
 
-// フォーム回答シート（Temairazu）のチェック欄を、スプレッドシートに書き戻す。
-//   body: { id, row, rowKey, col, header, value }
+// フォーム回答シート（Temairazu）の印の欄を、スプレッドシートに書き戻す。
+//   body: { id, row, rowKey, col, header, text }
 //     id     … 登録済みフォームシートの id（scope=form）
 //     row    … 画面の行番号（0始まり）、rowKey … その行の先頭列の値
 //     col    … 画面の列番号（0始まり）、header … その列の見出し
-//     value  … true / false、text … シートに入れる値（TRUE/FALSE か 〇/空）
+//     text   … シートに入れる値（"〇" / "✖" / 空欄 / "TRUE" / "FALSE" のみ）
 //
 // 画面を開いたあとに誰かが行を足していると位置がずれるので、
 // 行と列が画面で見えていたものと同じかを必ず確かめてから書く。
@@ -25,14 +25,13 @@ export async function POST(req) {
     const col = Number(b?.col);
     const rowKey = String(b?.rowKey ?? "");
     const header = String(b?.header ?? "");
-    const value = !!b?.value;
-    // 書き込めるのはチェック欄の値だけ（自由な文字は入れさせない）。
-    // 列によって書き方が違う（TRUE/FALSE の列、〇/✖ の列、〇/空欄 の列）ので、
-    // 印として使われるものだけを許す。
-    const ALLOWED = value
-      ? ["TRUE", "〇", "○", "◯", "✓", "✔", "●", "◎", "レ"]
-      : ["FALSE", "", "×", "✕", "✖", "✗", "✘", "☓", "＊", "－", "ー", "-"];
-    const text = ALLOWED.includes(String(b?.text ?? "")) ? String(b?.text ?? "") : ALLOWED[0];
+    // 書き込めるのは印だけ（自由な文字は入れさせない）。
+    // 〇 ✖ 空欄 の3つと、チェックボックスの列のための TRUE / FALSE。
+    const ALLOWED = ["〇", "✖", "", "TRUE", "FALSE"];
+    const text = String(b?.text ?? "");
+    if (!ALLOWED.includes(text)) {
+      return Response.json({ error: "この欄に入れられる値ではありません" }, { status: 200 });
+    }
     if (!id || !Number.isInteger(row) || !Number.isInteger(col) || row < 0 || col < 0) {
       return Response.json({ error: "行と列の指定が正しくありません" }, { status: 200 });
     }

@@ -250,8 +250,9 @@ export default function WorkRequestsPage() {
     }
   };
 
-  // Temairazu のチェック欄：画面で切り替えて、スプレッドシートにも書き戻す
-  const toggleFormCheck = async (rowIdx, ci, next, text) => {
+  // Temairazu の印の欄：画面で切り替えて、スプレッドシートにも書き戻す
+  //   text … シートに入れる値（"〇" / "✖" / "" / "TRUE" / "FALSE"）
+  const toggleFormCheck = async (rowIdx, ci, text) => {
     const sheet = form.sheetId;
     const grid = form.grid;
     if (!sheet || !grid) return;
@@ -274,7 +275,6 @@ export default function WorkRequestsPage() {
           rowKey: String(grid.rows[rowIdx]?.[0] ?? ""),
           col: ci,
           header: String(grid.headers[ci] ?? ""),
-          value: next,
           text,
         }),
       }).then((r) => r.json());

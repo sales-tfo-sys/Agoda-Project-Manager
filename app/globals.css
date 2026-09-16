@@ -13416,11 +13416,16 @@ body {
   font-weight: 700;
   line-height: 1;
 }
-.forms-mark.on {
+/* 〇＝青、✖＝赤、-（未入力）＝薄い灰 */
+.forms-mark.m-on {
   color: #1f7ae0;
 }
-.forms-mark.off {
+.forms-mark.m-off {
   color: #c0392b;
+}
+.forms-mark.m-none {
+  color: var(--ink-3);
+  font-weight: 600;
 }
 button.forms-mark {
   cursor: pointer;

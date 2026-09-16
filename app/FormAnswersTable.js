@@ -5,12 +5,30 @@ import { useState } from "react";
 // フォーム回答（スプレッドシート）の回答を表で出す。
 // 管理 → フォーム回答 と、作業依頼の Temairazu タブで同じものを使う。
 //
-// onToggle を渡すと、チェック欄を画面から切り替えられる。
+// onToggle を渡すと、印の列（〇 ✖ -）とチェック欄（TRUE/FALSE）を画面から切り替えられる。
 // 切り替えた内容は呼び出し側でスプレッドシートに書き戻す。
 
-// 〇 や ✓ など「付いている」印。× や － は「付いていない」印
+// 印の書き方はシートによってゆれるので、3つの状態にまとめて扱う。
+//   on   … 〇（○ や ✓ もこれに含める）
+//   off  … ✖（× や ✕ もこれに含める）
+//   none … 未入力（シートの空欄。画面では「-」と出す）
 const MARK_ON = /^[〇○◯✓✔レ●◎]$/;
-const MARK_OFF = /^[×✕✖✗✘☓＊－ー-]$/;
+const MARK_OFF = /^[×✕✖✗✘☓]$/;
+const MARK_NONE = /^[-－ー―‐]$/;
+
+const MARK_TEXT = { on: "〇", off: "✖", none: "-" }; // 画面に出す印
+const MARK_WRITE = { on: "〇", off: "✖", none: "" }; // シートに入れる値（none は空欄）
+const MARK_NEXT = { on: "off", off: "none", none: "on" }; // 押したときの順番
+
+// セルの中身 → 状態。印ではない（自由入力の）ときは null
+function markStateOf(v) {
+  const s = String(v ?? "").trim();
+  if (!s || MARK_NONE.test(s)) return "none";
+  const u = s.toUpperCase();
+  if (MARK_ON.test(s) || u === "TRUE") return "on";
+  if (MARK_OFF.test(s) || u === "FALSE") return "off";
+  return null;
+}
 
 // 検索に当たった行だけを返す。番号は元のままにして、シートと突き合わせられるようにする。
 // q は全部の列を対象にした部分一致（大文字小文字は区別しない）。
@@ -23,12 +41,12 @@ export function filterFormRows(grid, q) {
 }
 
 /**
- * 「チェック欄の列」を見つける。列ごとに全部の行を見て、
- * 入っている値が TRUE/FALSE だけ、または 〇 ✖ などの印だけなら、その列はチェック欄とみなす。
+ * 「印の列」を見つける。列ごとに全部の行を見て、入っている値が
+ * TRUE/FALSE だけ、または 〇 ✖ - などの印だけなら、その列は印の列とみなす。
  * 空欄しかない列は、見出しだけでは判断できないので対象外。
- * あわせて、その列で実際に使われている「付いている印／付いていない印」も覚えておき、
- * 切り替えたときに同じ書き方でシートへ入れる（〇 の列なら ✖ ではなく、その列の書き方に合わせる）。
- * 返り値: { 列番号: { kind:"bool"|"mark", on:"〇", off:"✖" } }
+ * 返り値: { 列番号: { kind: "bool" | "mark" } }
+ *   bool … スプレッドシートのチェックボックス（TRUE/FALSE）。四角のチェックで出す
+ *   mark … 〇 ✖ で運用している列。シートと同じ印のまま出す
  */
 export function detectCheckCols(grid) {
   const rows = grid?.rows || [];
@@ -38,65 +56,36 @@ export function detectCheckCols(grid) {
     let bool = 0;
     let mark = 0;
     let other = 0;
-    const ons = new Map();
-    const offs = new Map();
-    const bump = (m, k) => m.set(k, (m.get(k) || 0) + 1);
     for (const r of rows) {
       const s = String(r?.[ci] ?? "").trim();
       if (!s) continue;
       const u = s.toUpperCase();
       if (u === "TRUE" || u === "FALSE") bool++;
-      else if (MARK_ON.test(s)) {
-        mark++;
-        bump(ons, s);
-      } else if (MARK_OFF.test(s)) {
-        mark++;
-        bump(offs, s);
-      } else other++;
+      else if (MARK_ON.test(s) || MARK_OFF.test(s) || MARK_NONE.test(s)) mark++;
+      else other++;
       if (other) break;
     }
     if (other || bool + mark === 0) return;
-    if (bool >= mark) {
-      out[ci] = { kind: "bool", on: "TRUE", off: "FALSE" };
-      return;
-    }
-    // いちばん多く使われている印に合わせる。無ければ 〇 と 空欄
-    const top = (m) => [...m.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || null;
-    out[ci] = { kind: "mark", on: top(ons) || "〇", off: top(offs) || "" };
+    out[ci] = { kind: bool >= mark ? "bool" : "mark" };
   });
   return out;
-}
-
-// そのセルにチェックが付いているか
-function isOn(v) {
-  const s = String(v ?? "").trim();
-  if (!s) return false;
-  if (s.toUpperCase() === "TRUE") return true;
-  if (s.toUpperCase() === "FALSE") return false;
-  return MARK_ON.test(s);
-}
-
-// 切り替えたときにシートへ入れる値
-function textFor(col, on) {
-  if (!col) return on ? "TRUE" : "FALSE";
-  return on ? col.on ?? "〇" : col.off ?? "";
 }
 
 /**
  * headers / rows … 表の中身（rows は filterFormRows の戻り値）
  * checkCols      … detectCheckCols の結果（省略時は TRUE/FALSE のセルだけチェック表示）
- * onToggle       … (rowIdx, colIdx, next, text) => Promise。渡すと押して切り替えられる
+ * onToggle       … (rowIdx, colIdx, text) => Promise。渡すと押して切り替えられる
  */
 export default function FormAnswersTable({ headers, rows, q, checkCols, onToggle }) {
   // いま書き込み中のセル（"行-列"）。二重に押せないようにする
   const [busy, setBusy] = useState(null);
 
-  const toggle = async (rowIdx, ci, next, text) => {
+  const toggle = async (rowIdx, ci, text) => {
     if (!onToggle || busy) return;
     const k = `${rowIdx}-${ci}`;
     setBusy(k);
     try {
-      await onToggle(rowIdx, ci, next, text);
+      await onToggle(rowIdx, ci, text);
     } finally {
       setBusy(null);
     }
@@ -120,12 +109,11 @@ export default function FormAnswersTable({ headers, rows, q, checkCols, onToggle
                 <td className="forms-rownum">{no}</td>
                 {headers.map((_, ci) => {
                   const v = r[ci] ?? "";
-                  // チェック欄かどうか。列ごとの判定（checkCols）があればそれを優先する。
+                  // 印の列かどうか。列ごとの判定（checkCols）があればそれを優先する。
                   // 無いときは、そのセルが TRUE/FALSE のときだけチェック表示（元の動き）。
                   const b = String(v).trim().toUpperCase();
                   const col =
-                    checkCols?.[ci] ||
-                    (b === "TRUE" || b === "FALSE" ? { kind: "bool", on: "TRUE", off: "FALSE" } : null);
+                    checkCols?.[ci] || (b === "TRUE" || b === "FALSE" ? { kind: "bool" } : null);
                   if (!col) {
                     return (
                       <td key={ci} title={v || undefined}>
@@ -133,41 +121,42 @@ export default function FormAnswersTable({ headers, rows, q, checkCols, onToggle
                       </td>
                     );
                   }
-                  const on = isOn(v);
+                  const st = markStateOf(v) || "none";
                   const rowIdx = no - 1;
                   const k = `${rowIdx}-${ci}`;
-                  // 〇 ✖ で運用している列は、チェックの四角ではなく、その印のまま出す
+
+                  // 〇 ✖ - で運用している列は、チェックの四角ではなくその印のまま出す
                   if (col.kind === "mark") {
-                    const mark = on ? col.on || "〇" : col.off || "";
+                    const next = MARK_NEXT[st];
                     return (
                       <td key={ci} className="forms-check-cell" title={v || undefined}>
                         {onToggle ? (
                           <button
                             type="button"
-                            className={
-                              "forms-mark" + (on ? " on" : " off") + (busy === k ? " busy" : "")
-                            }
-                            onClick={() => toggle(rowIdx, ci, !on, textFor(col, !on))}
+                            className={`forms-mark m-${st}` + (busy === k ? " busy" : "")}
+                            onClick={() => toggle(rowIdx, ci, MARK_WRITE[next])}
                             disabled={!!busy}
-                            aria-pressed={on}
-                            aria-label={(headers[ci] || "") + (on ? "：" + mark : "：" + (mark || "空欄"))}
-                            title="押すと切り替わります（シートにも反映されます）"
+                            aria-label={`${headers[ci] || ""}：${MARK_TEXT[st]}（押すと ${MARK_TEXT[next]} になります）`}
+                            title="押すと 〇 → ✖ → - の順に切り替わります（シートにも反映されます）"
                           >
-                            {mark || "－"}
+                            {MARK_TEXT[st]}
                           </button>
                         ) : (
-                          <span className={"forms-mark" + (on ? " on" : " off")}>{mark}</span>
+                          <span className={`forms-mark m-${st}`}>{MARK_TEXT[st]}</span>
                         )}
                       </td>
                     );
                   }
+
+                  // スプレッドシートのチェックボックス（TRUE/FALSE）の列
+                  const on = st === "on";
                   return (
                     <td key={ci} className="forms-check-cell" title={v || undefined}>
                       {onToggle ? (
                         <button
                           type="button"
                           className={"forms-check is-btn" + (on ? " on" : "") + (busy === k ? " busy" : "")}
-                          onClick={() => toggle(rowIdx, ci, !on, textFor(col, !on))}
+                          onClick={() => toggle(rowIdx, ci, on ? "FALSE" : "TRUE")}
                           disabled={!!busy}
                           aria-pressed={on}
                           aria-label={(headers[ci] || "チェック") + (on ? "：チェックあり" : "：チェックなし")}
