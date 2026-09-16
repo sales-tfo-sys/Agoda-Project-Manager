@@ -711,7 +711,7 @@ function DetailModal({ record, onClose, canEdit, fields, onSaved }) {
           {canEdit &&
             (edit ? (
               <>
-                <button className="mini-btn" onClick={cancel} disabled={saving}>
+                <button className="mini-btn plain" onClick={cancel} disabled={saving}>
                   やめる
                 </button>
                 <button className="save-btn sm" onClick={save} disabled={saving}>

@@ -13778,3 +13778,55 @@ button.forms-mark.busy {
 .modal-body .box-text .kv-in {
   margin: 0;
 }
+
+/* ══════════════ 詳細ヘッダー：5項目の幅と、編集・閉じるボタン ══════════════ */
+/* 5項目は同じ幅にそろえる（いちばん長い日時に合わせる） */
+.rec-meta {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+}
+.rec-meta-v {
+  width: 100%;
+  box-sizing: border-box;
+}
+/* 編集・保存・やめる・閉じるは同じ大きさにそろえ、色で役割を分ける */
+.modal-head.detail-head .mini-btn,
+.modal-head.detail-head .save-btn,
+.modal-head.detail-head .close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 34px;
+  min-width: 84px;
+  padding: 0 16px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: none;
+}
+/* 編集・保存：サイトの青 */
+.modal-head.detail-head .mini-btn,
+.modal-head.detail-head .save-btn {
+  color: #ffffff;
+  border: 1px solid transparent;
+  background: linear-gradient(135deg, #5b9dff, #2f6be0);
+}
+.modal-head.detail-head .mini-btn:hover:not(:disabled),
+.modal-head.detail-head .save-btn:hover:not(:disabled) {
+  filter: brightness(1.07);
+}
+/* 閉じる・やめる：淡い青（押し間違えても戻れる操作） */
+.modal-head.detail-head .close-btn,
+.modal-head.detail-head .mini-btn.plain {
+  color: #24559f;
+  border: 1px solid #cfdcf3;
+  background: #eef4fe;
+}
+.modal-head.detail-head .close-btn:hover,
+.modal-head.detail-head .mini-btn.plain:hover:not(:disabled) {
+  color: #1b4a90;
+  border-color: #b6ccee;
+  background: #e3edff;
+}
