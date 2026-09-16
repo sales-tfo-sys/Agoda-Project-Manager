@@ -13365,3 +13365,13 @@ body {
 .modal-body .box-text {
   flex: 1 1 auto;
 }
+
+/* 担当者別 内訳：見出しの帯が窮屈だったので少し高くする（32px → 40px）。
+   更新バッジ（30px）は帯の中で上下中央に置く */
+.res-row > .chart-card.res-card > .chart-title {
+  padding-top: 11px;
+  padding-bottom: 11px;
+}
+.res-card .upd-badge-float {
+  top: 6px;
+}
