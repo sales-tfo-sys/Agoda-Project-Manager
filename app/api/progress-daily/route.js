@@ -153,10 +153,16 @@ export async function GET(req) {
     if (!records.length) return Response.json({ days: [], types: [], series: {} });
 
     const days = businessDays(year);
-    const built = cachedKey(year, dateCode, records, days);
-    const pend = cachedPending(year, records, days);
+    // 取り込み時刻も鍵に入れる。件数が同じでも中身（Stage 等）は変わるため
+    const stamp = snap?.fetchedAt || "";
+    const built = cachedKey(year, dateCode, records, days, stamp);
+    const pend = cachedPending(year, records, days, stamp);
 
-    // 保存済みの日は、そちらを正として上書きする
+    // 保存済みの日は、そちらを正として上書きする。
+    // ただし「今日」は別で、いま計算した値をそのまま使う。
+    // （日中に Kintone を取り込み直すと数が動くため。朝いちばんに保存した値を
+    //   使い続けると、進捗表の数と合わなくなる）
+    const today = iso(new Date());
     let saved = [];
     if (supabaseConfigured()) {
       saved = await sb(
@@ -166,6 +172,7 @@ export async function GET(req) {
     const savedMap = {};
     for (const row of saved || []) savedMap[row.key] = row.data || {};
     days.forEach((day, i) => {
+      if (day === today) return; // 今日は計算した値が正
       const rec = savedMap[day];
       if (!rec) return;
       for (const t of built.types) {
@@ -180,8 +187,7 @@ export async function GET(req) {
       }
     });
 
-    // 今日ぶんを保存しておく（次からはこの値が正になる）
-    const today = iso(new Date());
+    // 今日ぶんを保存しておく（日付が変わったあとは、この値が正になる）
     if (supabaseConfigured() && days[days.length - 1] === today) {
       const i = days.length - 1;
       const data = {};
@@ -217,13 +223,13 @@ export async function GET(req) {
 }
 
 // 同じ年・同じ基準日なら計算し直さない（全レコード×日数のループなので重い）
-function cachedKey(year, dateCode, records, days) {
-  return cachedSync(`pdaily:${year}:${dateCode}:${records.length}:${days.length}`, () =>
+function cachedKey(year, dateCode, records, days, stamp) {
+  return cachedSync(`pdaily:${year}:${dateCode}:${records.length}:${days.length}:${stamp}`, () =>
     reconstruct(records, dateCode, year, days)
   );
 }
-function cachedPending(year, records, days) {
-  return cachedSync(`pdaily-pen:${year}:${records.length}:${days.length}`, () =>
+function cachedPending(year, records, days, stamp) {
+  return cachedSync(`pdaily-pen:${year}:${records.length}:${days.length}:${stamp}`, () =>
     reconstructPending(records, year, days)
   );
 }
