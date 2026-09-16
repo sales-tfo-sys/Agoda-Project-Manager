@@ -29,6 +29,34 @@ const fmtStampDate = (v) => {
   const m = String(v || "").trim().match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/);
   return m ? `${m[1]}/${String(m[2]).padStart(2, "0")}/${String(m[3]).padStart(2, "0")}` : v;
 };
+// シートの見出し → Kintone の項目名。
+// ★ や ＊、空白、全角括弧の中は無視して、含まれている言葉で見分ける。
+const norm = (h) =>
+  String(h || "")
+    .replace(/[\s　]/g, "")
+    .replace(/[★☆＊*]/g, "")
+    .toUpperCase();
+const KIN_COL = (h) => {
+  const t = norm(h);
+  if (!t) return null;
+  if (t.includes("ステータス")) return "ステータス";
+  if (t.includes("滞留理由")) return "滞留理由";
+  if (t.includes("いつまでに")) return "いつまでに";
+  if (t.includes("誰が")) return "誰が";
+  if (t.includes("なにをする") || t.includes("何をする")) return "なにをする";
+  if (t.includes("CM種別") || t.includes("CMS種別")) return "CM種別";
+  if (t.includes("CM設定") || t.includes("CM代行") || t.includes("CMS代行")) return "CM設定";
+  if (t.includes("契約コード")) return "契約コード";
+  if (t.includes("DSA")) return "DSA";
+  if (t.includes("STAGE変更")) return "Stage変更日";
+  if (t.includes("YCS")) return "YCS完了メール";
+  if (t.includes("掲載開始") || t.includes("販売開始")) return "掲載開始";
+  if (t.includes("CM情報") || t.includes("CMS情報")) return "CM情報受領日";
+  if (t === "URL") return "URL";
+  if (t === "ID") return "ID"; // HID と間違えないよう、ちょうど「ID」のときだけ
+  if (t === "PW" || t.includes("パスワード") || t === "PASS") return "PW";
+  return null;
+};
 // レコード作成の印（〇 等）を真偽に解釈
 const isMaru = (v) => {
   const s = String(v || "").trim();
@@ -109,6 +137,8 @@ export default function WorkRequestsPage() {
   // Temairazu タブ：フォーム回答シートの中身と検索語
   const [form, setForm] = useState({ loading: false, title: null, sheetId: null, grid: null, error: null });
   const [formQ, setFormQ] = useState("");
+  // Kintone の内容（ステータス〜なにをする を自動で出すために使う）
+  const [kin, setKin] = useState(null); // { names, byId, byHid, fetchedAt }
   const [items, setItems] = useState([]); // 登録済みシートの一覧
   const [grid, setGrid] = useState(null); // {headers, rows, rowKeys, overlay, total} or {error}
   const [cells, setCells] = useState({}); // rowKey -> {created, recordNo, doneDate}
@@ -149,6 +179,35 @@ export default function WorkRequestsPage() {
   useEffect(() => {
     fetch("/api/form-config", { cache: "no-store" }).then((r) => r.json()).then(setCfg).catch(() => {});
   }, []);
+  // 表に出ている行のぶんだけ、Kintone の内容を読む（表示に使うだけ）。
+  // 全件もらうと1MBほどになるので、レコードNo と HID を渡して必要な行だけ受け取る。
+  useEffect(() => {
+    if (kind !== "new" || !grid || grid.error || !Array.isArray(grid.rows)) return;
+    const ids = [];
+    const hids = [];
+    grid.rows.forEach((r, ri) => {
+      const rk = grid.rowKeys?.[ri] ?? `#${ri}`;
+      const no = String((cells[rk] && cells[rk].recordNo) || (cols.recNo >= 0 ? r[cols.recNo] : "") || "").trim();
+      if (no) ids.push(no);
+      const hid = String(cols.hid >= 0 ? r[cols.hid] ?? "" : "").trim();
+      if (hid) hids.push(hid);
+    });
+    if (!ids.length && !hids.length) return;
+    let alive = true;
+    fetch("/api/kintone-basics", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids, hids }),
+    })
+      .then((r) => r.json())
+      .then((d) => alive && setKin(d && !d.error ? d : null))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+    // cols は grid から作られるので、依存は grid と cells で足りる
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kind, grid, cells]);
   useEffect(() => {
     cachedJson("/api/auth/me", 60 * 1000)
       .then((d) => setCanEdit(!!d?.perms?.pages?.workReq?.edit))
@@ -378,16 +437,48 @@ export default function WorkRequestsPage() {
     return {
       status: find((x) => x.includes("ステータス")),
       name,
+      hid: find((x) => norm(x) === "HID" || norm(x).includes("HID")),
       recCreate: find((x) => x.replace(/\s/g, "").includes("レコード作成")),
       recNo: find((x) => x.replace(/\s/g, "").includes("レコードNo")),
       done: find((x) => x.includes("作業完了日")),
     };
   }, [grid]);
 
+  // Kintone から自動で出す列。
+  // 対象は「ステータス列」から「なにをする列」までの間で、Kintone に同じ項目があるもの。
+  const autoCols = useMemo(() => {
+    const h = (grid?.headers || []).map((x) => String(x || ""));
+    const last = h.findIndex((x) => KIN_COL(x) === "なにをする");
+    const from = cols.status;
+    if (from < 0 || last < 0 || last < from) return {};
+    const m = {};
+    for (let ci = from; ci <= last; ci++) {
+      const name = KIN_COL(h[ci]);
+      if (name) m[ci] = name;
+    }
+    return m;
+  }, [grid, cols.status]);
+
+  // その行に対応する Kintone のレコード（レコードNo優先、無ければ HID で探す）
+  const kinRowOf = (r, rk) => {
+    if (!kin) return null;
+    const ov = cells[rk];
+    const no = String(
+      (ov && ov.recordNo) || (cols.recNo >= 0 ? r[cols.recNo] : "") || ""
+    ).trim();
+    if (no && kin.byId?.[no]) return kin.byId[no];
+    const hid = String(cols.hid >= 0 ? r[cols.hid] ?? "" : "").trim();
+    if (hid && kin.byHid?.[hid]) return kin.byHid[hid];
+    return null;
+  };
+
   // 「完了」判定：ステータスが「完了」を含む（例：完了 / 7.販売開始確認（完了））、
   // または「対応不要」。もしくは作業完了日が入っている行。
-  const isDone = (r, cell) => {
-    const st = cols.status >= 0 ? String(r[cols.status] || "") : "";
+  const isDone = (r, cell, rk) => {
+    // ステータスは Kintone の内容を出しているので、完了の判定も同じ値で行う
+    const kr = kinRowOf(r, rk);
+    const st =
+      (kr && kr["ステータス"]) || (cols.status >= 0 ? String(r[cols.status] || "") : "");
     if (st.includes("完了") || st.includes("対応不要")) return true;
     const dd = cell && cell.doneDate ? cell.doneDate : cols.done >= 0 ? r[cols.done] : "";
     if (String(dd || "").trim()) return true;
@@ -405,6 +496,13 @@ export default function WorkRequestsPage() {
     }
     // 先頭のタイムスタンプは時刻まで出すと長いので、日付だけにする
     if (ci === 0) return fmtStampDate(r[ci] ?? "");
+    // ステータス〜なにをする は Kintone の内容を出す（Kintone が空ならシートの値）
+    const name = autoCols[ci];
+    if (name) {
+      const kr = kinRowOf(r, rk);
+      const v = kr?.[name];
+      if (v) return v;
+    }
     return r[ci] ?? "";
   };
 
@@ -441,7 +539,7 @@ export default function WorkRequestsPage() {
     if (!grid || grid.error || !Array.isArray(grid.rows)) return [];
     return grid.rows
       .map((r, ri) => ({ r, rk: grid.rowKeys?.[ri] ?? `#${ri}`, ri }))
-      .filter(({ r, rk }) => filter !== "pending" || !isDone(r, cells[rk] || EMPTY_CELL));
+      .filter(({ r, rk }) => filter !== "pending" || !isDone(r, cells[rk] || EMPTY_CELL, rk));
     // isDone は cols（シートの列の役割）に依存するので、cols も見る
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [grid, cells, filter, cols]);
@@ -529,11 +627,17 @@ export default function WorkRequestsPage() {
               </span>
             );
           })()}
+          {/* 行の編集（鉛筆）と間違えないよう、シートの設定は歯車にしている */}
           {kind === "new" && canEdit && item && (
-            <button className="icon-btn" onClick={() => setEditTarget({ id: item.id, kind, title: item.title, url: item.url })} title="シートを設定" aria-label="シートを設定">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 20h9" />
-                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+            <button
+              className="icon-btn"
+              onClick={() => setEditTarget({ id: item.id, kind, title: item.title, url: item.url })}
+              title="シートの設定（読み込むスプレッドシートのURL）"
+              aria-label="シートの設定"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3.2" />
+                <path d="M12 2.8v2.4M12 18.8v2.4M21.2 12h-2.4M5.2 12H2.8M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7M18.5 18.5l-1.7-1.7M7.2 7.2 5.5 5.5" />
               </svg>
             </button>
           )}
