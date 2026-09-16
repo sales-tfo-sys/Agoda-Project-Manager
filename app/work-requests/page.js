@@ -96,7 +96,7 @@ export default function WorkRequestsPage() {
   const isAdhoc = kind === "adhoc";
   const isForm = kind === "temairazu";
   // Temairazu タブ：フォーム回答シートの中身と検索語
-  const [form, setForm] = useState({ loading: false, title: null, grid: null, error: null });
+  const [form, setForm] = useState({ loading: false, title: null, sheetId: null, grid: null, error: null });
   const [formQ, setFormQ] = useState("");
   const [items, setItems] = useState([]); // 登録済みシートの一覧
   const [grid, setGrid] = useState(null); // {headers, rows, rowKeys, overlay, total} or {error}
@@ -203,6 +203,7 @@ export default function WorkRequestsPage() {
             setForm({
               loading: false,
               title: null,
+              sheetId: null,
               grid: null,
               error: "管理 → フォーム回答 に、名前に「Temairazu」を含むシートが登録されていません。",
             });
@@ -211,9 +212,9 @@ export default function WorkRequestsPage() {
         const grid = await fetch(`/api/form-sheet-data?id=${encodeURIComponent(sheet.id)}`, {
           cache: "no-store",
         }).then((r) => r.json());
-        if (alive) setForm({ loading: false, title: sheet.title, grid, error: null });
+        if (alive) setForm({ loading: false, title: sheet.title, sheetId: sheet.id, grid, error: null });
       } catch (e) {
-        if (alive) setForm({ loading: false, title: null, grid: null, error: String(e?.message || e) });
+        if (alive) setForm({ loading: false, title: null, sheetId: null, grid: null, error: String(e?.message || e) });
       }
     })();
     return () => {
@@ -240,7 +241,46 @@ export default function WorkRequestsPage() {
         body: JSON.stringify({ sheetId: item.id, rowKey, ...next }),
       }).then((r) => r.json());
       if (res?.error) showToast(res.error, "err");
+      // サイトには保存できたが、スプレッドシートに書けなかったときは理由を出す
+      else if (res?.sheetError) showToast("スプレッドシートに反映できませんでした：" + res.sheetError, "err");
     } catch (e) {
+      showToast(String(e?.message || e), "err");
+    }
+  };
+
+  // Temairazu のチェック欄：画面で切り替えて、スプレッドシートにも書き戻す
+  const toggleFormCheck = async (rowIdx, ci, next) => {
+    const sheet = form.sheetId;
+    const grid = form.grid;
+    if (!sheet || !grid) return;
+    const before = grid.rows[rowIdx]?.[ci];
+    // 先に画面を変えて、失敗したら元に戻す
+    const put = (v) =>
+      setForm((f) => {
+        if (!f.grid) return f;
+        const rows = f.grid.rows.map((r, i) => (i === rowIdx ? r.map((c, j) => (j === ci ? v : c)) : r));
+        return { ...f, grid: { ...f.grid, rows } };
+      });
+    put(next ? "TRUE" : "FALSE");
+    try {
+      const res = await fetch("/api/form-sheet-cell", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: sheet,
+          row: rowIdx,
+          rowKey: String(grid.rows[rowIdx]?.[0] ?? ""),
+          col: ci,
+          header: String(grid.headers[ci] ?? ""),
+          value: next,
+        }),
+      }).then((r) => r.json());
+      if (res?.error) {
+        put(before);
+        showToast(res.error, "err");
+      }
+    } catch (e) {
+      put(before);
       showToast(String(e?.message || e), "err");
     }
   };
@@ -512,7 +552,12 @@ export default function WorkRequestsPage() {
             <div className="notice">データがありません。</div>
           </div>
         ) : (
-          <FormAnswersTable headers={form.grid.headers} rows={formRows} q={formQ} />
+          <FormAnswersTable
+            headers={form.grid.headers}
+            rows={formRows}
+            q={formQ}
+            onToggle={canEdit ? toggleFormCheck : undefined}
+          />
         )
       ) : (loading || gridLoading) && !busy ? (
         <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>
