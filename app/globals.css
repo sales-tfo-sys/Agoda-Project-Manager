@@ -13605,3 +13605,47 @@ button.forms-mark.busy {
 .modal-body .kv-v .kv-link {
   overflow: hidden;
 }
+
+/* ══════════════ 施設一覧の詳細：基本情報の右にメモ ══════════════ */
+/* 横に並べるぶん、この画面のモーダルは少し広くする */
+.modal.modal-detail {
+  max-width: 1320px;
+}
+.modal-body .detail-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 340px);
+  gap: 12px;
+  align-items: stretch;
+}
+/* メモは基本情報と同じ高さまで伸ばし、たまったら中で送る */
+.modal-body .detail-top > .panel-memo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.modal-body .detail-top > .panel-memo .panel-text {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.modal-body .detail-top > .panel-memo .memo-list {
+  flex: 1 1 auto;
+  max-height: none;
+}
+/* 幅が足りないときは、これまでどおり縦に並べる */
+@media (max-width: 1180px) {
+  .modal-body .detail-top {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .modal-body .detail-top > .panel-memo .memo-list {
+    max-height: 210px;
+  }
+}
+/* 右に置いたメモは幅が狭いので、入力欄とボタンは縦に並べる */
+.modal-body .detail-top > .panel-memo .memo-add {
+  flex-direction: column;
+  align-items: stretch;
+}
+.modal-body .detail-top > .panel-memo .memo-add .btn-primary {
+  align-self: flex-end;
+  min-width: 96px;
+}

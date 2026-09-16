@@ -423,7 +423,7 @@ function DetailModal({ record, onClose, canEdit }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div
-        className="modal"
+        className="modal modal-detail"
         role="dialog"
         aria-modal="true"
         aria-label="詳細"
@@ -436,6 +436,8 @@ function DetailModal({ record, onClose, canEdit }) {
           </button>
         </div>
         <div className="modal-body">
+          {/* 基本情報の右にメモを置く（幅が足りないときは下に回り込む） */}
+          <div className="detail-top">
           <section className="panel panel-hero">
             {/* 見出し。左に絵、右下に薄い飾り */}
             <div className="panel-title">
@@ -476,6 +478,8 @@ function DetailModal({ record, onClose, canEdit }) {
               </div>
             </div>
           </section>
+          <MemoPanel recordId={record?.$id?.value} canEdit={canEdit} />
+          </div>
 
           <section className="panel panel-note">
             <div className="panel-title">
@@ -490,8 +494,6 @@ function DetailModal({ record, onClose, canEdit }) {
               {fieldValue(record, FIELD_CODE["滞留理由"]) || "—"}
             </div>
           </section>
-
-          <MemoPanel recordId={record?.$id?.value} canEdit={canEdit} />
 
           <div className="box-row">
             {ACTION_BOXES.map(({ key, tone, icon }) => (
