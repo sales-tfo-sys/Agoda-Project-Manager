@@ -13494,3 +13494,10 @@ button.forms-mark.busy {
 .forms-tw .fold-ar {
   font-size: 13px;
 }
+
+/* 新規作業依頼：サイトで入力する3列（レコード作成／レコードNo／作業完了日）は
+   見出しも中身も中央ぞろえにする（短い値ばかりなので、左寄せだと散らかって見える） */
+.tw table th.wr-mancell,
+.tw table td.wr-mancell {
+  text-align: center;
+}
