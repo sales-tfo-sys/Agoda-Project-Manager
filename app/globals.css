@@ -13747,3 +13747,34 @@ button.forms-mark.busy {
     display: none; /* 狭い画面では詳細の中身を優先する */
   }
 }
+
+/* ══════════════ 詳細：項目の編集 ══════════════ */
+.modal-body .detail-err {
+  margin-bottom: 10px;
+}
+.modal-body .kv-in {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 5px 9px;
+  border: 1px solid #cfdcf3;
+  border-radius: 8px;
+  background: var(--surface);
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--ink);
+}
+.modal-body .kv-in:focus-visible {
+  outline: 2px solid #2f6be0;
+  outline-offset: 1px;
+}
+.modal-body .kv-in-ta {
+  resize: vertical;
+}
+/* 入力欄を入れるぶん、行の高さが詰まらないようにする */
+.modal-body .kv.kv-editing .kv-v {
+  padding: 5px 9px;
+}
+.modal-body .panel-text .kv-in,
+.modal-body .box-text .kv-in {
+  margin: 0;
+}

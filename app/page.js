@@ -103,7 +103,7 @@ const FIELD_CODE = {
   なにをする: "文字列__複数行__4",
 };
 const DETAIL_LEFT = [
-  "レコードNo",
+  // レコードNo は【詳細】の右（ヘッダー）に出しているので、ここには置かない
   "依頼",
   "HID",
   "Hotel",
@@ -125,6 +125,68 @@ const DETAIL_RIGHT = [
   "掲載開始",
   "DSA",
 ];
+
+// 詳細画面で直せる項目（Kintone のフィールドコード）。
+// 実際に通すかどうかはサーバー側でも同じ一覧で確かめる。
+const EDITABLE_CODES = new Set([
+  "ドロップダウン_13",
+  "文字列__1行_",
+  "文字列__1行__0",
+  "ドロップダウン",
+  "ドロップダウン_2",
+  "ドロップダウン_4",
+  "文字列__1行__6",
+  "文字列__1行__7",
+  "文字列__1行__8",
+  "文字列__1行__9",
+  "日付",
+  "日付_8",
+  "日付_6",
+  "ドロップダウン_11",
+  "文字列__複数行__1",
+  "日付_3",
+  "ドロップダウン_7",
+  "文字列__複数行__4",
+]);
+
+// 入力欄に出す「元の値」。日付は YYYY-MM-DD、それ以外は文字列。
+function rawValue(record, code) {
+  const v = record?.[code]?.value;
+  if (v == null) return "";
+  return typeof v === "string" ? v : String(v);
+}
+
+// Kintone の項目の型に合わせた入力欄
+function FieldInput({ code, field, value, onChange }) {
+  const type = field?.type;
+  if (type === "DROP_DOWN" || type === "RADIO_BUTTON") {
+    const opts = Object.values(field.options || {}).sort((a, b) => Number(a.index) - Number(b.index));
+    return (
+      <select className="kv-in" value={value} onChange={(e) => onChange(code, e.target.value)}>
+        <option value="">（未選択）</option>
+        {opts.map((o) => (
+          <option key={o.label} value={o.label}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    );
+  }
+  if (type === "DATE") {
+    return <input className="kv-in" type="date" value={value} onChange={(e) => onChange(code, e.target.value)} />;
+  }
+  if (type === "MULTI_LINE_TEXT") {
+    return (
+      <textarea
+        className="kv-in kv-in-ta"
+        rows={3}
+        value={value}
+        onChange={(e) => onChange(code, e.target.value)}
+      />
+    );
+  }
+  return <input className="kv-in" type="text" value={value} onChange={(e) => onChange(code, e.target.value)} />;
+}
 
 function fieldValue(record, code) {
   if (!code || !record) return "";
@@ -274,12 +336,13 @@ const DETAIL_ICON = {
   DSA: "shield",
 };
 
-function DetailRow({ label, value }) {
+function DetailRow({ label, value, edit, code, field, draft, onChange }) {
   const isUrl = /^https?:\/\//.test(value);
   // ステータスは他と見分けがつくよう、囲みにして出す
   const isStatus = label === "ステータス";
+  const editable = edit && code && EDITABLE_CODES.has(code);
   return (
-    <div className="kv">
+    <div className={"kv" + (editable ? " kv-editing" : "")}>
       <div className="kv-l">
         <span className={"kv-ic" + (label === "ステータス" ? " on" : "")} aria-hidden="true">
           <DetailIcon name={DETAIL_ICON[label]} />
@@ -287,7 +350,9 @@ function DetailRow({ label, value }) {
         <span className="kv-lt">{label}</span>
       </div>
       <div className="kv-v">
-        {value ? (
+        {editable ? (
+          <FieldInput code={code} field={field} value={draft} onChange={onChange} />
+        ) : value ? (
           isUrl ? (
             <a href={value} target="_blank" rel="noreferrer" className="kv-link">
               <span className="kv-link-t">{value}</span>
@@ -505,7 +570,7 @@ function MemoPanel({ recordId, canEdit }) {
 }
 
 // 【詳細】の右に出す、レコードそのものの情報（Kintone の一覧と同じ並び）
-function RecordMeta({ record }) {
+function RecordMeta({ record, editor }) {
   if (!record) return null;
   // Kintone の画面と同じになるよう、日本時間で出す（端末の時計に左右されない）
   const whenOf = (f) => {
@@ -526,11 +591,15 @@ function RecordMeta({ record }) {
       .replace(/\//g, "-");
   };
   const whoOf = (f) => f?.value?.name || "—";
+  // サイトから直したものなら「Admin（青木）」のように、操作した人の名前も出す。
+  // 版（revision）が一致するときだけ（その後 Kintone 側で直されていたら出さない）
+  const sameRev = editor?.rev && String(editor.rev) === String(record.$revision?.value || "");
+  const modifier = whoOf(record["更新者"]) + (sameRev && editor.name ? `（${editor.name}）` : "");
   const items = [
     { k: "レコード番号", v: record.$id?.value || "—", icon: "hash" },
     { k: "作成者", v: whoOf(record["作成者"]), icon: "person" },
     { k: "作成日時", v: whenOf(record["作成日時"]), icon: "calendar" },
-    { k: "更新者", v: whoOf(record["更新者"]), icon: "person" },
+    { k: "更新者", v: modifier, icon: "person" },
     { k: "更新日時", v: whenOf(record["更新日時"]), icon: "calendar" },
   ];
   return (
@@ -550,7 +619,83 @@ function RecordMeta({ record }) {
   );
 }
 
-function DetailModal({ record, onClose, canEdit }) {
+function DetailModal({ record, onClose, canEdit, fields, onSaved }) {
+  const [edit, setEdit] = useState(false);
+  const [draft, setDraft] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState(null);
+  // サイトから最後に直した人（Kintone 側の更新者はトークンの持ち主になるため）
+  const [editor, setEditor] = useState(null);
+  const id = record?.$id?.value;
+
+  useEffect(() => {
+    if (!id) return;
+    let alive = true;
+    fetch(`/api/kintone-record?id=${encodeURIComponent(id)}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j) => alive && setEditor(j.editor || null))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [id]);
+
+  const valueOf = (code) => (code in draft ? draft[code] : rawValue(record, code));
+  const setField = (code, v) => setDraft((d) => ({ ...d, [code]: v }));
+
+  const start = () => {
+    setDraft({});
+    setErr(null);
+    setEdit(true);
+  };
+  const cancel = () => {
+    setDraft({});
+    setErr(null);
+    setEdit(false);
+  };
+  const save = async () => {
+    // 変えたところだけ送る
+    const values = {};
+    for (const [code, v] of Object.entries(draft)) {
+      if (String(v ?? "") !== String(rawValue(record, code))) values[code] = v ?? "";
+    }
+    if (!Object.keys(values).length) {
+      cancel();
+      return;
+    }
+    setSaving(true);
+    setErr(null);
+    try {
+      const j = await fetch("/api/kintone-record", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, revision: record?.$revision?.value, values }),
+      }).then((r) => r.json());
+      if (j.error) setErr(j.error);
+      else {
+        if (j.editor) setEditor(j.editor);
+        if (j.record && onSaved) onSaved(j.record);
+        setDraft({});
+        setEdit(false);
+      }
+    } catch (e) {
+      setErr(String(e?.message || e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const rowProps = (label) => {
+    const code = FIELD_CODE[label];
+    return {
+      code,
+      field: code ? fields?.[code] : null,
+      edit,
+      draft: code ? valueOf(code) : "",
+      onChange: setField,
+    };
+  };
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div
@@ -562,12 +707,28 @@ function DetailModal({ record, onClose, canEdit }) {
       >
         <div className="modal-head detail-head">
           <h2>【 詳細 】</h2>
-          <RecordMeta record={record} />
+          <RecordMeta record={record} editor={editor} />
+          {canEdit &&
+            (edit ? (
+              <>
+                <button className="mini-btn" onClick={cancel} disabled={saving}>
+                  やめる
+                </button>
+                <button className="save-btn sm" onClick={save} disabled={saving}>
+                  {saving ? "保存中…" : "保存"}
+                </button>
+              </>
+            ) : (
+              <button className="mini-btn" onClick={start}>
+                編集
+              </button>
+            ))}
           <button className="close-btn" onClick={onClose}>
             閉じる
           </button>
         </div>
         <div className="modal-body">
+          {err && <div className="banner warn-banner detail-err">{err}</div>}
           {/* 基本情報の右にメモを置く（幅が足りないときは下に回り込む） */}
           <div className="detail-top">
           <section className="panel panel-hero">
@@ -592,20 +753,12 @@ function DetailModal({ record, onClose, canEdit }) {
             <div className="kv-cols">
               <div className="kv-col">
                 {DETAIL_LEFT.map((k) => (
-                  <DetailRow
-                    key={k}
-                    label={k}
-                    value={fieldValue(record, FIELD_CODE[k])}
-                  />
+                  <DetailRow key={k} label={k} value={fieldValue(record, FIELD_CODE[k])} {...rowProps(k)} />
                 ))}
               </div>
               <div className="kv-col">
                 {DETAIL_RIGHT.map((k) => (
-                  <DetailRow
-                    key={k}
-                    label={k}
-                    value={fieldValue(record, FIELD_CODE[k])}
-                  />
+                  <DetailRow key={k} label={k} value={fieldValue(record, FIELD_CODE[k])} {...rowProps(k)} />
                 ))}
               </div>
             </div>
@@ -623,7 +776,16 @@ function DetailModal({ record, onClose, canEdit }) {
               </span>
             </div>
             <div className="panel-text">
-              {fieldValue(record, FIELD_CODE["滞留理由"]) || "—"}
+              {edit ? (
+                <FieldInput
+                  code={FIELD_CODE["滞留理由"]}
+                  field={fields?.[FIELD_CODE["滞留理由"]]}
+                  value={valueOf(FIELD_CODE["滞留理由"])}
+                  onChange={setField}
+                />
+              ) : (
+                fieldValue(record, FIELD_CODE["滞留理由"]) || "—"
+              )}
             </div>
           </section>
 
@@ -637,7 +799,16 @@ function DetailModal({ record, onClose, canEdit }) {
                   {key}
                 </div>
                 <div className="box-text">
-                  {fieldValue(record, FIELD_CODE[key]) || "—"}
+                  {edit ? (
+                    <FieldInput
+                      code={FIELD_CODE[key]}
+                      field={fields?.[FIELD_CODE[key]]}
+                      value={valueOf(FIELD_CODE[key])}
+                      onChange={setField}
+                    />
+                  ) : (
+                    fieldValue(record, FIELD_CODE[key]) || "—"
+                  )}
                 </div>
               </div>
             ))}
@@ -1123,7 +1294,26 @@ export default function Page() {
       </div>
 
       {selected && (
-        <DetailModal record={selected} onClose={() => setSelected(null)} canEdit={canSync} />
+        <DetailModal
+          record={selected}
+          onClose={() => setSelected(null)}
+          canEdit={canSync}
+          fields={data?.fields}
+          onSaved={(rec) => {
+            // 直したレコードを、開いている詳細と一覧の両方に反映する
+            setSelected(rec);
+            setData((d) =>
+              d && Array.isArray(d.records)
+                ? {
+                    ...d,
+                    records: d.records.map((r) => (r?.$id?.value === rec?.$id?.value ? rec : r)),
+                  }
+                : d
+            );
+            // ためてある案件データは捨てる（次に開いたときは新しい内容を読む）
+            invalidate("/api/records");
+          }}
+        />
       )}
     </div>
   );
