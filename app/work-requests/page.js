@@ -24,6 +24,11 @@ const toISO = (v) => {
   const m = String(v || "").trim().match(/(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/);
   return m ? `${m[1]}-${String(m[2]).padStart(2, "0")}-${String(m[3]).padStart(2, "0")}` : "";
 };
+// タイムスタンプ（2026/09/15 14:23:05 など）は日付だけ出す
+const fmtStampDate = (v) => {
+  const m = String(v || "").trim().match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/);
+  return m ? `${m[1]}/${String(m[2]).padStart(2, "0")}/${String(m[3]).padStart(2, "0")}` : v;
+};
 // レコード作成の印（〇 等）を真偽に解釈
 const isMaru = (v) => {
   const s = String(v || "").trim();
@@ -390,6 +395,8 @@ export default function WorkRequestsPage() {
       if (ci === cols.recNo) return ov.recordNo || "";
       if (ci === cols.done) return fmtDate(ov.doneDate);
     }
+    // 先頭のタイムスタンプは時刻まで出すと長いので、日付だけにする
+    if (ci === 0) return fmtStampDate(r[ci] ?? "");
     return r[ci] ?? "";
   };
 
