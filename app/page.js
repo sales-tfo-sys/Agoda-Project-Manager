@@ -78,6 +78,7 @@ function formatValue(field) {
 
 // 表示ラベル（略称）→ Kintone フィールドコード（null は該当フィールド未確定）
 const FIELD_CODE = {
+  レコードNo: "$id",
   依頼: "ドロップダウン_13",
   HID: "文字列__1行_",
   Hotel: "文字列__1行__0",
@@ -102,6 +103,7 @@ const FIELD_CODE = {
   なにをする: "文字列__複数行__4",
 };
 const DETAIL_LEFT = [
+  "レコードNo",
   "依頼",
   "HID",
   "Hotel",
@@ -251,6 +253,7 @@ function DetailIcon({ name, size = 15 }) {
 
 // 項目名 → 絵。載っていない項目は書類の絵にする。
 const DETAIL_ICON = {
+  レコードNo: "hash",
   依頼: "doc",
   HID: "hash",
   Hotel: "hotel",
