@@ -8,7 +8,7 @@ import { useUi } from "./Ui";
 
 
 // 一覧の列見出しの表示名を上書き（Kintoneの実ラベルを別名で表示）
-const HEADER_LABEL = { "ドロップダウン": "ステータス", "ドロップダウン_4": "CM代行設定" };
+const HEADER_LABEL = { "ドロップダウン": "ステータス", "ドロップダウン_4": "CM代行設定", $id: "レコードNo" };
 
 // この列から右のセル（本文）は中央揃えにする
 const CENTER_FROM_CODE = "ドロップダウン_4"; // CM代行設定
@@ -612,6 +612,7 @@ export default function Page() {
   // 表示する列の順番（ユーザー指定）。Kintone のフィールドコードで指定。
   // ※「完了希望日 / Google Form受領日 / 作業依頼受領日」は該当フィールドが特定できず未設定。
   const COLUMN_ORDER = [
+    "$id", //              レコードNo（Kintone のレコード番号）
     "ドロップダウン_13", // 依頼（= 案件名）
     "文字列__1行_", //     HID
     "文字列__1行__0", //   Hotel Name
