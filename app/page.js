@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Pulldown from "./Pulldown";
 import UpdatedPop from "./UpdatedPop";
 import { cachedJson, peekJson, invalidate } from "./dataCache";
 import { useUi } from "./Ui";
@@ -473,8 +474,7 @@ export default function Page() {
   const [updatedAt, setUpdatedAt] = useState(null);
   const [selected, setSelected] = useState(null);
   const [typeFilter, setTypeFilter] = useState("all");
-  // 絞り込みの選択は画面から無くしたので、常に「すべて」で通す（表示は検索だけで絞る）
-  const [statusFilter, setStatusFilter] = useState("all"); // active=完了以外 / all=すべて
+  const [statusFilter, setStatusFilter] = useState("active"); // active=完了以外（既定） / all=すべて
   const [periodYear, setPeriodYear] = useState("all"); // "all" or 年
   const [periodQ, setPeriodQ] = useState("all"); // "all" or 1〜4
   const [q, setQ] = useState(""); // HID / Hotel Name 検索（入力用・即時反映）
@@ -738,7 +738,20 @@ export default function Page() {
       {/* 絞り込みは表の直前に置く */}
       {data && !error && (
         <div className="detail-tools list-tools">
-          {/* 絞り込みの選択は無くし、検索だけにした（HID・Hotel Name で探す） */}
+          {/* 絞り込みは「完了以外／すべて」と検索だけ。
+              どれで絞るかはアイコンと選択肢で分かるので、項目名は出さない。 */}
+          {records.length > 0 && (
+            <Pulldown
+              value={statusFilter}
+              onChange={setStatusFilter}
+              ariaLabel="ステータスで絞り込み"
+              icon="filter"
+              options={[
+                { value: "active", label: "完了以外" },
+                { value: "all", label: "すべてのステータス" },
+              ]}
+            />
+          )}
           {records.length > 0 && (
             <label className="search-box" aria-label="HID・Hotel Name で検索">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
