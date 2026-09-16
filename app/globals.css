@@ -13697,3 +13697,53 @@ button.forms-mark.busy {
   font-size: 11.5px;
   color: #c0392b;
 }
+
+/* ══════════════ 詳細のヘッダー：レコードそのものの情報 ══════════════ */
+/* Kintone の一覧と同じ並び（レコード番号／作成者／作成日時／更新者／更新日時） */
+.modal-head.detail-head {
+  gap: 16px;
+}
+.rec-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 6px;
+  margin-left: auto;
+}
+.rec-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.rec-meta-k {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--ink-3);
+  padding-left: 2px;
+}
+.rec-meta-v {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid #e0e9f8;
+  border-radius: 8px;
+  background: #f5f8fe;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.rec-meta-ic {
+  display: inline-grid;
+  place-items: center;
+  color: var(--brand-2);
+}
+@media (max-width: 900px) {
+  .rec-meta {
+    display: none; /* 狭い画面では詳細の中身を優先する */
+  }
+}

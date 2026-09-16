@@ -504,6 +504,52 @@ function MemoPanel({ recordId, canEdit }) {
   );
 }
 
+// 【詳細】の右に出す、レコードそのものの情報（Kintone の一覧と同じ並び）
+function RecordMeta({ record }) {
+  if (!record) return null;
+  // Kintone の画面と同じになるよう、日本時間で出す（端末の時計に左右されない）
+  const whenOf = (f) => {
+    const v = f?.value;
+    if (!v) return "—";
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) return String(v);
+    return d
+      .toLocaleString("ja-JP", {
+        timeZone: "Asia/Tokyo",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      })
+      .replace(/\//g, "-");
+  };
+  const whoOf = (f) => f?.value?.name || "—";
+  const items = [
+    { k: "レコード番号", v: record.$id?.value || "—", icon: "hash" },
+    { k: "作成者", v: whoOf(record["作成者"]), icon: "person" },
+    { k: "作成日時", v: whenOf(record["作成日時"]), icon: "calendar" },
+    { k: "更新者", v: whoOf(record["更新者"]), icon: "person" },
+    { k: "更新日時", v: whenOf(record["更新日時"]), icon: "calendar" },
+  ];
+  return (
+    <div className="rec-meta">
+      {items.map((it) => (
+        <div className="rec-meta-item" key={it.k}>
+          <span className="rec-meta-k">{it.k}</span>
+          <span className="rec-meta-v">
+            <span className="rec-meta-ic" aria-hidden="true">
+              <DetailIcon name={it.icon} size={12} />
+            </span>
+            {it.v}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function DetailModal({ record, onClose, canEdit }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -514,8 +560,9 @@ function DetailModal({ record, onClose, canEdit }) {
         aria-label="詳細"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="modal-head">
+        <div className="modal-head detail-head">
           <h2>【 詳細 】</h2>
+          <RecordMeta record={record} />
           <button className="close-btn" onClick={onClose}>
             閉じる
           </button>
