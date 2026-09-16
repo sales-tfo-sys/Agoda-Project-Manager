@@ -325,6 +325,7 @@ export function Chart({ title, days, rows, grip }) {
 export default function ProgressChart({
   year,
   dateCode,
+  ver, // Kintone取込のあとに数え直すための合図
   types,
   gridRef: outerRef,
   order,
@@ -355,7 +356,7 @@ export default function ProgressChart({
     return () => {
       alive = false;
     };
-  }, [year, dateCode]);
+  }, [year, dateCode, ver]);
 
   const view = useMemo(() => {
     if (!data?.days?.length) return null;

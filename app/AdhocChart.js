@@ -15,6 +15,7 @@ export const ONGOING = ["On Track", "Behind", "Onhold"];
 export default function AdhocChart({
   year,
   dateCode,
+  ver, // Kintone取込のあとに数え直すための合図
   tasks,
   known,
   hidden, // 「進捗グラフに出さない」設定のタスク名（Set）
@@ -45,7 +46,7 @@ export default function AdhocChart({
     return () => {
       alive = false;
     };
-  }, [year, dateCode]);
+  }, [year, dateCode, ver]);
 
   // グラフ1枚ぶんを組み立てる。
   //   ・「まとめ先」が設定されているタスクは、同じ名前どうしを1枚にして足し合わせる

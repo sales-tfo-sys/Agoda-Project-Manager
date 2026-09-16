@@ -1322,6 +1322,8 @@ export default function TaskBoard({ mode = "view" }) {
   const [countsReadAt, setCountsReadAt] = useState(null);
   // 表・グラフの「更新」バッジ用：編集・スケジュール・工数の最後に動いた時刻
   const [fresh, setFresh] = useState({});
+  // Kintone取込のあと、グラフにも数え直してもらうための合図
+  const [dataVer, setDataVer] = useState(0);
   // Regular の表・グラフ：Kintone を取り込んだ時刻
   const regularBadge = (
     <UpdatedBadge
@@ -1367,6 +1369,8 @@ export default function TaskBoard({ mode = "view" }) {
         // 取り込んだら、ためていた案件データは捨てて取り直す
         invalidate("/api/records");
         await load();
+        // 一覧だけでなくグラフも数え直す（グラフは別のAPIから取っているため）
+        setDataVer((v) => v + 1);
         flashDone("取り込みました");
       }
     } catch (e) {
@@ -3862,6 +3866,7 @@ ${e.memo}` : e.task}>
                 <ProgressChart
                   year={year}
                   dateCode={dateCode}
+                  ver={dataVer}
                   types={regularTypes}
                   gridRef={graphGridRef}
                   order={graphOrderOf("regular")}
@@ -3873,6 +3878,7 @@ ${e.memo}` : e.task}>
                 <AdhocChart
                   year={year}
                   dateCode={dateCode}
+                  ver={dataVer}
                   tasks={adhocOngoing}
                   known={adhocKnown}
                   hidden={adhocNoGraph}
