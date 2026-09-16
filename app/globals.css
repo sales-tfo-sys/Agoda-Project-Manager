@@ -13221,7 +13221,8 @@ body {
   background: var(--surface);
 }
 .modal-body .box-text {
-  margin: 0 12px 12px;
+  /* 上下の余白を同じにして、色の付いた枠が上に寄らないようにする */
+  margin: 12px;
   padding: 12px 13px;
   border-radius: 10px;
   font-size: 13px;

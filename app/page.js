@@ -2,11 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import UpdatedPop from "./UpdatedPop";
-import Pulldown from "./Pulldown";
 import { cachedJson, peekJson, invalidate } from "./dataCache";
 import { useUi } from "./Ui";
 
-const TYPE_ORDER = ["Hotel", "ACQ", "Liberty", "Temairazu", "IHM"];
 
 // 一覧の列見出しの表示名を上書き（Kintoneの実ラベルを別名で表示）
 const HEADER_LABEL = { "ドロップダウン": "ステータス", "ドロップダウン_4": "CM代行設定" };
@@ -475,7 +473,8 @@ export default function Page() {
   const [updatedAt, setUpdatedAt] = useState(null);
   const [selected, setSelected] = useState(null);
   const [typeFilter, setTypeFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("active"); // active=完了以外（既定） / all=すべて
+  // 絞り込みの選択は画面から無くしたので、常に「すべて」で通す（表示は検索だけで絞る）
+  const [statusFilter, setStatusFilter] = useState("all"); // active=完了以外 / all=すべて
   const [periodYear, setPeriodYear] = useState("all"); // "all" or 年
   const [periodQ, setPeriodQ] = useState("all"); // "all" or 1〜4
   const [q, setQ] = useState(""); // HID / Hotel Name 検索（入力用・即時反映）
@@ -580,29 +579,6 @@ export default function Page() {
   }, [selected]);
 
   const records = data?.records || [];
-
-  // 案件名フィルタ用の選択肢（件数つき）
-  const typeCounts = useMemo(() => {
-    const m = {};
-    for (const r of records) {
-      const t = caseTypeOf(r);
-      m[t] = (m[t] || 0) + 1;
-    }
-    return m;
-  }, [records]);
-  const typeList = [
-    ...TYPE_ORDER.filter((t) => typeCounts[t]),
-    ...Object.keys(typeCounts).filter((t) => !TYPE_ORDER.includes(t)),
-  ];
-  // 絞り込みに使える年（作成日時ベース・降順）
-  const years = useMemo(() => {
-    const set = new Set();
-    for (const r of records) {
-      const p = periodOf(r);
-      if (p) set.add(p.year);
-    }
-    return [...set].sort((a, b) => b - a);
-  }, [records]);
 
   const kw = qDeb.trim().toLowerCase();
   const shown = useMemo(
@@ -762,63 +738,7 @@ export default function Page() {
       {/* 絞り込みは表の直前に置く */}
       {data && !error && (
         <div className="detail-tools list-tools">
-          {/* 並びは 年 → 四半期 → 案件名 → ステータス → 検索。
-              どれで絞るかは選択肢とアイコンで分かるので、項目名は出さない。 */}
-          {years.length > 0 && (
-            <Pulldown
-              value={periodYear}
-              onChange={setPeriodYear}
-              ariaLabel="年で絞り込み"
-              icon="calendar"
-              options={[
-                { value: "all", label: "すべての年" },
-                ...years.map((y) => ({ value: String(y), label: `${y} 年` })),
-              ]}
-            />
-          )}
-          {records.length > 0 && (
-            <Pulldown
-              value={periodQ}
-              onChange={setPeriodQ}
-              disabled={periodYear === "all"}
-              ariaLabel="四半期で絞り込み"
-              icon="calendar"
-              options={[
-                { value: "all", label: "通年" },
-                { value: "1", label: "Q1（1〜3月）" },
-                { value: "2", label: "Q2（4〜6月）" },
-                { value: "3", label: "Q3（7〜9月）" },
-                { value: "4", label: "Q4（10〜12月）" },
-              ]}
-            />
-          )}
-          {records.length > 0 && (
-            <Pulldown
-              value={typeFilter}
-              onChange={setTypeFilter}
-              ariaLabel="案件名で絞り込み"
-              icon="filter"
-              options={[
-                { value: "all", label: `すべての案件名（${records.length.toLocaleString("ja-JP")}）` },
-                ...typeList.map((t) => ({
-                  value: t,
-                  label: `${t}（${typeCounts[t].toLocaleString("ja-JP")}）`,
-                })),
-              ]}
-            />
-          )}
-          {records.length > 0 && (
-            <Pulldown
-              value={statusFilter}
-              onChange={setStatusFilter}
-              ariaLabel="ステータスで絞り込み"
-              icon="filter"
-              options={[
-                { value: "active", label: "完了以外" },
-                { value: "all", label: "すべてのステータス" },
-              ]}
-            />
-          )}
+          {/* 絞り込みの選択は無くし、検索だけにした（HID・Hotel Name で探す） */}
           {records.length > 0 && (
             <label className="search-box" aria-label="HID・Hotel Name で検索">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
