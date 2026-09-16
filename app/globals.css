@@ -13578,9 +13578,8 @@ button.forms-mark.busy {
   outline: 2px solid #2f6be0;
   outline-offset: 1px;
 }
-.memo-add .btn-primary {
+.memo-add .save-btn {
   flex: none;
-  height: 34px;
 }
 
 /* 詳細の項目行：中身が長くても行の幅は変えない（列の幅でそろえる）。
@@ -13645,7 +13644,56 @@ button.forms-mark.busy {
   flex-direction: column;
   align-items: stretch;
 }
-.modal-body .detail-top > .panel-memo .memo-add .btn-primary {
+.modal-body .detail-top > .panel-memo .memo-add .save-btn {
   align-self: flex-end;
-  min-width: 96px;
+}
+
+/* メモの各件：書き直す／削除の小さなボタンと、その入力欄 */
+.memo-meta .memo-ops {
+  display: inline-flex;
+  gap: 6px;
+  margin-left: auto;
+}
+.memo-meta .memo-ops button {
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-3);
+  background: none;
+  border: 0;
+  padding: 0 2px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.memo-meta .memo-ops button:hover {
+  color: #2f6be0;
+}
+.memo-edit textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid #cfdcf3;
+  border-radius: 9px;
+  background: var(--surface);
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  resize: vertical;
+}
+.memo-edit-ops,
+.memo-confirm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.memo-edit-ops {
+  justify-content: flex-end;
+}
+.memo-confirm span {
+  flex: 1 1 auto;
+  font-size: 11.5px;
+  color: #c0392b;
 }

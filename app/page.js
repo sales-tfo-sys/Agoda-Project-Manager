@@ -324,6 +324,12 @@ function MemoPanel({ recordId, canEdit }) {
   const [text, setText] = useState("");
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState(null);
+  const [editId, setEditId] = useState(null); // 書き直し中のコメント
+  const [editText, setEditText] = useState("");
+  const [delId, setDelId] = useState(null); // 消してよいか確かめているコメント
+
+  // サイトから書いたメモは「名前：本文」の形。書き直すときは本文だけを出す
+  const bodyOf = (t) => String(t || "").replace(/^[^：\n]{1,40}：/, "");
 
   useEffect(() => {
     if (!recordId) return;
@@ -342,21 +348,48 @@ function MemoPanel({ recordId, canEdit }) {
     };
   }, [recordId]);
 
-  const add = async () => {
-    const t = text.trim();
-    if (!t || saving) return;
+  // 足す／書き直す（replaceId があれば、そのコメントを消してから足す）
+  const post = async (t, replaceId) => {
+    const body = String(t || "").trim();
+    if (!body || saving) return;
     setSaving(true);
     setErr(null);
     try {
       const j = await fetch("/api/kintone-comments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: recordId, text: t }),
+        body: JSON.stringify({ id: recordId, text: body, replaceId: replaceId || undefined }),
       }).then((r) => r.json());
       if (j.error) setErr(j.error);
       else {
         setList(j.comments || []);
-        setText("");
+        if (replaceId) {
+          setEditId(null);
+          setEditText("");
+        } else setText("");
+      }
+    } catch (e) {
+      setErr(String(e?.message || e));
+    } finally {
+      setSaving(false);
+    }
+  };
+  const add = () => post(text);
+
+  const remove = async (commentId) => {
+    if (saving) return;
+    setSaving(true);
+    setErr(null);
+    try {
+      const j = await fetch("/api/kintone-comments", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: recordId, commentId }),
+      }).then((r) => r.json());
+      if (j.error) setErr(j.error);
+      else {
+        setList(j.comments || []);
+        setDelId(null);
       }
     } catch (e) {
       setErr(String(e?.message || e));
@@ -395,8 +428,60 @@ function MemoPanel({ recordId, canEdit }) {
                 <div className="memo-meta">
                   <b>{c.by}</b>
                   <span>{when(c.at)}</span>
+                  {canEdit && editId !== c.id && delId !== c.id && (
+                    <span className="memo-ops">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditId(c.id);
+                          setEditText(bodyOf(c.text));
+                          setErr(null);
+                        }}
+                      >
+                        書き直す
+                      </button>
+                      <button type="button" onClick={() => { setDelId(c.id); setErr(null); }}>
+                        削除
+                      </button>
+                    </span>
+                  )}
                 </div>
-                <div className="memo-body">{c.text}</div>
+                {editId === c.id ? (
+                  <div className="memo-edit">
+                    <textarea
+                      value={editText}
+                      onChange={(e) => setEditText(e.target.value)}
+                      rows={3}
+                      autoFocus
+                    />
+                    <div className="memo-edit-ops">
+                      <button type="button" className="mini-btn" onClick={() => setEditId(null)} disabled={saving}>
+                        やめる
+                      </button>
+                      <button
+                        type="button"
+                        className="save-btn sm"
+                        onClick={() => post(editText, c.id)}
+                        disabled={saving || !editText.trim()}
+                      >
+                        {saving ? "保存中…" : "保存"}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="memo-body">{c.text}</div>
+                )}
+                {delId === c.id && (
+                  <div className="memo-confirm">
+                    <span>このメモを消しますか？（元に戻せません）</span>
+                    <button type="button" className="mini-btn" onClick={() => setDelId(null)} disabled={saving}>
+                      やめる
+                    </button>
+                    <button type="button" className="mini-btn danger" onClick={() => remove(c.id)} disabled={saving}>
+                      {saving ? "削除中…" : "削除する"}
+                    </button>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -409,7 +494,7 @@ function MemoPanel({ recordId, canEdit }) {
               placeholder="メモを書くと Kintone のコメントに残ります"
               rows={2}
             />
-            <button type="button" className="btn-primary" onClick={add} disabled={saving || !text.trim()}>
+            <button type="button" className="save-btn sm" onClick={add} disabled={saving || !text.trim()}>
               {saving ? "追加中…" : "追加"}
             </button>
           </div>
