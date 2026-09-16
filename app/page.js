@@ -317,7 +317,109 @@ const ACTION_BOXES = [
   { key: "なにをする", tone: "green", icon: "check" },
 ];
 
-function DetailModal({ record, onClose }) {
+// 施設の「メモ」＝ Kintone のレコードのコメント。
+// 滞留理由と同じ大きさの枠に、新しい順で出し、その場で足せるようにする。
+function MemoPanel({ recordId, canEdit }) {
+  const [list, setList] = useState(null); // null=読み込み中
+  const [text, setText] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState(null);
+
+  useEffect(() => {
+    if (!recordId) return;
+    let alive = true;
+    setList(null);
+    fetch(`/api/kintone-comments?id=${encodeURIComponent(recordId)}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j) => {
+        if (!alive) return;
+        setList(j.comments || []);
+        setErr(j.error || null);
+      })
+      .catch((e) => alive && setErr(String(e?.message || e)));
+    return () => {
+      alive = false;
+    };
+  }, [recordId]);
+
+  const add = async () => {
+    const t = text.trim();
+    if (!t || saving) return;
+    setSaving(true);
+    setErr(null);
+    try {
+      const j = await fetch("/api/kintone-comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: recordId, text: t }),
+      }).then((r) => r.json());
+      if (j.error) setErr(j.error);
+      else {
+        setList(j.comments || []);
+        setText("");
+      }
+    } catch (e) {
+      setErr(String(e?.message || e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const when = (iso) => {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "";
+    const p = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  };
+
+  return (
+    <section className="panel panel-note panel-memo">
+      <div className="panel-title">
+        <span className="panel-ico" aria-hidden="true">
+          <DetailIcon name="chat" size={18} />
+        </span>
+        <span className="panel-h">
+          <b>メモ</b>
+        </span>
+      </div>
+      <div className="panel-text">
+        {err && <div className="memo-err">{err}</div>}
+        {list == null ? (
+          <div className="memo-empty">読み込み中…</div>
+        ) : list.length === 0 ? (
+          <div className="memo-empty">まだメモはありません。</div>
+        ) : (
+          <ul className="memo-list">
+            {list.map((c) => (
+              <li key={c.id} className="memo-item">
+                <div className="memo-meta">
+                  <b>{c.by}</b>
+                  <span>{when(c.at)}</span>
+                </div>
+                <div className="memo-body">{c.text}</div>
+              </li>
+            ))}
+          </ul>
+        )}
+        {canEdit && (
+          <div className="memo-add">
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="メモを書くと Kintone のコメントに残ります"
+              rows={2}
+            />
+            <button type="button" className="btn-primary" onClick={add} disabled={saving || !text.trim()}>
+              {saving ? "追加中…" : "追加"}
+            </button>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function DetailModal({ record, onClose, canEdit }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div
@@ -388,6 +490,8 @@ function DetailModal({ record, onClose }) {
               {fieldValue(record, FIELD_CODE["滞留理由"]) || "—"}
             </div>
           </section>
+
+          <MemoPanel recordId={record?.$id?.value} canEdit={canEdit} />
 
           <div className="box-row">
             {ACTION_BOXES.map(({ key, tone, icon }) => (
@@ -885,7 +989,7 @@ export default function Page() {
       </div>
 
       {selected && (
-        <DetailModal record={selected} onClose={() => setSelected(null)} />
+        <DetailModal record={selected} onClose={() => setSelected(null)} canEdit={canSync} />
       )}
     </div>
   );

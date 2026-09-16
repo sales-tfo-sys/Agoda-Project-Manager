@@ -13507,3 +13507,101 @@ button.forms-mark.busy {
 .forms-tw td.forms-center {
   text-align: center;
 }
+
+/* ══════════════ 施設一覧の詳細：メモ（Kintone のコメント） ══════════════ */
+/* 大きさは滞留理由の枠に合わせる。中は新しい順の一覧＋書き足す欄 */
+.modal-body .panel-memo .panel-text {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.memo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 210px;
+  overflow-y: auto;
+}
+.memo-item {
+  padding: 9px 11px;
+  border: 1px solid #e3eaf7;
+  border-radius: 10px;
+  background: #f7faff;
+}
+.memo-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 3px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+.memo-meta b {
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.memo-body {
+  font-size: 13px;
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.memo-empty {
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.memo-err {
+  font-size: 12.5px;
+  color: #c0392b;
+}
+.memo-add {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+.memo-add textarea {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 8px 11px;
+  border: 1px solid #e0e9f8;
+  border-radius: 10px;
+  background: var(--surface);
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  resize: vertical;
+}
+.memo-add textarea:focus-visible {
+  outline: 2px solid #2f6be0;
+  outline-offset: 1px;
+}
+.memo-add .btn-primary {
+  flex: none;
+  height: 34px;
+}
+
+/* 詳細の項目行：中身が長くても行の幅は変えない（列の幅でそろえる）。
+   グリッドの列は既定で中身より狭くならないため、minmax(0,1fr) で縮められるようにする。
+   はみ出す URL などは、行の中で「…」で省略する（クリックすれば元のURLへ飛べる） */
+.modal-body .kv-cols {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.modal-body .kv-col {
+  min-width: 0;
+}
+.modal-body .kv {
+  grid-template-columns: 168px minmax(0, 1fr);
+}
+.modal-body .kv-v {
+  min-width: 0;
+}
+.modal-body .kv-v > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.modal-body .kv-v .kv-link {
+  overflow: hidden;
+}
