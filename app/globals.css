@@ -13501,3 +13501,9 @@ button.forms-mark.busy {
 .tw table td.wr-mancell {
   text-align: center;
 }
+
+/* 回答一覧：中央ぞろえにする列（HID など桁のそろった番号） */
+.forms-tw th.forms-center,
+.forms-tw td.forms-center {
+  text-align: center;
+}

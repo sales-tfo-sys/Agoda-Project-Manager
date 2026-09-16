@@ -91,8 +91,17 @@ function groupsOf(hiddenCols) {
  * checkCols      … detectCheckCols の結果（省略時は TRUE/FALSE のセルだけチェック表示）
  * onToggle       … (rowIdx, colIdx, text) => Promise。渡すと押して切り替えられる
  * hiddenCols     … 初めは隠しておく列（0始まり）。見出しのボタンで開閉できる
+ * centerCols     … 中身を中央ぞろえにする列（0始まり）
  */
-export default function FormAnswersTable({ headers, rows, q, checkCols, onToggle, hiddenCols }) {
+export default function FormAnswersTable({
+  headers,
+  rows,
+  q,
+  checkCols,
+  onToggle,
+  hiddenCols,
+  centerCols,
+}) {
   // いま書き込み中のセル（"行-列"）。二重に押せないようにする
   const [busy, setBusy] = useState(null);
   // 開いている列のまとまり（まとまりの先頭の列番号で覚える）
@@ -111,6 +120,7 @@ export default function FormAnswersTable({ headers, rows, q, checkCols, onToggle
   }, [groups, openCols]);
   const toggleGroup = (start) =>
     setOpenCols((v) => (v.includes(start) ? v.filter((x) => x !== start) : [...v, start]));
+  const centered = useMemo(() => new Set((centerCols || []).map(Number)), [centerCols]);
 
   const toggle = async (rowIdx, ci, text) => {
     if (!onToggle || busy) return;
@@ -151,7 +161,7 @@ export default function FormAnswersTable({ headers, rows, q, checkCols, onToggle
                 }
                 if (hidden.has(ci)) return null;
                 return (
-                  <th key={ci}>
+                  <th key={ci} className={centered.has(ci) ? "forms-center" : undefined}>
                     {g && (
                       <button
                         type="button"
@@ -190,7 +200,11 @@ export default function FormAnswersTable({ headers, rows, q, checkCols, onToggle
                     checkCols?.[ci] || (b === "TRUE" || b === "FALSE" ? { kind: "bool" } : null);
                   if (!col) {
                     return (
-                      <td key={ci} title={v || undefined}>
+                      <td
+                        key={ci}
+                        className={centered.has(ci) ? "forms-center" : undefined}
+                        title={v || undefined}
+                      >
                         {v}
                       </td>
                     );

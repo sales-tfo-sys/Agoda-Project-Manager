@@ -235,6 +235,14 @@ export default function WorkRequestsPage() {
   const formRows = useMemo(() => filterFormRows(form.grid, formQ), [form.grid, formQ]);
   // チェック欄の列（空欄のままの行も押せるように、列ごとに判定する）
   const formCheckCols = useMemo(() => detectCheckCols(form.grid), [form.grid]);
+  // HID は桁がそろった番号なので中央ぞろえにする
+  const formCenterCols = useMemo(
+    () =>
+      (form.grid?.headers || [])
+        .map((h, i) => (/HID/i.test(String(h || "")) ? i : -1))
+        .filter((i) => i >= 0),
+    [form.grid]
+  );
 
   // タブを切り替えたら、そのシートを読み直す
   useEffect(() => {
@@ -574,6 +582,7 @@ export default function WorkRequestsPage() {
             q={formQ}
             checkCols={formCheckCols}
             hiddenCols={TEMAIRAZU_HIDDEN}
+            centerCols={formCenterCols}
             onToggle={canEdit ? toggleFormCheck : undefined}
           />
         )
