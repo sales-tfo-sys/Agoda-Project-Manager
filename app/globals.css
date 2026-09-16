@@ -13299,13 +13299,14 @@ body {
   align-items: center;
   gap: 4px;
   flex: none;
-  height: 22px;
+  /* 高さはコピーボタンなどの操作部品と同じ 30px にそろえる */
+  height: 30px;
   box-sizing: border-box;
-  padding: 0 9px;
+  padding: 0 13px;
   border: 1px solid rgba(120, 160, 240, 0.28);
   background: #eef4fe;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 600;
   line-height: 1;
   color: var(--ink-2);
@@ -13339,10 +13340,28 @@ body {
 }
 .upd-badge-float {
   position: absolute;
-  top: 5px;
+  /* 見出しの帯（高さ32px）の中に収める */
+  top: 1px;
   right: 8px;
 }
 /* 見出しの行は部品の間隔が 22px と広いので、バッジとコピーボタンの間だけ詰める */
 .sec-row .upd-badge + .icon-btn.copy-btn {
   margin-left: -14px;
+}
+
+/* ══════════════ 施設一覧の詳細：枠の直し ══════════════ */
+/* 表形式だったころの「最後の行の下線は消す」指定が、1行ずつ囲みにした今の詳細にも
+   効いてしまい、契約コード・DSA（各列の最後の行）だけ下の線が無くなっていた。
+   この画面では最後の行も囲みを閉じる */
+.modal-body .kv:last-child .kv-v {
+  border-bottom: 1px solid #e0e9f8;
+}
+/* いつまでに／誰が／なにをする：中の色付きの枠を下までのばして、3つの高さをそろえる
+   （文字数が違っても、色の帯の上端と下端が横一直線に並ぶ） */
+.modal-body .box {
+  display: flex;
+  flex-direction: column;
+}
+.modal-body .box-text {
+  flex: 1 1 auto;
 }
