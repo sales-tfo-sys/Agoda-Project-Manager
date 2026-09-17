@@ -5,7 +5,7 @@ import Modal from "../Modal";
 import { useUi } from "../Ui";
 import ManageIcon from "../manage/ManageIcon";
 import FormAnswersTable, { filterFormRows } from "../FormAnswersTable";
-import { cachedJson } from "../dataCache";
+import { cachedJson, invalidate as invalidateCache } from "../dataCache";
 
 // 最終回答日時のラベル整形（今日 HH:MM / 昨日 HH:MM / M/D HH:MM）
 function fmtUpdated(ms) {
@@ -122,6 +122,10 @@ export default function FormsPage({ embedded, tabs } = {}) {
   const [cfg, setCfg] = useState(null);
   // CM情報だけ、施設一覧との紐づけ状況を行の左端に出す
   const [link, setLink] = useState(null); // { [行番号]: 予定 }
+  const [linkCount, setLinkCount] = useState(null); // 反映できる件数など
+  const [linkFilter, setLinkFilter] = useState("all"); // all | pending | nomatch | applied
+  const [running, setRunning] = useState(null); // 反映中の進み具合 { done, total }
+  const [lastRun, setLastRun] = useState(null); // 直前に反映した回答（取り消し用）
   const { setBusy, flashDone, showToast, busy } = useUi();
   const dragIndex = useRef(null);
   const [dragOver, setDragOver] = useState(null);
@@ -208,10 +212,71 @@ export default function FormsPage({ embedded, tabs } = {}) {
       const m = {};
       for (const p of j.rows) m[p.index] = p;
       setLink(m);
+      setLinkCount(j.count || null);
     } catch {
       /* 印が出ないだけなので、失敗しても画面はそのまま */
     }
   }, []);
+
+  // 施設一覧へ反映する。100件ずつ、残りが無くなるまで繰り返す。
+  const runImport = async () => {
+    if (running) return;
+    const pendingKeys = Object.values(link || {})
+      .filter((p) => p.status === "pending")
+      .map((p) => p.key);
+    if (!pendingKeys.length) return;
+    setRunning({ done: 0, total: pendingKeys.length });
+    setBusy("施設一覧へ反映中…");
+    const appliedKeys = [];
+    try {
+      let guard = 0;
+      while (guard++ < 50) {
+        const j = await fetch("/api/cm-import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ limit: 100 }),
+        }).then((r) => r.json());
+        if (j.error) {
+          showToast(j.error, "err");
+          break;
+        }
+        appliedKeys.push(...(j.appliedKeys || []));
+        setRunning((s) => ({ done: (s?.done || 0) + (j.applied || 0), total: s?.total || 0 }));
+        if (j.sheetError) showToast("シートの「Kintoneへ反映済み」は付けられませんでした：" + j.sheetError, "err");
+        if (!j.remaining) break;
+      }
+      setLastRun(appliedKeys);
+      flashDone(`${appliedKeys.length} 件を反映しました`);
+      await loadLink(selected, (items || []).find((f) => f.id === selected)?.title);
+      invalidateCache("/api/records");
+    } catch (e) {
+      setBusy(null);
+      showToast(String(e?.message || e), "err");
+    } finally {
+      setRunning(null);
+    }
+  };
+
+  // 直前の反映をまとめて取り消す（入れた値のままのものだけ空に戻す）
+  const undoLastRun = async () => {
+    if (!lastRun?.length || running) return;
+    setBusy("取り消し中…");
+    let ok = 0;
+    for (const key of lastRun) {
+      const j = await fetch("/api/cm-import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ revert: key }),
+      })
+        .then((r) => r.json())
+        .catch(() => ({ error: "通信に失敗しました" }));
+      if (j.ok) ok++;
+    }
+    setLastRun(null);
+    flashDone(`${ok} 件を取り消しました`);
+    await loadLink(selected, (items || []).find((f) => f.id === selected)?.title);
+    invalidateCache("/api/records");
+  };
 
   const openDetail = (id) => {
     setSelected(id);
@@ -300,7 +365,12 @@ export default function FormsPage({ embedded, tabs } = {}) {
   // 検索に当たった行だけを出す（作業依頼の Temairazu タブと同じ決まり）
   // 表示用に整えた表（不要な列を落とし、見出しの番号順にそろえる）
   const viewGrid = useMemo(() => viewOf(grid), [grid]);
-  const shownRows = filterFormRows(viewGrid, q);
+  const allRows = filterFormRows(viewGrid, q);
+  // 紐づけの状態で絞り込む（CM情報のときだけ使う）
+  const shownRows =
+    link && linkFilter !== "all"
+      ? allRows.filter(({ no }) => (link[no - 1]?.status || "nomatch") === linkFilter)
+      : allRows;
 
   // Hotel ID は画面から直せるようにする（紐づけの直しに使うため）
   const hidCol = useMemo(() => {
@@ -432,6 +502,57 @@ export default function FormsPage({ embedded, tabs } = {}) {
         ) : !grid || (grid.headers || []).length === 0 ? (
           <div className="notice">データがありません。</div>
         ) : (
+          <>
+          {/* CM情報だけ：施設一覧への反映 */}
+          {link && (
+            <div className="cmimp">
+              <div className="cmimp-head">
+                <span className="cmimp-title">施設一覧への反映</span>
+                <span className="cmimp-chips">
+                  {[
+                    { k: "all", label: "すべて", n: linkCount?.total },
+                    { k: "pending", label: "反映できる", n: linkCount?.pending },
+                    { k: "nomatch", label: "紐づかない", n: linkCount?.nomatch },
+                    { k: "applied", label: "反映済み", n: linkCount?.applied },
+                  ].map((c) => (
+                    <button
+                      key={c.k}
+                      type="button"
+                      className={"cmimp-chip" + (linkFilter === c.k ? " on" : "") + " t-" + c.k}
+                      onClick={() => setLinkFilter(c.k)}
+                    >
+                      {c.label}
+                      <b>{(c.n ?? 0).toLocaleString("ja-JP")}</b>
+                    </button>
+                  ))}
+                </span>
+                {canEdit && (
+                  <span className="cmimp-ops">
+                    {lastRun?.length > 0 && !running && (
+                      <button type="button" className="mini-btn" onClick={undoLastRun}>
+                        直前の{lastRun.length}件を取り消す
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="save-btn sm"
+                      onClick={runImport}
+                      disabled={!!running || !(linkCount?.pending > 0)}
+                    >
+                      {running
+                        ? `反映中… ${running.done}/${running.total}`
+                        : `反映する（${(linkCount?.pending ?? 0).toLocaleString("ja-JP")}件）`}
+                    </button>
+                  </span>
+                )}
+              </div>
+              <div className="cmimp-note">
+                HID →（空なら）施設名（英語）→（それも空なら）施設名（日本語）で施設を探し、
+                <b>Kintone 側が空の項目にだけ</b>入れます（CM種別・URL・ID・PW・契約コード）。
+                行の左の印にマウスを乗せると、どのレコードに何を入れるかが出ます。
+              </div>
+            </div>
+          )}
           <FormAnswersTable
             headers={viewGrid.headers}
             rows={shownRows}
@@ -440,6 +561,7 @@ export default function FormsPage({ embedded, tabs } = {}) {
             editCols={canEdit && hidCol >= 0 ? [hidCol] : undefined}
             onEditCell={canEdit ? saveCell : undefined}
           />
+          </>
         )
       ) : items === null && !busy ? (
         <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>
