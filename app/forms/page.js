@@ -465,6 +465,21 @@ export default function FormsPage({ embedded, tabs } = {}) {
               )}
             </div>
             <div className="head-right">
+              {/* 施設一覧への反映（CM情報のときだけ）。中身はモーダルで出す */}
+              {link && (
+                <button
+                  className={"icon-btn" + (linkStat?.pending > 0 ? " has-new" : "")}
+                  onClick={() => setLinkHelp(true)}
+                  title="施設一覧への反映"
+                  aria-label="施設一覧への反映"
+                >
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7" />
+                    <path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" />
+                  </svg>
+                  {linkStat?.pending > 0 && <span className="icon-dot" aria-hidden="true" />}
+                </button>
+              )}
               {canEdit && current && (
                 <button className="icon-btn" onClick={() => setEditTarget({ id: current.id, title: current.title, url: current.url, description: current.description })} title="このフォームを編集" aria-label="編集">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
@@ -518,64 +533,6 @@ export default function FormsPage({ embedded, tabs } = {}) {
           <div className="notice">データがありません。</div>
         ) : (
           <>
-          {/* CM情報だけ：施設一覧への反映 */}
-          {link && (
-            <div className="cmimp">
-              <div className="cmimp-head">
-                <span className="cmimp-title">施設一覧への反映</span>
-                <button
-                  type="button"
-                  className="cmimp-help"
-                  onClick={() => setLinkHelp(true)}
-                  title="反映のしくみと内訳"
-                  aria-label="反映のしくみと内訳"
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="M9.6 9.2a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .9-1 1.6v.4" />
-                    <path d="M12 17.3v.1" />
-                  </svg>
-                </button>
-                <span className="cmimp-chips">
-                  {[
-                    { k: "all", label: "すべて", n: linkStat?.total },
-                    { k: "pending", label: "反映できる", n: linkStat?.pending },
-                    { k: "nomatch", label: "紐づかない", n: linkStat?.nomatch },
-                    { k: "applied", label: "反映済み", n: linkStat?.applied },
-                  ].map((c) => (
-                    <button
-                      key={c.k}
-                      type="button"
-                      className={"cmimp-chip" + (linkFilter === c.k ? " on" : "") + " t-" + c.k}
-                      onClick={() => setLinkFilter(c.k)}
-                    >
-                      {c.label}
-                      <b>{(c.n ?? 0).toLocaleString("ja-JP")}</b>
-                    </button>
-                  ))}
-                </span>
-                {canEdit && (
-                  <span className="cmimp-ops">
-                    {lastRun?.length > 0 && !running && (
-                      <button type="button" className="mini-btn" onClick={undoLastRun}>
-                        直前の{lastRun.length}件を取り消す
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className="save-btn sm"
-                      onClick={runImport}
-                      disabled={!!running || !(linkStat?.pending > 0)}
-                    >
-                      {running
-                        ? `反映中… ${running.done}/${running.total}`
-                        : `反映する（${(linkStat?.pending ?? 0).toLocaleString("ja-JP")}件）`}
-                    </button>
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
           <FormAnswersTable
             headers={viewGrid.headers}
             rows={shownRows}
@@ -781,6 +738,50 @@ export default function FormsPage({ embedded, tabs } = {}) {
         footer={<button className="save-btn" onClick={() => setLinkHelp(false)}>閉じる</button>}
       >
         <div className="cmhelp">
+          {/* 実行と、状態での絞り込み */}
+          <div className="cmhelp-run">
+            <div className="cmimp-chips">
+              {[
+                { k: "all", label: "すべて", n: linkStat?.total },
+                { k: "pending", label: "反映できる", n: linkStat?.pending },
+                { k: "nomatch", label: "紐づかない", n: linkStat?.nomatch },
+                { k: "applied", label: "反映済み", n: linkStat?.applied },
+              ].map((c) => (
+                <button
+                  key={c.k}
+                  type="button"
+                  className={"cmimp-chip" + (linkFilter === c.k ? " on" : "") + " t-" + c.k}
+                  onClick={() => {
+                    setLinkFilter(c.k);
+                    setLinkHelp(false);
+                  }}
+                  title="この状態の回答だけを表に出す"
+                >
+                  {c.label}
+                  <b>{(c.n ?? 0).toLocaleString("ja-JP")}</b>
+                </button>
+              ))}
+            </div>
+            {canEdit && (
+              <div className="cmhelp-ops">
+                {lastRun?.length > 0 && !running && (
+                  <button type="button" className="mini-btn" onClick={undoLastRun}>
+                    直前の{lastRun.length}件を取り消す
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="save-btn"
+                  onClick={runImport}
+                  disabled={!!running || !(linkStat?.pending > 0)}
+                >
+                  {running
+                    ? `反映中… ${running.done}/${running.total}`
+                    : `反映する（${(linkStat?.pending ?? 0).toLocaleString("ja-JP")}件）`}
+                </button>
+              </div>
+            )}
+          </div>
           <div className="cmhelp-sec">
             <b>いまの内訳（全 {(linkStat?.total ?? 0).toLocaleString("ja-JP")} 件）</b>
             <ul>

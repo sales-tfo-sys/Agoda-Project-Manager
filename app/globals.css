@@ -14046,3 +14046,35 @@ button.forms-mark.busy {
   font-weight: 700;
   color: #1f9d63;
 }
+
+/* 反映モーダル：実行と絞り込み */
+.cmhelp-run {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.cmhelp-ops {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+/* ヘッダーのアイコンボタン：反映できるものがあるときは印を付ける */
+.icon-btn.has-new {
+  position: relative;
+  color: #2f6be0;
+  border-color: #b6ccee;
+  background: #eef4fe;
+}
+.icon-btn .icon-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #e0533d;
+}
