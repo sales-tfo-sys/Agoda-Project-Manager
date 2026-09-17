@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import AiHealth from "./AiHealth";
+import { cachedJson } from "../dataCache";
 
 /* ── 表示ヘルパー ───────────────────────────────────────── */
 const num = (n) => (n == null ? "—" : Number(n).toLocaleString("ja-JP"));
@@ -81,6 +83,13 @@ function Kpi({ label, value, sub, note, tone = "ok", gauge }) {
 }
 
 export default function SystemHealthPage() {
+  // 「実施を記録」できるのは、データを編集できる人だけ
+  const [canEdit, setCanEdit] = useState(false);
+  useEffect(() => {
+    cachedJson("/api/auth/me", 60 * 1000)
+      .then((d) => setCanEdit(!!d?.perms?.editTasks))
+      .catch(() => {});
+  }, []);
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
 
@@ -329,7 +338,10 @@ export default function SystemHealthPage() {
             </div>
           </section>
 
-          {/* ④ 接続先 */}
+          {/* ④ 月1回のAI健康診断 */}
+          <AiHealth canEdit={canEdit} />
+
+          {/* ⑤ 接続先 */}
           <section className="sh-conn-sec">
             <h2 className="sh-conn-h">接続先</h2>
             <p className="sh-conn">
