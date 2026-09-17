@@ -13992,3 +13992,57 @@ button.forms-mark.busy {
   font-variant-numeric: tabular-nums;
   color: #4a3a12;
 }
+
+/* 反映パネル：説明を出すボタンと、その中身 */
+.cmimp-help {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid #dbe5f6;
+  border-radius: 999px;
+  background: var(--surface);
+  color: #2f6be0;
+  cursor: pointer;
+}
+.cmimp-help:hover {
+  border-color: #2f6be0;
+  background: #e8f0fe;
+}
+.cmhelp {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--ink-2);
+}
+.cmhelp-sec > b {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: var(--ink);
+}
+.cmhelp-sec p {
+  margin: 0;
+}
+.cmhelp ul {
+  margin: 0;
+  padding-left: 18px;
+}
+.cmhelp li {
+  margin: 2px 0;
+}
+.cmhelp .t-pending {
+  font-weight: 700;
+  color: #2f6be0;
+}
+.cmhelp .t-nomatch {
+  font-weight: 700;
+  color: #c0392b;
+}
+.cmhelp .t-applied {
+  font-weight: 700;
+  color: #1f9d63;
+}

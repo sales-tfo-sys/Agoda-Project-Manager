@@ -126,6 +126,7 @@ export default function FormsPage({ embedded, tabs } = {}) {
   const [linkFilter, setLinkFilter] = useState("all"); // all | pending | nomatch | applied
   const [running, setRunning] = useState(null); // 反映中の進み具合 { done, total }
   const [lastRun, setLastRun] = useState(null); // 直前に反映した回答（取り消し用）
+  const [linkHelp, setLinkHelp] = useState(false); // 「反映のしくみ」の説明
   const { setBusy, flashDone, showToast, busy } = useUi();
   const dragIndex = useRef(null);
   const [dragOver, setDragOver] = useState(null);
@@ -522,6 +523,19 @@ export default function FormsPage({ embedded, tabs } = {}) {
             <div className="cmimp">
               <div className="cmimp-head">
                 <span className="cmimp-title">施設一覧への反映</span>
+                <button
+                  type="button"
+                  className="cmimp-help"
+                  onClick={() => setLinkHelp(true)}
+                  title="反映のしくみと内訳"
+                  aria-label="反映のしくみと内訳"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M9.6 9.2a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .9-1 1.6v.4" />
+                    <path d="M12 17.3v.1" />
+                  </svg>
+                </button>
                 <span className="cmimp-chips">
                   {[
                     { k: "all", label: "すべて", n: linkStat?.total },
@@ -559,20 +573,6 @@ export default function FormsPage({ embedded, tabs } = {}) {
                     </button>
                   </span>
                 )}
-              </div>
-              {!(linkStat?.pending > 0) && (
-                <div className="cmimp-why">
-                  いま入れられるものはありません。内訳：
-                  紐づかない <b>{(linkStat?.nomatch ?? 0).toLocaleString("ja-JP")}</b> 件（HID・施設名が一致しない）／
-                  入れるものなし <b>{(linkStat?.nochange ?? 0).toLocaleString("ja-JP")}</b> 件（Kintone 側にすでに値がある、または選択肢にない回答）／
-                  反映済み <b>{(linkStat?.applied ?? 0).toLocaleString("ja-JP")}</b> 件（シートの「Kintoneへ反映済み」に印がある回答を含む）。
-                  行の左の印にマウスを乗せると、1件ずつの理由が出ます。
-                </div>
-              )}
-              <div className="cmimp-note">
-                HID →（空なら）施設名（英語）→（それも空なら）施設名（日本語）で施設を探し、
-                <b>Kintone 側が空の項目にだけ</b>入れます（CM種別・URL・ID・PW・契約コード）。
-                行の左の印にマウスを乗せると、どのレコードに何を入れるかが出ます。
               </div>
             </div>
           )}
@@ -772,6 +772,62 @@ export default function FormsPage({ embedded, tabs } = {}) {
       )}
 
       {/* 追加・編集モーダル */}
+      {/* 反映のしくみと内訳 */}
+      <Modal
+        open={linkHelp}
+        title="施設一覧への反映について"
+        onClose={() => setLinkHelp(false)}
+        width={560}
+        footer={<button className="save-btn" onClick={() => setLinkHelp(false)}>閉じる</button>}
+      >
+        <div className="cmhelp">
+          <div className="cmhelp-sec">
+            <b>いまの内訳（全 {(linkStat?.total ?? 0).toLocaleString("ja-JP")} 件）</b>
+            <ul>
+              <li>
+                <span className="t-pending">反映できる {(linkStat?.pending ?? 0).toLocaleString("ja-JP")} 件</span>
+                … これから入れられるもの
+              </li>
+              <li>
+                <span className="t-nomatch">紐づかない {(linkStat?.nomatch ?? 0).toLocaleString("ja-JP")} 件</span>
+                … HID・施設名が一致せず、施設を特定できなかった回答。Hotel ID を直すと紐づきます
+              </li>
+              <li>
+                入れるものなし {(linkStat?.nochange ?? 0).toLocaleString("ja-JP")} 件
+                … Kintone 側にすでに値がある、または CM種別が選択肢にない回答
+              </li>
+              <li>
+                <span className="t-applied">反映済み {(linkStat?.applied ?? 0).toLocaleString("ja-JP")} 件</span>
+                … このサイトで反映したもの、およびシートの「Kintoneへ反映済み」に印がある回答
+              </li>
+            </ul>
+          </div>
+          <div className="cmhelp-sec">
+            <b>何を入れるか</b>
+            <p>
+              CM種別・URL・ID・PW・契約コードの5つを、<b>Kintone 側が空の項目にだけ</b>入れます。
+              すでに値が入っている項目は触りません（手で直した内容を消さないため）。
+              CM種別は Kintone の選択肢に無い回答なら入れません。
+            </p>
+          </div>
+          <div className="cmhelp-sec">
+            <b>どの施設に入れるか</b>
+            <p>
+              Hotel ID（HID）→（空なら）施設名（英語）→（それも空なら）施設名（日本語）の順で探します。
+              紐づけを間違えている場合は、回答一覧の Hotel ID をその場で直せます。
+            </p>
+          </div>
+          <div className="cmhelp-sec">
+            <b>反映したあと</b>
+            <p>
+              回答の左の印が緑になり、施設一覧のレコードNoの右にも印が付きます。
+              シートの「Kintoneへ反映済み」にも〇を付けます。直前の反映はまとめて取り消せます
+              （入れた値のままのものだけ空に戻します）。
+            </p>
+          </div>
+        </div>
+      </Modal>
+
       <Modal
         open={!!editTarget}
         title={editTarget?.id ? "フォームを編集" : "フォームを追加"}
