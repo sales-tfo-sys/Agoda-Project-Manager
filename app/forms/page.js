@@ -80,6 +80,24 @@ function viewOf(grid) {
   };
 }
 
+// 紐づけの列。まだ読み込めていないときも列は出し、中身だけ後から入れる。
+function LinkCell({ p, loading, onPick }) {
+  if (loading) return <span className="lk-cell lk-wait">…</span>;
+  if (p?.recordId) {
+    return (
+      <button type="button" className="lk-cell lk-on" onClick={onPick} title={`レコード${p.recordId}／${p.hotel || ""}
+クリックで選び直し`}>
+        {p.recordId}
+      </button>
+    );
+  }
+  return (
+    <button type="button" className="lk-cell lk-off" onClick={onPick} title="施設を選んで紐づける">
+      紐づけ
+    </button>
+  );
+}
+
 // 先頭列（タイムスタンプ）を時刻に直す。読めなければ null
 function tsOf(row) {
   const v = String(row?.[0] ?? "").trim();
@@ -108,7 +126,7 @@ function markOf(p) {
     const why = (p.skipped || []).map((x) => `・${x.label}（${x.why}）`).join(nl);
     return { tone: "link", title: who + nl + "入れるものはありません" + (why ? nl + why : "") };
   }
-  return { tone: "warn", title: "施設一覧に見つかりませんでした（HID・施設名が一致しません）" };
+  return { tone: "warn", title: "まだ施設と紐づいていません（右の「紐づけ」から施設を選んでください）" };
 }
 
 // embedded / tabs は「管理」ページに埋め込まれたときだけ渡される
@@ -135,6 +153,9 @@ export default function FormsPage({ embedded, tabs } = {}) {
   const [running, setRunning] = useState(null); // 反映中の進み具合 { done, total }
   const [lastRun, setLastRun] = useState(null); // 直前に反映した回答（取り消し用）
   const [linkHelp, setLinkHelp] = useState(false); // 「反映のしくみ」の説明
+  const [picker, setPicker] = useState(null); // 施設を選ぶ画面 { rowIdx, key, q }
+  const [pickList, setPickList] = useState(null); // 候補
+  const [picking, setPicking] = useState(false);
   const { setBusy, flashDone, showToast, busy } = useUi();
   const dragIndex = useRef(null);
   const [dragOver, setDragOver] = useState(null);
@@ -287,6 +308,77 @@ export default function FormsPage({ embedded, tabs } = {}) {
     invalidateCache("/api/records");
   };
 
+  // 施設を選ぶ画面を開く（初めの検索語は、その回答の Hotel ID か施設名）
+  const openPicker = (rowIdx) => {
+    const p = link?.[rowIdx];
+    const q0 = (p?.hid || p?.name || p?.nameJa || "").trim();
+    setPicker({ rowIdx, key: p?.key, q: q0 });
+  };
+
+  // 候補をさがす
+  useEffect(() => {
+    if (!picker) {
+      setPickList(null);
+      return;
+    }
+    let alive = true;
+    const t = setTimeout(() => {
+      fetch(`/api/facility-search?q=${encodeURIComponent(picker.q || "")}`, { cache: "no-store" })
+        .then((r) => r.json())
+        .then((j) => alive && setPickList(j.items || []))
+        .catch(() => alive && setPickList([]));
+    }, 200);
+    return () => {
+      alive = false;
+      clearTimeout(t);
+    };
+  }, [picker?.q, picker?.rowIdx]);
+
+  // 選んだ施設に紐づけて、そのまま施設一覧へ反映する
+  const pickFacility = async (recordId) => {
+    if (!picker?.key || picking) return;
+    setPicking(true);
+    setBusy("紐づけ中…");
+    try {
+      const j = await fetch("/api/cm-import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ relink: { key: picker.key, id: recordId } }),
+      }).then((r) => r.json());
+      if (j.error) {
+        setBusy(null);
+        showToast(j.error, "err");
+      } else {
+        setPicker(null);
+        flashDone(j.applied ? "紐づけて反映しました" : "紐づけました（入れる項目はありませんでした）");
+        await loadLink(selected, (items || []).find((f) => f.id === selected)?.title);
+        invalidateCache("/api/records");
+      }
+    } catch (e) {
+      setBusy(null);
+      showToast(String(e?.message || e), "err");
+    } finally {
+      setPicking(false);
+    }
+  };
+
+  // 紐づけを外す（入れた値はそのまま）
+  const unlinkRow = async () => {
+    if (!picker?.key || picking) return;
+    setPicking(true);
+    try {
+      await fetch("/api/cm-import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ unlink: picker.key }),
+      });
+      setPicker(null);
+      await loadLink(selected, (items || []).find((f) => f.id === selected)?.title);
+    } finally {
+      setPicking(false);
+    }
+  };
+
   const openDetail = (id) => {
     setSelected(id);
     setGrid(null);
@@ -375,6 +467,8 @@ export default function FormsPage({ embedded, tabs } = {}) {
   // 表示用に整えた表（不要な列を落とし、見出しの番号順にそろえる）
   const viewGrid = useMemo(() => viewOf(grid), [grid]);
   // 紐づけの件数。サーバーの戻り値をそのまま使わず、手元の予定からも数える
+  const isCm = /CM情報/.test(String(current?.title || ""));
+
   const linkStat = useMemo(() => {
     const list = Object.values(link || {});
     if (!list.length) return linkCount || null;
@@ -383,7 +477,7 @@ export default function FormsPage({ embedded, tabs } = {}) {
       total: list.length,
       pending: n("pending"),
       applied: n("applied"),
-      nomatch: n("nomatch"),
+      unlinked: n("unlinked"),
       nochange: n("nochange"),
     };
   }, [link, linkCount]);
@@ -392,7 +486,7 @@ export default function FormsPage({ embedded, tabs } = {}) {
   // 紐づけの状態で絞り込む（CM情報のときだけ使う）
   const filteredRows =
     link && linkFilter !== "all"
-      ? allRows.filter(({ no }) => (link[no - 1]?.status || "nomatch") === linkFilter)
+      ? allRows.filter(({ no }) => (link[no - 1]?.status || "unlinked") === linkFilter)
       : allRows;
   // 新しい回答ほど上に出す（# の番号はシートの行のままにして、突き合わせられるようにする）
   const shownRows = useMemo(() => {
@@ -560,7 +654,15 @@ export default function FormsPage({ embedded, tabs } = {}) {
             headers={viewGrid.headers}
             rows={shownRows}
             q={q}
-            marks={link ? Object.fromEntries(Object.entries(link).map(([i, p]) => [i, markOf(p)])) : undefined}
+            marks={
+              isCm
+                ? link
+                  ? Object.fromEntries(Object.entries(link).map(([i, p]) => [i, markOf(p)]))
+                  : {}
+                : undefined
+            }
+            rowNode={isCm && canEdit ? (rowIdx) => <LinkCell p={link?.[rowIdx]} loading={!link} onPick={() => openPicker(rowIdx)} /> : undefined}
+            rowNodeLabel="紐づけ"
             editCols={canEdit && hidCol >= 0 ? [hidCol] : undefined}
             onEditCell={canEdit ? saveCell : undefined}
           />
@@ -752,6 +854,66 @@ export default function FormsPage({ embedded, tabs } = {}) {
       )}
 
       {/* 追加・編集モーダル */}
+      {/* 施設をえらぶ */}
+      <Modal
+        open={!!picker}
+        title="施設を選ぶ"
+        onClose={() => setPicker(null)}
+        width={560}
+        footer={
+          <>
+            {link?.[picker?.rowIdx]?.recordId && (
+              <button className="mini-btn" onClick={unlinkRow} disabled={picking}>
+                紐づけを外す
+              </button>
+            )}
+            <button className="mini-btn" onClick={() => setPicker(null)} disabled={picking}>
+              閉じる
+            </button>
+          </>
+        }
+      >
+        <div className="fpick">
+          <label className="search-box fpick-search" aria-label="施設をさがす">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="16.5" y1="16.5" x2="21" y2="21" />
+            </svg>
+            <input
+              type="search"
+              value={picker?.q || ""}
+              onChange={(e) => setPicker((v) => ({ ...v, q: e.target.value }))}
+              placeholder="HID・施設名・レコード番号でさがす"
+            />
+          </label>
+          <div className="fpick-list">
+            {pickList == null ? (
+              <div className="fpick-empty">さがしています…</div>
+            ) : pickList.length === 0 ? (
+              <div className="fpick-empty">見つかりませんでした。</div>
+            ) : (
+              pickList.map((x) => (
+                <button
+                  key={x.id}
+                  type="button"
+                  className="fpick-row"
+                  onClick={() => pickFacility(x.id)}
+                  disabled={picking}
+                >
+                  <span className="fpick-id">{x.id}</span>
+                  <span className="fpick-hid">{x.hid || "—"}</span>
+                  <span className="fpick-name">{x.name || "—"}</span>
+                  <span className="fpick-stage">{x.stage || ""}</span>
+                </button>
+              ))
+            )}
+          </div>
+          <div className="fpick-note">
+            選ぶとすぐに施設一覧へ反映します（Kintone 側が空の項目にだけ入れます）。
+          </div>
+        </div>
+      </Modal>
+
       {/* 反映のしくみと内訳 */}
       <Modal
         open={linkHelp}
@@ -767,7 +929,7 @@ export default function FormsPage({ embedded, tabs } = {}) {
               {[
                 { k: "all", label: "すべて", n: linkStat?.total },
                 { k: "pending", label: "反映できる", n: linkStat?.pending },
-                { k: "nomatch", label: "紐づかない", n: linkStat?.nomatch },
+                { k: "unlinked", label: "未紐づけ", n: linkStat?.unlinked },
                 { k: "applied", label: "反映済み", n: linkStat?.applied },
               ].map((c) => (
                 <button
@@ -813,8 +975,8 @@ export default function FormsPage({ embedded, tabs } = {}) {
                 … これから入れられるもの
               </li>
               <li>
-                <span className="t-nomatch">紐づかない {(linkStat?.nomatch ?? 0).toLocaleString("ja-JP")} 件</span>
-                … HID・施設名が一致せず、施設を特定できなかった回答。Hotel ID を直すと紐づきます
+                <span className="t-nomatch">未紐づけ {(linkStat?.unlinked ?? 0).toLocaleString("ja-JP")} 件</span>
+                … まだ施設を選んでいない回答。表の「紐づけ」から施設を選ぶと、その場で反映します
               </li>
               <li>
                 入れるものなし {(linkStat?.nochange ?? 0).toLocaleString("ja-JP")} 件

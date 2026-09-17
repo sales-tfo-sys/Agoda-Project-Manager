@@ -15,7 +15,8 @@ export const maxDuration = 60;
 //   GET                      … 反映の予定と、これまでの結果を返す（書き込みはしない）
 //   POST { keys, limit }     … 反映する（keys 省略時は反映できるもの全部。1回の上限が limit）
 //   POST { revert: key }     … その回答で入れた内容を取り消す（入れた値のままなら空に戻す）
-//   POST { relink: {key,id}} … 別のレコードに付け替えて入れ直す
+//   POST { relink: {key,id}} … 施設を選んで（付け替えて）入れ直す
+//   POST { unlink: key }     … 紐づけを外す
 //
 // 突き合わせは HID →（空なら）施設名（英語）→（それも空なら）施設名（日本語）。
 // Kintone 側が空の項目にだけ入れる。CM種別は選択肢に無ければ入れずに知らせる。
@@ -67,6 +68,20 @@ export async function POST(req) {
       invalidate("kintone:records");
       invalidate("kintone:basics");
       return NextResponse.json({ ok: true, reverted: Object.keys(values).length });
+    }
+
+    // ── 紐づけを外す（入れた値はそのまま。必要なら先に取り消してから外す）──
+    if (b?.unlink) {
+      const results = await readResults();
+      const r = results[b.unlink] || {};
+      await writeResult(b.unlink, {
+        ...r,
+        recordId: null,
+        pinned: false,
+        wrote: null,
+        unlinked: { at: new Date().toISOString(), by: who },
+      });
+      return NextResponse.json({ ok: true });
     }
 
     // ── 付け替え：別のレコードに入れ直す ──

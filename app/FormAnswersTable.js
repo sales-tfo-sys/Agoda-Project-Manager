@@ -156,6 +156,8 @@ function groupsOf(hiddenCols) {
  * marks          … { 行番号(0始まり): { tone, title } } … 行の左端に出す印
  * editCols       … 文字で直せる列（0始まり）。onEditCell と一緒に渡す
  * onEditCell     … (rowIdx, colIdx, text) => Promise。入力を確定したときに呼ばれる
+ * rowNode        … (rowIdx) => ReactNode。行の左に置く操作（施設の紐づけなど）
+ * rowNodeLabel   … その列の見出し
  */
 export default function FormAnswersTable({
   headers,
@@ -168,6 +170,8 @@ export default function FormAnswersTable({
   marks,
   editCols,
   onEditCell,
+  rowNode,
+  rowNodeLabel,
 }) {
   // いま書き込み中のセル（"行-列"）。二重に押せないようにする
   const [busy, setBusy] = useState(null);
@@ -209,6 +213,7 @@ export default function FormAnswersTable({
             <tr>
               <th className="forms-rownum">#</th>
               {marks && <th className="forms-mark-col" title="施設一覧との紐づけ" />}
+              {rowNode && <th className="forms-act-col">{rowNodeLabel || ""}</th>}
               {headers.map((h, ci) => {
                 const g = groupAt.get(ci);
                 // 閉じているまとまりは、見出しを1つの「開く」ボタンにまとめる
@@ -257,6 +262,7 @@ export default function FormAnswersTable({
                     <MarkIcon mark={marks[no - 1]} />
                   </td>
                 )}
+                {rowNode && <td className="forms-act-col">{rowNode(no - 1)}</td>}
                 {headers.map((_, ci) => {
                   if (hidden.has(ci)) {
                     // 閉じているまとまりは、行でも1つのセルにまとめる
