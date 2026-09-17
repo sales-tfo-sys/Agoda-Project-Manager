@@ -47,28 +47,40 @@ export async function POST(req) {
     if (b?.revert) {
       const results = await readResults();
       const r = results[b.revert];
-      if (!r?.wrote) return NextResponse.json({ error: "取り消せる記録がありません" });
-      const rec = await fetchRecord(r.recordId);
-      const values = {};
-      for (const [code, v] of Object.entries(r.wrote)) {
-        if (text(rec?.[code]?.value) === text(v)) values[code] = "";
+      const applied = r?.applied || {};
+      if (!Object.keys(applied).length) {
+        return NextResponse.json({ error: "取り消せる記録がありません" });
       }
-      if (!Object.keys(values).length) {
+      let n = 0;
+      const left = {};
+      for (const [recordId, one] of Object.entries(applied)) {
+        const rec = await fetchRecord(recordId).catch(() => null);
+        const values = {};
+        for (const [code, v] of Object.entries(one.wrote || {})) {
+          if (text(rec?.[code]?.value) === text(v)) values[code] = "";
+        }
+        if (!Object.keys(values).length) {
+          left[recordId] = one; // 入れたあとに変わっているものは残す
+          continue;
+        }
+        const { revision } = await updateRecord(recordId, values);
+        const after = await fetchRecord(recordId).catch(() => null);
+        if (after) await patchSnapshotRecord(after).catch(() => {});
+        await writeEditor(recordId, { name: who, revision }).catch(() => {});
+        n += Object.keys(values).length;
+      }
+      if (!n) {
         return NextResponse.json({ error: "入れたあとに値が変わっているため、取り消しませんでした" });
       }
-      const { revision } = await updateRecord(r.recordId, values);
-      const after = await fetchRecord(r.recordId);
-      if (after) await patchSnapshotRecord(after).catch(() => {});
-      await writeEditor(r.recordId, { name: who, revision }).catch(() => {});
       await writeResult(b.revert, {
         ...r,
-        wrote: null,
+        applied: left,
         reverted: { at: new Date().toISOString(), by: who },
       });
       invalidate("records:snapshot");
       invalidate("kintone:records");
       invalidate("kintone:basics");
-      return NextResponse.json({ ok: true, reverted: Object.keys(values).length });
+      return NextResponse.json({ ok: true, reverted: n });
     }
 
     // ── Hotel ID でまとめて紐づけ（そのまま反映）──
@@ -84,30 +96,32 @@ export async function POST(req) {
       const r = results[b.unlink] || {};
       await writeResult(b.unlink, {
         ...r,
+        recordIds: [],
         recordId: null,
         pinned: false,
-        wrote: null,
         unlinked: { at: new Date().toISOString(), by: who },
       });
       return NextResponse.json({ ok: true });
     }
 
     // ── 付け替え：別のレコードに入れ直す ──
-    if (b?.relink?.key && b?.relink?.id) {
+    if (b?.relink?.key && (b?.relink?.id || b?.relink?.ids?.length)) {
+      const ids = (b.relink.ids || [b.relink.id]).map(String).filter(Boolean);
       const results = await readResults();
       const r = results[b.relink.key] || {};
       await writeResult(b.relink.key, {
         ...r,
-        recordId: String(b.relink.id),
+        recordIds: ids,
+        recordId: ids[0] || null,
         pinned: true,
-        wrote: null,
+        matchedBy: "選択",
         relinked: { at: new Date().toISOString(), by: who },
       });
       const plan = await buildPlan();
       if (plan.error) return NextResponse.json({ error: plan.error });
       const one = (plan.rows || []).filter((x) => x.key === b.relink.key && x.status === "pending");
       const res = one.length ? await applyPlans(one, who, plan.sheet, plan.cols, 1) : { applied: 0 };
-      return NextResponse.json({ ok: true, applied: res.applied });
+      return NextResponse.json({ ok: true, linked: ids.length, applied: res.applied });
     }
 
     // ── 反映 ──

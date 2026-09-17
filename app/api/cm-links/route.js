@@ -12,18 +12,18 @@ export async function GET() {
     const results = await readResults();
     const byRecord = {};
     for (const [key, r] of Object.entries(results)) {
-      if (!r?.recordId || !r?.wrote) continue; // 取り消したものは印を出さない
-      const id = String(r.recordId);
-      const labels = Object.values(r.labels || {});
-      const cur = byRecord[id];
-      // 同じレコードに複数の回答が入っていたら、新しい方を残して項目名はまとめる
-      if (!cur) byRecord[id] = { at: r.at || "", by: r.by || "", labels, hid: r.hid || "", key };
-      else {
-        cur.labels = [...new Set([...cur.labels, ...labels])];
-        if ((r.at || "") > (cur.at || "")) {
-          cur.at = r.at || cur.at;
-          cur.by = r.by || cur.by;
-          cur.key = key;
+      for (const [id, one] of Object.entries(r?.applied || {})) {
+        if (!one?.wrote) continue;
+        const labels = Object.values(one.labels || {});
+        const cur = byRecord[id];
+        if (!cur) byRecord[id] = { at: one.at || "", by: one.by || "", labels, hid: r.hid || "", key };
+        else {
+          cur.labels = [...new Set([...cur.labels, ...labels])];
+          if ((one.at || "") > (cur.at || "")) {
+            cur.at = one.at || cur.at;
+            cur.by = one.by || cur.by;
+            cur.key = key;
+          }
         }
       }
     }

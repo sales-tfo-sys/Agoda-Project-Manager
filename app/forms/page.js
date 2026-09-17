@@ -83,11 +83,16 @@ function viewOf(grid) {
 // 紐づけの列。まだ読み込めていないときも列は出し、中身だけ後から入れる。
 function LinkCell({ p, loading, onPick }) {
   if (loading) return <span className="lk-cell lk-wait">…</span>;
-  if (p?.recordId) {
+  const ids = p?.recordIds?.length ? p.recordIds : p?.recordId ? [p.recordId] : [];
+  if (ids.length) {
+    const nl = "\n";
+    const title =
+      (p.links || []).map((l) => `レコード${l.recordId}／${l.hotel || ""}`).join(nl) ||
+      `レコード${ids.join("・")}`;
     return (
-      <button type="button" className="lk-cell lk-on" onClick={onPick} title={`レコード${p.recordId}／${p.hotel || ""}
-クリックで選び直し`}>
-        {p.recordId}
+      <button type="button" className="lk-cell lk-on" onClick={onPick} title={title + nl + "クリックで選び直し"}>
+        {ids[0]}
+        {ids.length > 1 && <em>+{ids.length - 1}</em>}
       </button>
     );
   }
@@ -300,8 +305,8 @@ export default function FormsPage({ embedded, tabs } = {}) {
     };
   }, [picker?.q, picker?.rowIdx]);
 
-  // 選んだ施設に紐づけて、そのまま施設一覧へ反映する
-  const pickFacility = async (recordId) => {
+  // 選んだ施設に紐づけて、そのまま施設一覧へ反映する（複数まとめても可）
+  const pickFacility = async (recordId, all) => {
     if (!picker?.key || picking) return;
     setPicking(true);
     setBusy("紐づけ中…");
@@ -309,7 +314,9 @@ export default function FormsPage({ embedded, tabs } = {}) {
       const j = await fetch("/api/cm-import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ relink: { key: picker.key, id: recordId } }),
+        body: JSON.stringify({
+          relink: all?.length ? { key: picker.key, ids: all } : { key: picker.key, id: recordId },
+        }),
       }).then((r) => r.json());
       if (j.error) {
         setBusy(null);
@@ -453,7 +460,12 @@ export default function FormsPage({ embedded, tabs } = {}) {
   // 紐づけの状態で絞り込む（CM情報のときだけ使う）
   const filteredRows =
     link && linkFilter !== "all"
-      ? allRows.filter(({ no }) => (link[no - 1]?.status || "unlinked") === linkFilter)
+      ? allRows.filter(({ no }) => {
+          const st = link[no - 1]?.status || "unlinked";
+          // 紐付け完了以外＝まだ施設を選んでいない回答
+          if (linkFilter === "todo") return st === "unlinked";
+          return st === linkFilter;
+        })
       : allRows;
   // 新しい回答ほど上に出す（# の番号はシートの行のままにして、突き合わせられるようにする）
   const shownRows = useMemo(() => {
@@ -530,6 +542,28 @@ export default function FormsPage({ embedded, tabs } = {}) {
               <span className="page-h page-h-gap">{current?.title || "フォーム回答"}</span>
               {/* 回答の絞り込み。どの列に入っている言葉でも引っかかる。
                   ページ名との間は、ダッシュボードと同じく仕切り線で区切る */}
+              {isCm && (
+                <>
+                  <span className="head-sep" aria-hidden="true" />
+                  <div className="segbar segbar-sm" role="tablist" aria-label="紐づけで絞り込み">
+                    {[
+                      { k: "all", label: "すべて" },
+                      { k: "todo", label: "紐付け完了以外" },
+                    ].map((t) => (
+                      <button
+                        key={t.k}
+                        type="button"
+                        role="tab"
+                        aria-selected={(linkFilter === "todo" ? "todo" : "all") === t.k}
+                        className={"segbar-btn" + ((linkFilter === "todo" ? "todo" : "all") === t.k ? " active" : "")}
+                        onClick={() => setLinkFilter(t.k)}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
               {grid && !grid.error && (grid.rows || []).length > 0 && (
                 <>
                   <span className="head-sep" aria-hidden="true" />
@@ -853,6 +887,22 @@ export default function FormsPage({ embedded, tabs } = {}) {
               placeholder="HID・施設名・レコード番号でさがす"
             />
           </label>
+          {(() => {
+            // 同じ HID の施設が複数あるときは、まとめて紐づけられるようにする
+            const q = String(picker?.q || "").trim();
+            const same = (pickList || []).filter((x) => x.hid && x.hid === q);
+            if (same.length < 2) return null;
+            return (
+              <button
+                type="button"
+                className="fpick-all"
+                onClick={() => pickFacility(null, same.map((x) => x.id))}
+                disabled={picking}
+              >
+                HID {q} の {same.length} 件すべてを紐づける
+              </button>
+            );
+          })()}
           <div className="fpick-list">
             {pickList == null ? (
               <div className="fpick-empty">さがしています…</div>
