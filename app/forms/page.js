@@ -76,6 +76,26 @@ function viewOf(grid) {
   };
 }
 
+// 施設一覧への反映の状態 → 行の左端に出す印
+function markOf(p) {
+  if (!p) return null;
+  const nl = "\n";
+  const who = p.recordId ? `レコード${p.recordId}／${p.hotel || "—"}（${p.matchedBy}で紐づけ）` : "";
+  if (p.status === "applied") {
+    const wrote = Object.values(p.done?.labels || {}).join("・");
+    return { tone: "done", title: who + nl + "施設一覧へ反映済み" + (wrote ? "：" + wrote : "") };
+  }
+  if (p.status === "pending") {
+    const list = (p.changes || []).map((c) => c.label).join("・");
+    return { tone: "link", title: who + nl + "これから入れる：" + list };
+  }
+  if (p.status === "nochange") {
+    const why = (p.skipped || []).map((x) => `・${x.label}（${x.why}）`).join(nl);
+    return { tone: "link", title: who + nl + "入れるものはありません" + (why ? nl + why : "") };
+  }
+  return { tone: "warn", title: "施設一覧に見つかりませんでした（HID・施設名が一致しません）" };
+}
+
 // embedded / tabs は「管理」ページに埋め込まれたときだけ渡される
 // （見出しを「管理」に差し替え、その下にタブ行を挟む）。
 export default function FormsPage({ embedded, tabs } = {}) {
@@ -93,6 +113,8 @@ export default function FormsPage({ embedded, tabs } = {}) {
   const [saving, setSaving] = useState(false);
   const [delTarget, setDelTarget] = useState(null);
   const [cfg, setCfg] = useState(null);
+  // CM情報だけ、施設一覧との紐づけ状況を行の左端に出す
+  const [link, setLink] = useState(null); // { [行番号]: 予定 }
   const { setBusy, flashDone, showToast, busy } = useUi();
   const dragIndex = useRef(null);
   const [dragOver, setDragOver] = useState(null);
@@ -169,15 +191,32 @@ export default function FormsPage({ embedded, tabs } = {}) {
     }
   }, []);
 
+  // CM情報の回答を開いたら、施設一覧との紐づけ状況を読む（書き込みはしない）
+  const loadLink = useCallback(async (id, title) => {
+    setLink(null);
+    if (!/CM情報/.test(String(title || ""))) return;
+    try {
+      const j = await fetch("/api/cm-import", { cache: "no-store" }).then((r) => r.json());
+      if (j.error || !Array.isArray(j.rows)) return;
+      const m = {};
+      for (const p of j.rows) m[p.index] = p;
+      setLink(m);
+    } catch {
+      /* 印が出ないだけなので、失敗しても画面はそのまま */
+    }
+  }, []);
+
   const openDetail = (id) => {
     setSelected(id);
     setGrid(null);
     setQ("");
     loadGrid(id);
+    loadLink(id, (items || []).find((f) => f.id === id)?.title);
   };
   const backToList = () => {
     setSelected(null);
     setGrid(null);
+    setLink(null);
     setQ(""); // 検索は持ち越さない
   };
 
@@ -342,7 +381,12 @@ export default function FormsPage({ embedded, tabs } = {}) {
         ) : !grid || (grid.headers || []).length === 0 ? (
           <div className="notice">データがありません。</div>
         ) : (
-          <FormAnswersTable headers={viewGrid.headers} rows={shownRows} q={q} />
+          <FormAnswersTable
+            headers={viewGrid.headers}
+            rows={shownRows}
+            q={q}
+            marks={link ? Object.fromEntries(Object.entries(link).map(([i, p]) => [i, markOf(p)])) : undefined}
+          />
         )
       ) : items === null && !busy ? (
         <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>

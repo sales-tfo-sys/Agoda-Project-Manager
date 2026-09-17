@@ -13830,3 +13830,32 @@ button.forms-mark.busy {
   border-color: #b6ccee;
   background: #e3edff;
 }
+
+/* ══════════════ 回答一覧：施設一覧との紐づけの印 ══════════════ */
+.forms-tw th.forms-mark-col,
+.forms-tw td.forms-mark-col {
+  width: 34px;
+  min-width: 34px;
+  padding: 0;
+  text-align: center;
+}
+.forms-tw .forms-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  cursor: default;
+}
+.forms-tw .forms-mark.m-done {
+  color: #1f9d63;
+  background: #e7f7ef;
+}
+.forms-tw .forms-mark.m-link {
+  color: #2f6be0;
+  background: #e8f0fe;
+}
+.forms-tw .forms-mark.m-warn {
+  color: #c0392b;
+  background: #fdecea;
+}

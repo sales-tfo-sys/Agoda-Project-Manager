@@ -20,6 +20,34 @@ const MARK_TEXT = { on: "〇", off: "✖", none: "-" }; // 画面に出す印
 const MARK_WRITE = { on: "〇", off: "✖", none: "" }; // シートに入れる値（none は空欄）
 const MARK_NEXT = { on: "off", off: "none", none: "on" }; // 押したときの順番
 
+// 行の左端に出す印（施設一覧と紐づいているか）
+function MarkIcon({ mark }) {
+  if (!mark) return null;
+  const tone = mark.tone || "link";
+  return (
+    <span className={"forms-mark m-" + tone} title={mark.title || ""}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        {tone === "done" ? (
+          <>
+            <circle cx="12" cy="12" r="9" />
+            <path d="m8 12.3 2.6 2.6L16 9.6" />
+          </>
+        ) : tone === "warn" ? (
+          <>
+            <path d="M12 4.5 2.8 20h18.4Z" />
+            <path d="M12 10v4M12 17.2v.1" />
+          </>
+        ) : (
+          <>
+            <path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7" />
+            <path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" />
+          </>
+        )}
+      </svg>
+    </span>
+  );
+}
+
 // セルの中身 → 状態。印ではない（自由入力の）ときは null
 function markStateOf(v) {
   const s = String(v ?? "").trim();
@@ -92,6 +120,7 @@ function groupsOf(hiddenCols) {
  * onToggle       … (rowIdx, colIdx, text) => Promise。渡すと押して切り替えられる
  * hiddenCols     … 初めは隠しておく列（0始まり）。見出しのボタンで開閉できる
  * centerCols     … 中身を中央ぞろえにする列（0始まり）
+ * marks          … { 行番号(0始まり): { tone, title } } … 行の左端に出す印
  */
 export default function FormAnswersTable({
   headers,
@@ -101,6 +130,7 @@ export default function FormAnswersTable({
   onToggle,
   hiddenCols,
   centerCols,
+  marks,
 }) {
   // いま書き込み中のセル（"行-列"）。二重に押せないようにする
   const [busy, setBusy] = useState(null);
@@ -140,6 +170,7 @@ export default function FormAnswersTable({
           <thead>
             <tr>
               <th className="forms-rownum">#</th>
+              {marks && <th className="forms-mark-col" title="施設一覧との紐づけ" />}
               {headers.map((h, ci) => {
                 const g = groupAt.get(ci);
                 // 閉じているまとまりは、見出しを1つの「開く」ボタンにまとめる
@@ -183,6 +214,11 @@ export default function FormAnswersTable({
             {rows.map(({ r, no }) => (
               <tr key={no}>
                 <td className="forms-rownum">{no}</td>
+                {marks && (
+                  <td className="forms-mark-col">
+                    <MarkIcon mark={marks[no - 1]} />
+                  </td>
+                )}
                 {headers.map((_, ci) => {
                   if (hidden.has(ci)) {
                     // 閉じているまとまりは、行でも1つのセルにまとめる

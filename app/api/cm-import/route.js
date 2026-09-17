@@ -115,6 +115,7 @@ function planFor(row, cols, idx, index, fields, results) {
 
   return {
     key,
+    index,
     at: text(row[0]),
     hid,
     name,
