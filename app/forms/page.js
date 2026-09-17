@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Modal from "../Modal";
 import { useUi } from "../Ui";
 import ManageIcon from "../manage/ManageIcon";
@@ -18,6 +18,57 @@ function fmtUpdated(ms) {
   y.setDate(now.getDate() - 1);
   if (d.toDateString() === y.toDateString()) return `昨日 ${hhmm}`;
   return `${d.toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" })} ${hhmm}`;
+}
+
+// 見出しの先頭についている番号（「1.」「2）」「3 」など）を取り出す。無ければ null
+function headNo(h) {
+  const m = String(h || "").trim().match(/^([0-9０-９]{1,3})\s*[.．,、)）:：_-]?\s*/);
+  if (!m) return null;
+  const n = Number(m[1].replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0)));
+  return Number.isFinite(n) ? n : null;
+}
+
+// 表に出す列を整える。
+//   ・回答フォームのURL（forms.gle など）だけが入っている列は出さない
+//   ・見出しに番号が振られていれば、その番号順に並べ替える
+//     （シートの並びが番号順になっていないことがあるため）
+function viewOf(grid) {
+  if (!grid || grid.error || !(grid.headers || []).length) return grid;
+  const headers = grid.headers;
+  const rows = grid.rows || [];
+  const isFormUrl = (v) => /^https?:\/\/(forms\.gle|docs\.google\.com\/forms)/i.test(String(v || "").trim());
+
+  const keep = [];
+  for (let c = 0; c < headers.length; c++) {
+    const vals = rows.map((r) => String(r?.[c] ?? "").trim()).filter(Boolean);
+    const urlCol =
+      isFormUrl(headers[c]) || (vals.length > 0 && vals.every(isFormUrl));
+    if (!urlCol) keep.push(c);
+  }
+
+  // 番号つきの見出しが半分以上あるときだけ並べ替える（誤作動を避ける）
+  const nums = keep.map((c) => headNo(headers[c]));
+  const numbered = nums.filter((n) => n != null).length;
+  let order = keep;
+  if (numbered >= Math.max(2, Math.ceil(keep.length / 2))) {
+    order = keep
+      .map((c, i) => ({ c, n: nums[i], i }))
+      .sort((a, b) => {
+        // 番号の無い列（タイムスタンプ等）は元の位置のまま前に出す
+        if (a.n == null && b.n == null) return a.i - b.i;
+        if (a.n == null) return -1;
+        if (b.n == null) return 1;
+        return a.n - b.n || a.i - b.i;
+      })
+      .map((x) => x.c);
+  }
+
+  if (order.length === headers.length && order.every((c, i) => c === i)) return grid;
+  return {
+    ...grid,
+    headers: order.map((c) => headers[c]),
+    rows: rows.map((r) => order.map((c) => r[c] ?? "")),
+  };
 }
 
 // embedded / tabs は「管理」ページに埋め込まれたときだけ渡される
@@ -196,7 +247,9 @@ export default function FormsPage({ embedded, tabs } = {}) {
   ].join("\n");
 
   // 検索に当たった行だけを出す（作業依頼の Temairazu タブと同じ決まり）
-  const shownRows = filterFormRows(grid, q);
+  // 表示用に整えた表（不要な列を落とし、見出しの番号順にそろえる）
+  const viewGrid = useMemo(() => viewOf(grid), [grid]);
+  const shownRows = filterFormRows(viewGrid, q);
 
   return (
     <div className={"wrap page-compact forms-page" + (selected ? " forms-detail" : "")}>
@@ -284,7 +337,7 @@ export default function FormsPage({ embedded, tabs } = {}) {
         ) : !grid || (grid.headers || []).length === 0 ? (
           <div className="notice">データがありません。</div>
         ) : (
-          <FormAnswersTable headers={grid.headers} rows={shownRows} q={q} />
+          <FormAnswersTable headers={viewGrid.headers} rows={shownRows} q={q} />
         )
       ) : items === null && !busy ? (
         <div className="page-loading"><span className="loader-ring" role="status" aria-label="読み込み中" /></div>
