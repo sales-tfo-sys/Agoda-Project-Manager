@@ -6,7 +6,7 @@ import { writeEditor } from "@/lib/kintoneEditor";
 import { denyUnlessPerm, getPerms } from "@/lib/auth";
 import { invalidate } from "@/lib/cache";
 import { readResults, writeResult } from "@/lib/cmImport";
-import { buildPlan, applyPlans } from "@/lib/cmImportRun";
+import { buildPlan, applyPlans, autolinkByHid } from "@/lib/cmImportRun";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -17,6 +17,7 @@ export const maxDuration = 60;
 //   POST { revert: key }     … その回答で入れた内容を取り消す（入れた値のままなら空に戻す）
 //   POST { relink: {key,id}} … 施設を選んで（付け替えて）入れ直す
 //   POST { unlink: key }     … 紐づけを外す
+//   POST { autolinkByHid }   … Hotel ID がそのまま一致する回答を、まとめて紐づけて反映する
 //
 // 突き合わせは HID →（空なら）施設名（英語）→（それも空なら）施設名（日本語）。
 // Kintone 側が空の項目にだけ入れる。CM種別は選択肢に無ければ入れずに知らせる。
@@ -68,6 +69,13 @@ export async function POST(req) {
       invalidate("kintone:records");
       invalidate("kintone:basics");
       return NextResponse.json({ ok: true, reverted: Object.keys(values).length });
+    }
+
+    // ── Hotel ID でまとめて紐づけ（そのまま反映）──
+    if (b?.autolinkByHid) {
+      const res = await autolinkByHid(who, { limit: Math.min(Number(b?.limit) || 200, 300) });
+      if (res.error) return NextResponse.json({ error: res.error });
+      return NextResponse.json({ ok: true, ...res });
     }
 
     // ── 紐づけを外す（入れた値はそのまま。必要なら先に取り消してから外す）──
