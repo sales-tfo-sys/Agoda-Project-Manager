@@ -13859,3 +13859,31 @@ button.forms-mark.busy {
   color: #c0392b;
   background: #fdecea;
 }
+
+/* 回答一覧：画面から直せるセル（Hotel ID） */
+.forms-tw td.forms-edit-cell {
+  padding: 2px 6px;
+}
+.forms-tw .forms-cell-in {
+  width: 100%;
+  min-width: 90px;
+  box-sizing: border-box;
+  padding: 4px 8px;
+  border: 1px solid #dbe5f6;
+  border-radius: 7px;
+  background: var(--surface);
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--ink);
+  text-align: center;
+}
+.forms-tw .forms-cell-in:hover {
+  border-color: #b6ccee;
+}
+.forms-tw .forms-cell-in:focus-visible {
+  outline: 2px solid #2f6be0;
+  outline-offset: 1px;
+}
+.forms-tw .forms-cell-in.busy {
+  opacity: 0.6;
+}

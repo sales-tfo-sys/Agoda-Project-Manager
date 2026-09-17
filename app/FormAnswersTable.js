@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 // フォーム回答（スプレッドシート）の回答を表で出す。
 // 管理 → フォーム回答 と、作業依頼の Temairazu タブで同じものを使う。
@@ -19,6 +19,39 @@ const MARK_NONE = /^[-－ー―‐]$/;
 const MARK_TEXT = { on: "〇", off: "✖", none: "-" }; // 画面に出す印
 const MARK_WRITE = { on: "〇", off: "✖", none: "" }; // シートに入れる値（none は空欄）
 const MARK_NEXT = { on: "off", off: "none", none: "on" }; // 押したときの順番
+
+// 直せるセル。入力欄から外れたとき（または Enter）に保存する。
+function CellInput({ value, onSave, title }) {
+  const [v, setV] = useState(String(value ?? ""));
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    setV(String(value ?? ""));
+  }, [value]);
+  const commit = async () => {
+    const next = v.trim();
+    if (busy || next === String(value ?? "").trim()) return;
+    setBusy(true);
+    try {
+      await onSave(next);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <input
+      className={"forms-cell-in" + (busy ? " busy" : "")}
+      value={v}
+      title={title}
+      disabled={busy}
+      onChange={(e) => setV(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") e.currentTarget.blur();
+        if (e.key === "Escape") setV(String(value ?? ""));
+      }}
+    />
+  );
+}
 
 // 行の左端に出す印（施設一覧と紐づいているか）
 function MarkIcon({ mark }) {
@@ -121,6 +154,8 @@ function groupsOf(hiddenCols) {
  * hiddenCols     … 初めは隠しておく列（0始まり）。見出しのボタンで開閉できる
  * centerCols     … 中身を中央ぞろえにする列（0始まり）
  * marks          … { 行番号(0始まり): { tone, title } } … 行の左端に出す印
+ * editCols       … 文字で直せる列（0始まり）。onEditCell と一緒に渡す
+ * onEditCell     … (rowIdx, colIdx, text) => Promise。入力を確定したときに呼ばれる
  */
 export default function FormAnswersTable({
   headers,
@@ -131,6 +166,8 @@ export default function FormAnswersTable({
   hiddenCols,
   centerCols,
   marks,
+  editCols,
+  onEditCell,
 }) {
   // いま書き込み中のセル（"行-列"）。二重に押せないようにする
   const [busy, setBusy] = useState(null);
@@ -151,6 +188,7 @@ export default function FormAnswersTable({
   const toggleGroup = (start) =>
     setOpenCols((v) => (v.includes(start) ? v.filter((x) => x !== start) : [...v, start]));
   const centered = useMemo(() => new Set((centerCols || []).map(Number)), [centerCols]);
+  const editable = useMemo(() => new Set((editCols || []).map(Number)), [editCols]);
 
   const toggle = async (rowIdx, ci, text) => {
     if (!onToggle || busy) return;
@@ -229,6 +267,18 @@ export default function FormAnswersTable({
                     ) : null;
                   }
                   const v = r[ci] ?? "";
+                  // 直せる列は入力欄にする（いまは Hotel ID だけ）
+                  if (editable.has(ci) && onEditCell) {
+                    return (
+                      <td key={ci} className="forms-edit-cell">
+                        <CellInput
+                          value={v}
+                          onSave={(next) => onEditCell(no - 1, ci, next)}
+                          title={headers[ci] || ""}
+                        />
+                      </td>
+                    );
+                  }
                   // 印の列かどうか。列ごとの判定（checkCols）があればそれを優先する。
                   // 無いときは、そのセルが TRUE/FALSE のときだけチェック表示（元の動き）。
                   const b = String(v).trim().toUpperCase();

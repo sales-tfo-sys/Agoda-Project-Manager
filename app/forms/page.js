@@ -68,9 +68,13 @@ function viewOf(grid) {
       .map((x) => x.c);
   }
 
-  if (order.length === headers.length && order.every((c, i) => c === i)) return grid;
+  // map… 表示の列番号 → シートの列番号（直すときに元の位置へ戻すために持たせる）
+  if (order.length === headers.length && order.every((c, i) => c === i)) {
+    return { ...grid, map: order };
+  }
   return {
     ...grid,
+    map: order,
     headers: order.map((c) => headers[c]),
     rows: rows.map((r) => order.map((c) => r[c] ?? "")),
   };
@@ -298,6 +302,50 @@ export default function FormsPage({ embedded, tabs } = {}) {
   const viewGrid = useMemo(() => viewOf(grid), [grid]);
   const shownRows = filterFormRows(viewGrid, q);
 
+  // Hotel ID は画面から直せるようにする（紐づけの直しに使うため）
+  const hidCol = useMemo(() => {
+    const hs = (viewGrid?.headers || []).map((h) => String(h || "").replace(/[\s　]/g, ""));
+    const i = hs.findIndex((h) => /^HotelID$/i.test(h) || /^HID$/i.test(h) || /ホテルID/.test(h));
+    return i;
+  }, [viewGrid]);
+
+  const saveCell = async (rowIdx, ci, textValue) => {
+    if (!selected || !viewGrid) return;
+    const orig = viewGrid.map ? viewGrid.map[ci] : ci;
+    try {
+      const j = await fetch("/api/form-sheet-edit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: selected,
+          row: rowIdx,
+          rowKey: String(grid?.rows?.[rowIdx]?.[0] ?? ""),
+          col: orig,
+          header: String(grid?.headers?.[orig] ?? ""),
+          text: textValue,
+        }),
+      }).then((r) => r.json());
+      if (j.error) {
+        showToast(j.error, "err");
+        return;
+      }
+      // 画面の値も入れ替えて、紐づけの印を取り直す
+      setGrid((g) =>
+        g && Array.isArray(g.rows)
+          ? {
+              ...g,
+              rows: g.rows.map((r, i) => (i === rowIdx ? r.map((c, j2) => (j2 === orig ? textValue : c)) : r)),
+            }
+          : g
+      );
+      flashDone("保存しました");
+      loadLink(selected, (items || []).find((f) => f.id === selected)?.title);
+    } catch (e) {
+      showToast(String(e?.message || e), "err");
+    }
+  };
+
+
   return (
     <div className={"wrap page-compact forms-page" + (selected ? " forms-detail" : "")}>
       {/* 上部ヘッダー（他ページと共通スタイル）。一覧と詳細で内容を出し分ける */}
@@ -389,6 +437,8 @@ export default function FormsPage({ embedded, tabs } = {}) {
             rows={shownRows}
             q={q}
             marks={link ? Object.fromEntries(Object.entries(link).map(([i, p]) => [i, markOf(p)])) : undefined}
+            editCols={canEdit && hidCol >= 0 ? [hidCol] : undefined}
+            onEditCell={canEdit ? saveCell : undefined}
           />
         )
       ) : items === null && !busy ? (
