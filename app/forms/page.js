@@ -80,6 +80,48 @@ function viewOf(grid) {
   };
 }
 
+// 切り替えタブ（ダッシュボードのタブと同じ見た目）。
+// ラベルの幅が違うので、スライダーは選んでいるボタンを実測して重ねる。
+function SegTabs({ items, value, onChange, label }) {
+  const ref = useRef(null);
+  const [thumb, setThumb] = useState(null);
+  useEffect(() => {
+    const measure = () => {
+      const el = ref.current;
+      const btn = el && el.querySelector(".segbar-btn.active");
+      if (!btn) {
+        setThumb(null);
+        return;
+      }
+      setThumb({ left: btn.offsetLeft, width: btn.offsetWidth });
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [value, items]);
+  return (
+    <div className="segbar segbar-sm" role="tablist" aria-label={label} ref={ref}>
+      <span
+        className="segbar-thumb"
+        style={thumb ? { left: thumb.left, width: thumb.width, transform: "none" } : { opacity: 0 }}
+        aria-hidden="true"
+      />
+      {items.map((it) => (
+        <button
+          key={it.key}
+          type="button"
+          role="tab"
+          aria-selected={value === it.key}
+          className={"segbar-btn" + (value === it.key ? " active" : "")}
+          onClick={() => onChange(it.key)}
+        >
+          {it.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // 紐づけの列。まだ読み込めていないときも列は出し、中身だけ後から入れる。
 function LinkCell({ p, loading, onPick }) {
   if (loading) return <span className="lk-cell lk-wait">…</span>;
@@ -545,23 +587,15 @@ export default function FormsPage({ embedded, tabs } = {}) {
               {isCm && (
                 <>
                   <span className="head-sep" aria-hidden="true" />
-                  <div className="segbar segbar-sm" role="tablist" aria-label="紐づけで絞り込み">
-                    {[
-                      { k: "all", label: "すべて" },
-                      { k: "todo", label: "紐付け完了以外" },
-                    ].map((t) => (
-                      <button
-                        key={t.k}
-                        type="button"
-                        role="tab"
-                        aria-selected={(linkFilter === "todo" ? "todo" : "all") === t.k}
-                        className={"segbar-btn" + ((linkFilter === "todo" ? "todo" : "all") === t.k ? " active" : "")}
-                        onClick={() => setLinkFilter(t.k)}
-                      >
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
+                  <SegTabs
+                    items={[
+                      { key: "all", label: "すべて" },
+                      { key: "todo", label: "紐付け完了以外" },
+                    ]}
+                    value={linkFilter === "todo" ? "todo" : "all"}
+                    onChange={setLinkFilter}
+                    label="紐づけで絞り込み"
+                  />
                 </>
               )}
               {grid && !grid.error && (grid.rows || []).length > 0 && (
