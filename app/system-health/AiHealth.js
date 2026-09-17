@@ -44,7 +44,34 @@ export default function AiHealth({ canEdit }) {
   const [data, setData] = useState(null); // { items, month, ref }
   const [open, setOpen] = useState(null); // 記録を書いている点検 { kind, note }
   const [saving, setSaving] = useState(false);
-  const { flashDone, showToast } = useUi();
+  const [running, setRunning] = useState(false);
+  const { flashDone, showToast, setBusy } = useUi();
+
+  // ボタンひとつで点検して、結果を残す
+  const run = async () => {
+    if (running) return;
+    setRunning(true);
+    setBusy("診断中…");
+    try {
+      const j = await fetch("/api/ai-health", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ run: true }),
+      }).then((r) => r.json());
+      if (j.error) {
+        setBusy(null);
+        showToast(j.error, "err");
+      } else {
+        flashDone(j.total ? `${j.total} 件の指摘が見つかりました` : "指摘はありませんでした");
+        load();
+      }
+    } catch (e) {
+      setBusy(null);
+      showToast(String(e?.message || e), "err");
+    } finally {
+      setRunning(false);
+    }
+  };
 
   const load = useCallback(async () => {
     try {
@@ -111,10 +138,17 @@ export default function AiHealth({ canEdit }) {
           </span>
         )}
       </h2>
-      <p className="aih-lead">
-        Supabase の点検は Supabase の管理画面で行います。ここでは決まった文面をコピーして貼るだけで済むようにし、
-        いつ・誰が・何が出たかを残します。
-      </p>
+      <div className="aih-top">
+        <p className="aih-lead">
+          「いま診断する」を押すと、データベースを読み取って点検し、結果をここに残します（書き込みはしません）。
+          より詳しく見たいときは、Supabase の画面を開いて文面を貼ってください。
+        </p>
+        {canEdit && (
+          <button type="button" className="save-btn" onClick={run} disabled={running}>
+            {running ? "診断中…" : "いま診断する"}
+          </button>
+        )}
+      </div>
 
       <div className="aih-grid">
         {CHECKS.map((c) => {
@@ -125,7 +159,7 @@ export default function AiHealth({ canEdit }) {
               <div className="aih-card-h">
                 <b>{c.label}</b>
                 <span className={"aih-state " + (done ? "ok" : "todo")}>
-                  {done ? `${fmt(done.at)} 実施` : "未実施"}
+                  {done ? `${fmt(done.at)} 実施${done.findings ? `／指摘 ${done.findings.length} 件` : ""}` : "未実施"}
                 </span>
               </div>
               <p className="aih-card-lead">{c.lead}</p>
@@ -165,7 +199,26 @@ export default function AiHealth({ canEdit }) {
                 </div>
               ) : (
                 <div className="aih-last">
-                  {done?.note ? (
+                  {done?.findings ? (
+                    done.findings.length === 0 ? (
+                      <span className="aih-ok">指摘はありませんでした。</span>
+                    ) : (
+                      <ul className="aih-finds">
+                        {done.findings.map((f, i) => (
+                          <li key={i} className={"lv-" + (f.level || "low")}>
+                            <span className="aih-lv">
+                              {f.level === "high" ? "重大" : f.level === "med" ? "注意" : "軽微"}
+                            </span>
+                            <span className="aih-ft">
+                              <b>{f.title}</b>
+                              {f.target && <em>{f.target}</em>}
+                              <span>{f.detail}</span>
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )
+                  ) : done?.note ? (
                     <span className="aih-note">{done.note}</span>
                   ) : prev ? (
                     <span className="aih-prev">
@@ -175,6 +228,7 @@ export default function AiHealth({ canEdit }) {
                   ) : (
                     <span className="aih-prev">記録はまだありません。</span>
                   )}
+                  {done?.note && done?.findings && <span className="aih-note">{done.note}</span>}
                 </div>
               )}
             </div>
