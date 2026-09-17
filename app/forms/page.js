@@ -28,8 +28,12 @@ function headNo(h) {
   return Number.isFinite(n) ? n : null;
 }
 
+// 見出しがこれに当てはまる列は出さない（案内文など、表で見る必要のないもの）
+const HIDE_HEADERS = [/Agoda新規参画サポートサービス/];
+
 // 表に出す列を整える。
 //   ・回答フォームのURL（forms.gle など）だけが入っている列は出さない
+//   ・HIDE_HEADERS に当てはまる見出しの列も出さない
 //   ・見出しに番号が振られていれば、その番号順に並べ替える
 //     （シートの並びが番号順になっていないことがあるため）
 function viewOf(grid) {
@@ -43,7 +47,8 @@ function viewOf(grid) {
     const vals = rows.map((r) => String(r?.[c] ?? "").trim()).filter(Boolean);
     const urlCol =
       isFormUrl(headers[c]) || (vals.length > 0 && vals.every(isFormUrl));
-    if (!urlCol) keep.push(c);
+    const hideCol = HIDE_HEADERS.some((re) => re.test(String(headers[c] || "")));
+    if (!urlCol && !hideCol) keep.push(c);
   }
 
   // 番号つきの見出しが半分以上あるときだけ並べ替える（誤作動を避ける）
