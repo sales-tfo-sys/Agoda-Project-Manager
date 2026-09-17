@@ -14236,3 +14236,114 @@ button.forms-mark.busy {
   border-color: #1f9d63;
   background: #e7f7ef;
 }
+
+/* ══════════════ システムヘルス：AI健康診断（月1回） ══════════════ */
+.aih-badge {
+  margin-left: 10px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  vertical-align: 2px;
+}
+.aih-badge.ok {
+  color: #14724a;
+  background: #e7f7ef;
+  border: 1px solid #cfe3d6;
+}
+.aih-badge.todo {
+  color: #8a5a10;
+  background: #fff4e2;
+  border: 1px solid #f0d9a8;
+}
+.aih-lead {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ink-3);
+}
+.aih-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 900px) {
+  .aih-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.aih-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 12px 14px;
+}
+.aih-card.done {
+  border-color: #cfe3d6;
+  background: #fafffc;
+}
+.aih-card-h {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.aih-state {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 700;
+}
+.aih-state.ok {
+  color: #14724a;
+}
+.aih-state.todo {
+  color: #b06a10;
+}
+.aih-card-lead {
+  margin: 6px 0 10px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ink-3);
+}
+.aih-ops {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.aih-ops .mini-btn {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+.aih-form {
+  margin-top: 10px;
+}
+.aih-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid #cfdcf3;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--ink);
+  resize: vertical;
+}
+.aih-form-ops {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 6px;
+}
+.aih-last {
+  margin-top: 10px;
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: var(--ink-3);
+}
+.aih-note {
+  color: var(--ink-2);
+  white-space: pre-wrap;
+}
