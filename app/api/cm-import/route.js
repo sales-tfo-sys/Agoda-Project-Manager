@@ -26,7 +26,7 @@ export const dynamic = "force-dynamic";
 //   POST { revert: key }     … その回答で入れた内容を取り消す（入れた値のままなら空に戻す）
 //   POST { relink: {key,id}} … 別のレコードに付け替えて入れ直す
 //
-// 突き合わせは HID →（空なら）施設名（英語）。
+// 突き合わせは HID →（空なら）施設名（英語）→（それも空なら）施設名（日本語）。
 // Kintone 側が空の項目にだけ入れる。CM種別は選択肢に無ければ入れずに知らせる。
 
 const FORM_TITLE = /CM情報/;
@@ -67,6 +67,7 @@ function planFor(row, cols, idx, index, fields, results) {
   const key = answerKey(row, cols, index);
   const hid = cols.hid >= 0 ? text(row[cols.hid]) : "";
   const name = cols.name >= 0 ? text(row[cols.name]) : "";
+  const nameJa = cols.nameJa >= 0 ? text(row[cols.nameJa]) : "";
   const prev = results[key] || null;
 
   // 付け替えの指定があればそれを優先する
@@ -82,7 +83,11 @@ function planFor(row, cols, idx, index, fields, results) {
   }
   if (!rec && name) {
     rec = idx.byName.get(normName(name)) || null;
-    if (rec) by = "施設名";
+    if (rec) by = "施設名（英語）";
+  }
+  if (!rec && nameJa) {
+    rec = idx.byName.get(normName(nameJa)) || null;
+    if (rec) by = "施設名（日本語）";
   }
 
   const answer = {
@@ -119,6 +124,7 @@ function planFor(row, cols, idx, index, fields, results) {
     at: text(row[0]),
     hid,
     name,
+    nameJa,
     answer,
     matchedBy: by,
     recordId: rec ? String(rec.$id?.value) : null,
