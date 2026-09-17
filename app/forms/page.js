@@ -183,7 +183,17 @@ export default function FormsPage({ embedded, tabs } = {}) {
   const totalForms = items?.length || 0;
   const totalResponses = cvals.reduce((s, c) => s + (c && !c.error ? c.total || 0 : 0), 0);
   const monthResponses = cvals.reduce((s, c) => s + (c && !c.error ? c.month || 0 : 0), 0);
+  // 「最終回答」＝登録している全フォームの中で、いちばん新しい回答の日時。
+  // シートを直した時刻ではないので、どのフォームのいつかを添えておく。
   const latestMs = cvals.reduce((m, c) => (c && !c.error && c.latest ? Math.max(m, c.latest) : m), 0);
+  const latestTitle = [
+    "登録しているフォームの中で、いちばん新しい回答の日時です",
+    ...(items || []).map((f) => {
+      const c = counts[f.id];
+      const at = c && !c.error && c.latest ? fmtUpdated(c.latest) : "—";
+      return `・${f.title}：${at}`;
+    }),
+  ].join("\n");
 
   // 検索に当たった行だけを出す（作業依頼の Temairazu タブと同じ決まり）
   const shownRows = filterFormRows(grid, q);
@@ -327,8 +337,10 @@ export default function FormsPage({ embedded, tabs } = {}) {
                 </svg>
               </span>
               <span className="fstat-body">
-                <span className="fstat-label">最終更新</span>
-                <span className="fstat-value fstat-value-sm">{fmtUpdated(latestMs)}</span>
+                <span className="fstat-label">最終回答</span>
+                <span className="fstat-value fstat-value-sm" title={latestTitle}>
+                  {fmtUpdated(latestMs)}
+                </span>
               </span>
             </div>
           </div>
