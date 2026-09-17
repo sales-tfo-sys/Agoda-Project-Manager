@@ -382,6 +382,29 @@ const ACTION_BOXES = [
   { key: "なにをする", tone: "green", icon: "check" },
 ];
 
+// CM情報フォームから反映したレコードに付ける印
+function CmLinkMark({ info, size = 13 }) {
+  if (!info) return null;
+  const when = (iso) => {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "";
+    const p = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())}`;
+  };
+  const title =
+    "CM情報フォームから反映済み" +
+    (info.labels?.length ? "：" + info.labels.join("・") : "") +
+    (info.at ? `（${when(info.at)}${info.by ? " " + info.by : ""}）` : "");
+  return (
+    <span className="cm-mark" title={title} aria-label={title}>
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7" />
+        <path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" />
+      </svg>
+    </span>
+  );
+}
+
 // 施設の「メモ」＝ Kintone のレコードのコメント。
 // 滞留理由と同じ大きさの枠に、新しい順で出し、その場で足せるようにする。
 function MemoPanel({ recordId, canEdit }) {
@@ -570,7 +593,7 @@ function MemoPanel({ recordId, canEdit }) {
 }
 
 // 【詳細】の右に出す、レコードそのものの情報（Kintone の一覧と同じ並び）
-function RecordMeta({ record, editor }) {
+function RecordMeta({ record, editor, cmLink }) {
   if (!record) return null;
   // Kintone の画面と同じになるよう、日本時間で出す（端末の時計に左右されない）
   const whenOf = (f) => {
@@ -596,7 +619,7 @@ function RecordMeta({ record, editor }) {
   const sameRev = editor?.rev && String(editor.rev) === String(record.$revision?.value || "");
   const modifier = whoOf(record["更新者"]) + (sameRev && editor.name ? `（${editor.name}）` : "");
   const items = [
-    { k: "レコード番号", v: record.$id?.value || "—", icon: "hash" },
+    { k: "レコード番号", v: record.$id?.value || "—", icon: "hash", mark: cmLink },
     { k: "作成者", v: whoOf(record["作成者"]), icon: "person" },
     { k: "作成日時", v: whenOf(record["作成日時"]), icon: "calendar" },
     { k: "更新者", v: modifier, icon: "person" },
@@ -612,6 +635,7 @@ function RecordMeta({ record, editor }) {
               <DetailIcon name={it.icon} size={12} />
             </span>
             {it.v}
+            {it.mark && <CmLinkMark info={it.mark} size={12} />}
           </span>
         </div>
       ))}
@@ -619,7 +643,7 @@ function RecordMeta({ record, editor }) {
   );
 }
 
-function DetailModal({ record, onClose, canEdit, fields, onSaved }) {
+function DetailModal({ record, onClose, canEdit, fields, onSaved, cmLink }) {
   const [edit, setEdit] = useState(false);
   const [draft, setDraft] = useState({});
   const [saving, setSaving] = useState(false);
@@ -707,7 +731,7 @@ function DetailModal({ record, onClose, canEdit, fields, onSaved }) {
       >
         <div className="modal-head detail-head">
           <h2>【 詳細 】</h2>
-          <RecordMeta record={record} editor={editor} />
+          <RecordMeta record={record} editor={editor} cmLink={cmLink} />
           {canEdit &&
             (edit ? (
               <>
@@ -885,6 +909,8 @@ export default function Page() {
   const [error, setError] = useState(null);
   const [updatedAt, setUpdatedAt] = useState(null);
   const [selected, setSelected] = useState(null);
+  // CM情報フォームから反映したレコード（印を出すのに使う）
+  const [cmLinks, setCmLinks] = useState({});
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("active"); // active=完了以外（既定） / all=すべて
   const [periodYear, setPeriodYear] = useState("all"); // "all" or 年
@@ -918,6 +944,11 @@ export default function Page() {
       s.col === c ? { col: c, dir: s.dir === "asc" ? "desc" : "asc" } : { col: c, dir: "asc" }
     );
 
+  useEffect(() => {
+    cachedJson("/api/cm-links", 60 * 1000)
+      .then((d) => setCmLinks(d?.byRecord || {}))
+      .catch(() => {});
+  }, []);
   useEffect(() => {
     cachedJson("/api/auth/me", 60 * 1000)
       .then((d) => setCanSync(!!d?.perms?.editTasks))
@@ -1243,6 +1274,7 @@ export default function Page() {
                       {columns.map((c, ci) => {
                         const text = formatValue(r[c]);
                         const center = centerFrom >= 0 && ci >= centerFrom;
+                        const mark = c === "$id" ? cmLinks[String(r.$id?.value)] : null;
                         return (
                           <td
                             key={c}
@@ -1252,6 +1284,7 @@ export default function Page() {
                             title={text}
                           >
                             {text === "" ? <span className="empty">—</span> : text}
+                            {mark && <CmLinkMark info={mark} />}
                           </td>
                         );
                       })}
@@ -1298,6 +1331,7 @@ export default function Page() {
           record={selected}
           onClose={() => setSelected(null)}
           canEdit={canSync}
+          cmLink={cmLinks[String(selected?.$id?.value)]}
           fields={data?.fields}
           onSaved={(rec) => {
             // 直したレコードを、開いている詳細と一覧の両方に反映する

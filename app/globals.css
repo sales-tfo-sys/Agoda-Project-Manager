@@ -13887,3 +13887,16 @@ button.forms-mark.busy {
 .forms-tw .forms-cell-in.busy {
   opacity: 0.6;
 }
+
+/* CM情報フォームから反映したレコードの印（施設一覧・詳細） */
+.cm-mark {
+  display: inline-grid;
+  place-items: center;
+  margin-left: 5px;
+  color: #2f6be0;
+  vertical-align: -2px;
+  cursor: default;
+}
+.rec-meta-v .cm-mark {
+  margin-left: 4px;
+}
