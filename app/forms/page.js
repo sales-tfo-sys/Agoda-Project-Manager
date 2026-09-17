@@ -150,8 +150,6 @@ export default function FormsPage({ embedded, tabs } = {}) {
   const [link, setLink] = useState(null); // { [行番号]: 予定 }
   const [linkCount, setLinkCount] = useState(null); // 反映できる件数など
   const [linkFilter, setLinkFilter] = useState("all"); // all | pending | nomatch | applied
-  const [running, setRunning] = useState(null); // 反映中の進み具合 { done, total }
-  const [lastRun, setLastRun] = useState(null); // 直前に反映した回答（取り消し用）
   const [linkHelp, setLinkHelp] = useState(false); // 「反映のしくみ」の説明
   const [picker, setPicker] = useState(null); // 施設を選ぶ画面 { rowIdx, key, q }
   const [pickList, setPickList] = useState(null); // 候補
@@ -247,66 +245,6 @@ export default function FormsPage({ embedded, tabs } = {}) {
       /* 印が出ないだけなので、失敗しても画面はそのまま */
     }
   }, []);
-
-  // 施設一覧へ反映する。100件ずつ、残りが無くなるまで繰り返す。
-  const runImport = async () => {
-    if (running) return;
-    const pendingKeys = Object.values(link || {})
-      .filter((p) => p.status === "pending")
-      .map((p) => p.key);
-    if (!pendingKeys.length) return;
-    setRunning({ done: 0, total: pendingKeys.length });
-    setBusy("施設一覧へ反映中…");
-    const appliedKeys = [];
-    try {
-      let guard = 0;
-      while (guard++ < 50) {
-        const j = await fetch("/api/cm-import", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ limit: 100 }),
-        }).then((r) => r.json());
-        if (j.error) {
-          showToast(j.error, "err");
-          break;
-        }
-        appliedKeys.push(...(j.appliedKeys || []));
-        setRunning((s) => ({ done: (s?.done || 0) + (j.applied || 0), total: s?.total || 0 }));
-        if (j.sheetError) showToast("シートの「Kintoneへ反映済み」は付けられませんでした：" + j.sheetError, "err");
-        if (!j.remaining) break;
-      }
-      setLastRun(appliedKeys);
-      flashDone(`${appliedKeys.length} 件を反映しました`);
-      await loadLink(selected, (items || []).find((f) => f.id === selected)?.title);
-      invalidateCache("/api/records");
-    } catch (e) {
-      setBusy(null);
-      showToast(String(e?.message || e), "err");
-    } finally {
-      setRunning(null);
-    }
-  };
-
-  // 直前の反映をまとめて取り消す（入れた値のままのものだけ空に戻す）
-  const undoLastRun = async () => {
-    if (!lastRun?.length || running) return;
-    setBusy("取り消し中…");
-    let ok = 0;
-    for (const key of lastRun) {
-      const j = await fetch("/api/cm-import", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ revert: key }),
-      })
-        .then((r) => r.json())
-        .catch(() => ({ error: "通信に失敗しました" }));
-      if (j.ok) ok++;
-    }
-    setLastRun(null);
-    flashDone(`${ok} 件を取り消しました`);
-    await loadLink(selected, (items || []).find((f) => f.id === selected)?.title);
-    invalidateCache("/api/records");
-  };
 
   // 施設を選ぶ画面を開く（初めの検索語は、その回答の Hotel ID か施設名）
   const openPicker = (rowIdx) => {
@@ -947,25 +885,6 @@ export default function FormsPage({ embedded, tabs } = {}) {
                 </button>
               ))}
             </div>
-            {canEdit && (
-              <div className="cmhelp-ops">
-                {lastRun?.length > 0 && !running && (
-                  <button type="button" className="mini-btn" onClick={undoLastRun}>
-                    直前の{lastRun.length}件を取り消す
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="save-btn"
-                  onClick={runImport}
-                  disabled={!!running || !(linkStat?.pending > 0)}
-                >
-                  {running
-                    ? `反映中… ${running.done}/${running.total}`
-                    : `反映する（${(linkStat?.pending ?? 0).toLocaleString("ja-JP")}件）`}
-                </button>
-              </div>
-            )}
           </div>
           <div className="cmhelp-sec">
             <b>いまの内訳（全 {(linkStat?.total ?? 0).toLocaleString("ja-JP")} 件）</b>
@@ -989,9 +908,10 @@ export default function FormsPage({ embedded, tabs } = {}) {
             </ul>
           </div>
           <div className="cmhelp-sec">
-            <b>何を入れるか</b>
+            <b>紐づけと反映</b>
             <p>
-              CM種別・URL・ID・PW・契約コードの5つを、<b>Kintone 側が空の項目にだけ</b>入れます。
+              表の「紐づけ」から施設を選ぶと、<b>その場で1件だけ</b>反映します。
+              入れるのは CM種別・URL・ID・PW・契約コードの5つで、<b>Kintone 側が空の項目にだけ</b>入れます。
               すでに値が入っている項目は触りません（手で直した内容を消さないため）。
               CM種別は Kintone の選択肢に無い回答なら入れません。
             </p>
@@ -1007,8 +927,8 @@ export default function FormsPage({ embedded, tabs } = {}) {
             <b>反映したあと</b>
             <p>
               回答の左の印が緑になり、施設一覧のレコードNoの右にも印が付きます。
-              シートの「Kintoneへ反映済み」にも〇を付けます。直前の反映はまとめて取り消せます
-              （入れた値のままのものだけ空に戻します）。
+              シートの「Kintoneへ反映済み」にも〇を付けます。
+              紐づけを選び直したり、外したりもできます。
             </p>
           </div>
         </div>
