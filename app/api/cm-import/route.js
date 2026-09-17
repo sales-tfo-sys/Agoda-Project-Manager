@@ -6,6 +6,7 @@ import { kintoneConfigured, updateRecord, fetchRecord } from "@/lib/kintone";
 import { writeEditor } from "@/lib/kintoneEditor";
 import { denyUnlessPerm, getPerms } from "@/lib/auth";
 import { invalidate, cached } from "@/lib/cache";
+import { writeSheetCells } from "@/lib/sheetWrite";
 import {
   TARGETS,
   HID_CODE,
@@ -61,6 +62,8 @@ function indexRecords(records) {
 }
 
 const text = (v) => String(v ?? "").trim();
+// シートの「Kintoneへ反映済み」欄に付いている印か
+const isOn = (v) => /^[〇○◯✓✔レ●◎]$/.test(text(v)) || text(v).toUpperCase() === "TRUE";
 
 // 1回答ぶんの「何をどう入れるか」を組み立てる
 function planFor(row, cols, idx, index, fields, results) {
@@ -89,6 +92,9 @@ function planFor(row, cols, idx, index, fields, results) {
     rec = idx.byName.get(normName(nameJa)) || null;
     if (rec) by = "施設名（日本語）";
   }
+
+  // シート側で「Kintoneへ反映済み」に印が付いていれば、もう入れない（人の判断を尊重する）
+  const sheetDone = cols.done >= 0 && isOn(row[cols.done]);
 
   const answer = {
     cm: cols.cm >= 0 ? text(row[cols.cm]) : "",
@@ -131,8 +137,15 @@ function planFor(row, cols, idx, index, fields, results) {
     hotel: rec ? text(rec?.[NAME_CODE]?.value) : "",
     changes,
     skipped,
+    sheetDone,
     done: prev || null,
-    status: !rec ? "nomatch" : prev?.wrote ? "applied" : changes.length ? "pending" : "nochange",
+    status: !rec
+      ? "nomatch"
+      : prev?.wrote || sheetDone
+      ? "applied"
+      : changes.length
+      ? "pending"
+      : "nochange",
   };
 }
 
@@ -154,7 +167,12 @@ async function build() {
   const rows = (grid.rows || []).map((row, i) =>
     planFor(row, cols, idx, i, snap?.data?.fields, results)
   );
-  return { cols, headers: grid.headers, rows, sheet: { id: sheet.id, title: sheet.title } };
+  return {
+    cols,
+    headers: grid.headers,
+    rows,
+    sheet: { id: sheet.id, title: sheet.title, url: sheet.url },
+  };
 }
 
 export async function GET() {
@@ -168,7 +186,7 @@ export async function GET() {
 }
 
 // 実際に Kintone へ書く
-async function applyOne(plan, who) {
+async function applyOne(plan, who, sheet, cols) {
   if (!plan.recordId || !plan.changes.length) return null;
   const values = {};
   for (const c of plan.changes) values[c.code] = c.to;
@@ -187,7 +205,19 @@ async function applyOne(plan, who) {
     by: who,
     pinned: !!plan.done?.pinned,
   });
-  return { key: plan.key, recordId: plan.recordId, wrote: plan.changes.length };
+  // シートの「Kintoneへ反映済み」にも印を付ける（シートを見る人にも伝わるように）。
+  // 書けなくても Kintone への反映は成立しているので、失敗は理由だけ残す。
+  let sheetMark = null;
+  if (sheet?.url && cols?.done >= 0) {
+    const res = await writeSheetCells(
+      sheet.url,
+      (rows) => rows.findIndex((r) => text(r?.[0]) === plan.at && (!plan.hid || text(r?.[cols.hid]) === plan.hid)),
+      () => [{ col: cols.done, value: "〇" }]
+    ).catch((e) => ({ error: String(e?.message || e) }));
+    sheetMark = res?.error || "ok";
+  }
+
+  return { key: plan.key, recordId: plan.recordId, wrote: plan.changes.length, sheetMark };
 }
 
 export async function POST(req) {
@@ -237,7 +267,7 @@ export async function POST(req) {
       // 付け替え先へ入れ直す
       const out = await build();
       const plan = (out.rows || []).find((x) => x.key === b.relink.key);
-      const done = plan ? await applyOne(plan, who) : null;
+      const done = plan ? await applyOne(plan, who, out.sheet, out.cols) : null;
       invalidate("records:snapshot");
       invalidate("kintone:basics");
       return NextResponse.json({ ok: true, applied: done ? 1 : 0 });
@@ -254,7 +284,7 @@ export async function POST(req) {
     const failed = [];
     for (const plan of targets) {
       try {
-        const d = await applyOne(plan, who);
+        const d = await applyOne(plan, who, out.sheet, out.cols);
         if (d) applied.push(d);
       } catch (e) {
         failed.push({ key: plan.key, error: String(e?.message || e) });

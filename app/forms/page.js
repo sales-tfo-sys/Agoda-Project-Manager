@@ -83,7 +83,10 @@ function markOf(p) {
   const who = p.recordId ? `レコード${p.recordId}／${p.hotel || "—"}（${p.matchedBy}で紐づけ）` : "";
   if (p.status === "applied") {
     const wrote = Object.values(p.done?.labels || {}).join("・");
-    return { tone: "done", title: who + nl + "施設一覧へ反映済み" + (wrote ? "：" + wrote : "") };
+    const how = p.done?.wrote
+      ? "施設一覧へ反映済み" + (wrote ? "：" + wrote : "")
+      : "シートで「Kintoneへ反映済み」に印が付いています";
+    return { tone: "done", title: (who ? who + nl : "") + how };
   }
   if (p.status === "pending") {
     const list = (p.changes || []).map((c) => c.label).join("・");
