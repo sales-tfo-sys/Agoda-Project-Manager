@@ -12,6 +12,8 @@ const PUBLIC_PATHS = [
   "/api/auth/session",
   "/api/auth/logout",
   "/api/auth/me",
+  // 時間で動く処理の入口。中で合言葉（CRON_SECRET）を確かめる
+  "/api/cron",
 ];
 
 function isPublic(pathname) {
