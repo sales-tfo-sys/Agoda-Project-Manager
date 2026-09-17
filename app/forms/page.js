@@ -80,6 +80,14 @@ function viewOf(grid) {
   };
 }
 
+// 先頭列（タイムスタンプ）を時刻に直す。読めなければ null
+function tsOf(row) {
+  const v = String(row?.[0] ?? "").trim();
+  if (!v) return null;
+  const d = new Date(v.replace(/-/g, "/"));
+  return Number.isNaN(d.getTime()) ? null : d.getTime();
+}
+
 // 施設一覧への反映の状態 → 行の左端に出す印
 function markOf(p) {
   if (!p) return null;
@@ -382,10 +390,25 @@ export default function FormsPage({ embedded, tabs } = {}) {
 
   const allRows = filterFormRows(viewGrid, q);
   // 紐づけの状態で絞り込む（CM情報のときだけ使う）
-  const shownRows =
+  const filteredRows =
     link && linkFilter !== "all"
       ? allRows.filter(({ no }) => (link[no - 1]?.status || "nomatch") === linkFilter)
       : allRows;
+  // 新しい回答ほど上に出す（# の番号はシートの行のままにして、突き合わせられるようにする）
+  const shownRows = useMemo(() => {
+    const list = [...filteredRows];
+    list.sort((a, b) => {
+      const ta = tsOf(a.r);
+      const tb = tsOf(b.r);
+      if (ta == null && tb == null) return a.no - b.no;
+      if (ta == null) return 1; // 日時が読めない行は下に置く
+      if (tb == null) return -1;
+      return tb - ta || b.no - a.no;
+    });
+    return list;
+    // filteredRows は毎回作られるので、中身が変わったときだけ並べ替える
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewGrid, q, link, linkFilter]);
 
   // Hotel ID は画面から直せるようにする（紐づけの直しに使うため）
   const hidCol = useMemo(() => {
