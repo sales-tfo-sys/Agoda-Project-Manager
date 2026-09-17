@@ -338,16 +338,16 @@ export default function SystemHealthPage() {
             </div>
           </section>
 
-          {/* ④ 月1回のAI健康診断 */}
-          <AiHealth canEdit={canEdit} />
-
-          {/* ⑤ 接続先 */}
+          {/* ④ 接続先 */}
           <section className="sh-conn-sec">
             <h2 className="sh-conn-h">接続先</h2>
             <p className="sh-conn">
               ホスト：{data.host || "(不明)"}　／　{pgVer || "(バージョン不明)"}
             </p>
           </section>
+
+          {/* ⑤ 月1回のAI健康診断 */}
+          <AiHealth canEdit={canEdit} />
         </>
       )}
     </div>
