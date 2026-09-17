@@ -14429,3 +14429,11 @@ button.forms-mark.busy {
   font-weight: 700;
   color: #2f6be0;
 }
+/* 診断ボタンは見出しの右端に置く */
+.sh-panel .aih-run {
+  margin-left: auto;
+}
+.sh-panel .sh-h {
+  display: flex;
+  align-items: center;
+}
