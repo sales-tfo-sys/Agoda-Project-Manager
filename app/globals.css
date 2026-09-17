@@ -13977,3 +13977,18 @@ button.forms-mark.busy {
 .cmimp-note b {
   color: var(--ink-2);
 }
+/* 反映できるものが無いときの説明 */
+.cmimp-why {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid #f0d9a8;
+  border-radius: 9px;
+  background: #fff8e8;
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: #6b5320;
+}
+.cmimp-why b {
+  font-variant-numeric: tabular-nums;
+  color: #4a3a12;
+}

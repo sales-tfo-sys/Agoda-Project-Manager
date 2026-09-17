@@ -365,6 +365,20 @@ export default function FormsPage({ embedded, tabs } = {}) {
   // 検索に当たった行だけを出す（作業依頼の Temairazu タブと同じ決まり）
   // 表示用に整えた表（不要な列を落とし、見出しの番号順にそろえる）
   const viewGrid = useMemo(() => viewOf(grid), [grid]);
+  // 紐づけの件数。サーバーの戻り値をそのまま使わず、手元の予定からも数える
+  const linkStat = useMemo(() => {
+    const list = Object.values(link || {});
+    if (!list.length) return linkCount || null;
+    const n = (st) => list.filter((p) => p.status === st).length;
+    return {
+      total: list.length,
+      pending: n("pending"),
+      applied: n("applied"),
+      nomatch: n("nomatch"),
+      nochange: n("nochange"),
+    };
+  }, [link, linkCount]);
+
   const allRows = filterFormRows(viewGrid, q);
   // 紐づけの状態で絞り込む（CM情報のときだけ使う）
   const shownRows =
@@ -510,10 +524,10 @@ export default function FormsPage({ embedded, tabs } = {}) {
                 <span className="cmimp-title">施設一覧への反映</span>
                 <span className="cmimp-chips">
                   {[
-                    { k: "all", label: "すべて", n: linkCount?.total },
-                    { k: "pending", label: "反映できる", n: linkCount?.pending },
-                    { k: "nomatch", label: "紐づかない", n: linkCount?.nomatch },
-                    { k: "applied", label: "反映済み", n: linkCount?.applied },
+                    { k: "all", label: "すべて", n: linkStat?.total },
+                    { k: "pending", label: "反映できる", n: linkStat?.pending },
+                    { k: "nomatch", label: "紐づかない", n: linkStat?.nomatch },
+                    { k: "applied", label: "反映済み", n: linkStat?.applied },
                   ].map((c) => (
                     <button
                       key={c.k}
@@ -537,15 +551,24 @@ export default function FormsPage({ embedded, tabs } = {}) {
                       type="button"
                       className="save-btn sm"
                       onClick={runImport}
-                      disabled={!!running || !(linkCount?.pending > 0)}
+                      disabled={!!running || !(linkStat?.pending > 0)}
                     >
                       {running
                         ? `反映中… ${running.done}/${running.total}`
-                        : `反映する（${(linkCount?.pending ?? 0).toLocaleString("ja-JP")}件）`}
+                        : `反映する（${(linkStat?.pending ?? 0).toLocaleString("ja-JP")}件）`}
                     </button>
                   </span>
                 )}
               </div>
+              {!(linkStat?.pending > 0) && (
+                <div className="cmimp-why">
+                  いま入れられるものはありません。内訳：
+                  紐づかない <b>{(linkStat?.nomatch ?? 0).toLocaleString("ja-JP")}</b> 件（HID・施設名が一致しない）／
+                  入れるものなし <b>{(linkStat?.nochange ?? 0).toLocaleString("ja-JP")}</b> 件（Kintone 側にすでに値がある、または選択肢にない回答）／
+                  反映済み <b>{(linkStat?.applied ?? 0).toLocaleString("ja-JP")}</b> 件（シートの「Kintoneへ反映済み」に印がある回答を含む）。
+                  行の左の印にマウスを乗せると、1件ずつの理由が出ます。
+                </div>
+              )}
               <div className="cmimp-note">
                 HID →（空なら）施設名（英語）→（それも空なら）施設名（日本語）で施設を探し、
                 <b>Kintone 側が空の項目にだけ</b>入れます（CM種別・URL・ID・PW・契約コード）。
