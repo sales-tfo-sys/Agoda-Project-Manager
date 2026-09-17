@@ -154,6 +154,7 @@ export default function FormsPage({ embedded, tabs } = {}) {
   const [picker, setPicker] = useState(null); // 施設を選ぶ画面 { rowIdx, key, q }
   const [pickList, setPickList] = useState(null); // 候補
   const [picking, setPicking] = useState(false);
+  const [bulking, setBulking] = useState(false); // まとめて紐づけ（最初の1回だけ使う）
   const { setBusy, flashDone, showToast, busy } = useUi();
   const dragIndex = useRef(null);
   const [dragOver, setDragOver] = useState(null);
@@ -245,6 +246,33 @@ export default function FormsPage({ embedded, tabs } = {}) {
       /* 印が出ないだけなので、失敗しても画面はそのまま */
     }
   }, []);
+
+  // Hotel ID が一致する回答を、まとめて紐づけて反映する（最初の1回だけ使う想定）
+  const bulkLink = async () => {
+    if (bulking) return;
+    setBulking(true);
+    setBusy("まとめて紐づけ中…");
+    try {
+      const j = await fetch("/api/cm-import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ autolinkByHid: true, limit: 300 }),
+      }).then((r) => r.json());
+      if (j.error) {
+        setBusy(null);
+        showToast(j.error, "err");
+      } else {
+        flashDone(`${j.linked ?? 0} 件を紐づけ、${j.applied ?? 0} 件に値を入れました`);
+        await loadLink(selected, (items || []).find((f) => f.id === selected)?.title);
+        invalidateCache("/api/records");
+      }
+    } catch (e) {
+      setBusy(null);
+      showToast(String(e?.message || e), "err");
+    } finally {
+      setBulking(false);
+    }
+  };
 
   // 施設を選ぶ画面を開く（初めの検索語は、その回答の Hotel ID か施設名）
   const openPicker = (rowIdx) => {
@@ -413,6 +441,7 @@ export default function FormsPage({ embedded, tabs } = {}) {
     const n = (st) => list.filter((p) => p.status === st).length;
     return {
       total: list.length,
+      linkable: list.filter((p) => p.status === "unlinked" && p.hidMatch).length,
       pending: n("pending"),
       applied: n("applied"),
       unlinked: n("unlinked"),
@@ -886,6 +915,17 @@ export default function FormsPage({ embedded, tabs } = {}) {
               ))}
             </div>
           </div>
+          {canEdit && linkStat?.linkable > 0 && (
+            <div className="cmhelp-bulk">
+              <div>
+                <b>Hotel ID が一致する {linkStat.linkable.toLocaleString("ja-JP")} 件</b>
+                をまとめて紐づけられます（HID が完全に一致するものだけ。紐づけたあと、Kintone 側が空の項目にだけ入れます）。
+              </div>
+              <button type="button" className="save-btn" onClick={bulkLink} disabled={bulking}>
+                {bulking ? "処理中…" : "まとめて紐づけ"}
+              </button>
+            </div>
+          )}
           <div className="cmhelp-sec">
             <b>いまの内訳（全 {(linkStat?.total ?? 0).toLocaleString("ja-JP")} 件）</b>
             <ul>

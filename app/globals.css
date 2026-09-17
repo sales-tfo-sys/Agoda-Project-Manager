@@ -14193,3 +14193,22 @@ button.forms-mark.busy {
     display: none;
   }
 }
+/* はじめの1回だけ使う「まとめて紐づけ」 */
+.cmhelp-bulk {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #cfe3d6;
+  border-radius: 10px;
+  background: #f1fbf5;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ink-2);
+}
+.cmhelp-bulk b {
+  color: #14724a;
+}
+.cmhelp-bulk .save-btn {
+  flex: none;
+}
