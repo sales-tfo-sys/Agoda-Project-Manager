@@ -14442,3 +14442,23 @@ button.forms-mark.busy {
   max-height: none;
   overflow: visible;
 }
+/* AI診断：API の名前と、直し方へのリンク */
+.aih-code {
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: #eef1f6;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--ink-3);
+  vertical-align: 1px;
+}
+.aih-fix {
+  font-size: 11px;
+  color: #2f6be0;
+  text-decoration: none;
+}
+.aih-fix:hover {
+  text-decoration: underline;
+}

@@ -4,8 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useUi } from "../Ui";
 
 // 月1回の「AI健康診断」。
-// ボタンを押すとデータベースを読み取って点検し（db/sys_advisor.sql の関数）、
-// 出てきた指摘をその月の記録として残す。書き込みはしない。
+// ボタンを押すと Supabase 公式の Advisors で点検し、出てきた指摘をその月の記録として残す
+// （トークンが無いときだけ、予備の自作SQLで点検）。毎月1日にも自動で走る。書き込みはしない。
 
 const CHECKS = [
   { kind: "security", label: "セキュリティ点検" },
@@ -92,7 +92,9 @@ export default function AiHealth({ canEdit }) {
                 <b>{c.label}</b>
                 <span className={"aih-state " + (done ? "ok" : "todo")}>
                   {done
-                    ? `${fmt(done.at)} 実施${finds ? `／指摘 ${finds.length} 件` : ""}`
+                    ? `${fmt(done.at)} 実施${finds ? `／指摘 ${finds.length} 件` : ""}${
+                        done.source === "sql" ? "（予備の点検）" : ""
+                      }`
                     : "未実施"}
                 </span>
               </div>
@@ -111,9 +113,18 @@ export default function AiHealth({ canEdit }) {
                           {f.level === "high" ? "重大" : f.level === "med" ? "注意" : "軽微"}
                         </span>
                         <span className="aih-ft">
-                          <b>{f.title}</b>
+                          <b>
+                            {f.title}
+                            {/* 対訳がずれても取り違えないよう、API の名前を必ず添える */}
+                            {f.apiName && <code className="aih-code">{f.apiName}</code>}
+                          </b>
                           {f.target && <em>{f.target}</em>}
                           <span>{f.detail}</span>
+                          {f.remediation && /^https:\/\//.test(f.remediation) && (
+                            <a className="aih-fix" href={f.remediation} target="_blank" rel="noreferrer">
+                              直し方（Supabase の説明）
+                            </a>
+                          )}
                         </span>
                       </li>
                     ))}

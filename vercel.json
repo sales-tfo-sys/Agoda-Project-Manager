@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/cm-import",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/ai-health",
+      "schedule": "0 0 1 * *"
     }
   ]
 }

@@ -1204,6 +1204,8 @@ export default function DesignSpecPage() {
                 ],
                 [<C>SUPABASE_DB_LIMIT_MB</C>, "任意", <>DB 容量の上限（MB）。既定 8192（Proプラン）。</>],
                 [<C>SUPABASE_PLAN_NAME</C>, "任意", <>表示用のプラン名。既定「Proプラン」。</>],
+                [<C>SUPABASE_ACCESS_TOKEN</C>, "任意", <>AI健康診断で Supabase 公式 Advisors を読むためのトークン（Advisors 読み取りのみ）。未設定なら予備の自作SQLで点検。</>],
+                [<C>CRON_SECRET</C>, "任意", <>定期実行（/api/cron/*）の合言葉。未設定なら定期実行は何もしない。</>],
               ]}
             />
             <Note>
