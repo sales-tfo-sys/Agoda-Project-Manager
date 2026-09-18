@@ -14437,3 +14437,8 @@ button.forms-mark.busy {
   display: flex;
   align-items: center;
 }
+/* AI診断は専用のタブになったので、指摘の一覧は枠内でスクロールさせず全部出す */
+.sys-health .aih-finds {
+  max-height: none;
+  overflow: visible;
+}

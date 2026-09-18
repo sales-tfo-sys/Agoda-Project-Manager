@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import AiHealth from "./AiHealth";
 import { cachedJson } from "../dataCache";
 
@@ -82,7 +82,64 @@ function Kpi({ label, value, sub, note, tone = "ok", gauge }) {
   );
 }
 
+// ページ切り替えのタブ（ダッシュボードと同じ見た目）。
+// ラベルの幅が違うので、スライダーは選んでいるボタンを実測して重ねる。
+function SegTabs({ items, value, onChange, label }) {
+  const ref = useRef(null);
+  const [thumb, setThumb] = useState(null);
+  useEffect(() => {
+    const measure = () => {
+      const btn = ref.current && ref.current.querySelector(".segbar-btn.active");
+      setThumb(btn ? { left: btn.offsetLeft, width: btn.offsetWidth } : null);
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [value, items]);
+  return (
+    <div className="segbar segbar-sm" role="tablist" aria-label={label} ref={ref}>
+      <span
+        className="segbar-thumb"
+        style={thumb ? { left: thumb.left, width: thumb.width, transform: "none" } : { opacity: 0 }}
+        aria-hidden="true"
+      />
+      {items.map((it) => (
+        <button
+          key={it.key}
+          type="button"
+          role="tab"
+          aria-selected={value === it.key}
+          className={"segbar-btn" + (value === it.key ? " active" : "")}
+          onClick={() => onChange(it.key)}
+        >
+          {it.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const TABS = [
+  { key: "status", label: "状況" },
+  { key: "ai", label: "AI診断" },
+];
+const TAB_LS = "agoda-syshealth-tab";
+
 export default function SystemHealthPage() {
+  // 状況／AI診断 の切り替え。選んだタブは次に開いたときも覚えておく
+  const [tab, setTab] = useState("status");
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(TAB_LS);
+      if (TABS.some((t) => t.key === v)) setTab(v);
+    } catch {}
+  }, []);
+  const switchTab = (k) => {
+    setTab(k);
+    try {
+      localStorage.setItem(TAB_LS, k);
+    } catch {}
+  };
   // 「実施を記録」できるのは、データを編集できる人だけ
   const [canEdit, setCanEdit] = useState(false);
   useEffect(() => {
@@ -130,12 +187,20 @@ export default function SystemHealthPage() {
             </svg>
           </span>
           <span className="page-h page-h-gap">システムヘルス</span>
+          <span className="head-sep" aria-hidden="true" />
+          <SegTabs items={TABS} value={tab} onChange={switchTab} label="表示の切り替え" />
         </div>
         <div className="head-right">
-          {data?.checkedAt && <span className="updated">最終チェック：{fmtDateTime(data.checkedAt)}</span>}
+          {tab === "status" && data?.checkedAt && (
+            <span className="updated">最終チェック：{fmtDateTime(data.checkedAt)}</span>
+          )}
         </div>
       </div>
 
+      {tab === "ai" ? (
+        <AiHealth canEdit={canEdit} />
+      ) : (
+      <>
       {err && <div className="banner err-banner">エラー：{err}</div>}
 
       {data === null ? (
@@ -345,10 +410,9 @@ export default function SystemHealthPage() {
               ホスト：{data.host || "(不明)"}　／　{pgVer || "(バージョン不明)"}
             </p>
           </section>
-
-          {/* ⑤ 月1回のAI健康診断 */}
-          <AiHealth canEdit={canEdit} />
         </>
+      )}
+      </>
       )}
     </div>
   );
