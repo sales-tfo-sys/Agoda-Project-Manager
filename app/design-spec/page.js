@@ -1202,8 +1202,8 @@ export default function DesignSpecPage() {
                   "任意",
                   "移行元シートの指定。既定値がコードに入っているため通常は設定不要。",
                 ],
-                [<C>SUPABASE_DB_LIMIT_MB</C>, "任意", <>DB 容量の上限（MB）。既定 500（無料プラン）。</>],
-                [<C>SUPABASE_PLAN_NAME</C>, "任意", <>表示用のプラン名。既定「無料プラン」。</>],
+                [<C>SUPABASE_DB_LIMIT_MB</C>, "任意", <>DB 容量の上限（MB）。既定 8192（Proプラン）。</>],
+                [<C>SUPABASE_PLAN_NAME</C>, "任意", <>表示用のプラン名。既定「Proプラン」。</>],
               ]}
             />
             <Note>

@@ -238,7 +238,7 @@ export default function SystemHealthPage() {
               value={sto?.usedPct != null ? sto.usedPct.toFixed(1) + "%" : "—"}
               sub={
                 sto
-                  ? `${toMB(sto.usedBytes).toFixed(1)} / ${Math.round(toMB(sto.limitBytes)).toLocaleString("ja-JP")} MB（${cap?.planName || "無料プラン"}）`
+                  ? `${toMB(sto.usedBytes).toFixed(1)} / ${Math.round(toMB(sto.limitBytes)).toLocaleString("ja-JP")} MB（${cap?.planName || "Proプラン"}）`
                   : "—"
               }
               note={

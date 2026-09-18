@@ -12,13 +12,15 @@ const SB_KEY =
 // ★★ プランを変更したら必ずこの値も直すこと ★★
 //    直し忘れると「上限間近」と誤表示する（無料500MBのまま移行して誤警告した事例あり）。
 //    無料 = 500MB / Pro = 8192MB。環境変数でも上書きできる。
-const DB_LIMIT_MB = Number(process.env.SUPABASE_DB_LIMIT_MB || 500);
-const DB_PLAN_NAME = process.env.SUPABASE_PLAN_NAME || "無料プラン";
+//    2026-09-18 に有料（Pro）の組織へ移管したので、既定値を Pro にした。
+const DB_LIMIT_MB = Number(process.env.SUPABASE_DB_LIMIT_MB || 8192);
+const DB_PLAN_NAME = process.env.SUPABASE_PLAN_NAME || "Proプラン";
 
 // ── ファイル保管（資料ページ）の上限（プラン依存）──────────────────
 // ★★ プランを変更したら必ずこの値も直すこと ★★
 //    DBとは別枠で数えられる。無料 = 1GB / Pro = 100GB。環境変数でも上書きできる。
-const STORAGE_LIMIT_MB = Number(process.env.SUPABASE_STORAGE_LIMIT_MB || 1024);
+//    2026-09-18 に Pro へ移ったので、既定値を 100GB にした。
+const STORAGE_LIMIT_MB = Number(process.env.SUPABASE_STORAGE_LIMIT_MB || 102400);
 
 // ── 取り込み状況に出す「表示名 / テーブル / 日付列」──────────────────
 // ★ テーブル名・列名はクエリに埋め込むため、必ずこの固定の許可リストのみ。
